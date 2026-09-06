@@ -1,0 +1,29 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/frontend/**"
+      - ".github/workflows/deploy-vercel.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Deploy to Vercel
+        run: |
+          vercel deploy \
+            --prod \
+            --yes \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --scope=team01-0e5b \
+            --cwd=app/frontend
