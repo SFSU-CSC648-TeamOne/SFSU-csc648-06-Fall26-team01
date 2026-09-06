@@ -1,0 +1,601 @@
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    background: #ffffff;
+    color: #102342;
+}
+
+
+/* -------------------------
+   HEADER
+------------------------- */
+
+.topbar {
+    height: 78px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 5%;
+
+    background:
+        linear-gradient(
+            90deg,
+            #061a3d,
+            #052654
+        );
+
+    color: white;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+
+    font-size: 27px;
+    font-weight: 700;
+}
+
+.brand-icon {
+    font-size: 34px;
+}
+
+
+/* -------------------------
+   HERO
+------------------------- */
+
+.hero {
+    min-height: 310px;
+
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+
+    align-items: center;
+
+    gap: 30px;
+
+    padding: 40px 5% 10px;
+
+    background:
+        linear-gradient(
+            110deg,
+            #ffffff,
+            #f5f9ff
+        );
+}
+
+.hero-text h1 {
+    margin: 0;
+
+    font-size: clamp(36px, 4vw, 58px);
+    letter-spacing: -1.5px;
+}
+
+.title-line {
+    width: 78px;
+    height: 4px;
+
+    margin: 20px 0 25px;
+
+    border-radius: 10px;
+
+    background: #1681f5;
+}
+
+.hero-text p {
+    max-width: 600px;
+
+    margin: 0;
+
+    font-size: 19px;
+    line-height: 1.55;
+
+    color: #536079;
+}
+
+.hero-art svg {
+    width: 100%;
+    height: auto;
+}
+
+
+/* -------------------------
+   TEAM
+------------------------- */
+
+.team-section {
+    position: relative;
+
+    padding:
+        10px
+        4%
+        60px;
+}
+
+.team-section > h2 {
+    text-align: center;
+
+    margin: 0;
+
+    font-size: 27px;
+}
+
+.section-line {
+    width: 48px;
+    height: 3px;
+
+    margin:
+        10px auto
+        25px;
+
+    background: #1681f5;
+}
+
+
+/* -------------------------
+   MEMBER CARDS
+------------------------- */
+
+.team-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(180px, 1fr));
+
+    gap: 20px;
+}
+
+.member-card {
+    min-height: 355px;
+
+    padding: 12px;
+
+    border: 1px solid #dbe3ed;
+    border-radius: 9px;
+
+    background: white;
+
+    text-align: center;
+
+    box-shadow:
+        0 3px 12px
+        rgba(18, 49, 85, 0.08);
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s,
+        border-color 0.2s;
+}
+
+.member-card:hover,
+.member-card.selected {
+    transform: translateY(-4px);
+
+    border-color: #1681f5;
+
+    box-shadow:
+        0 8px 22px
+        rgba(22, 129, 245, 0.17);
+}
+
+
+/* placeholder portraits */
+
+.portrait {
+    height: 190px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 7px;
+
+    font-size: 54px;
+    font-weight: 700;
+
+    color: white;
+}
+
+.portrait-blue {
+    background:
+        linear-gradient(
+            135deg,
+            #69b0ff,
+            #135fc4
+        );
+}
+
+.portrait-green {
+    background:
+        linear-gradient(
+            135deg,
+            #54c786,
+            #187047
+        );
+}
+
+.portrait-purple {
+    background:
+        linear-gradient(
+            135deg,
+            #8e9cf4,
+            #5362bb
+        );
+}
+
+.portrait-orange {
+    background:
+        linear-gradient(
+            135deg,
+            #ffc15b,
+            #e7881d
+        );
+}
+
+
+.member-card h3 {
+    margin:
+        16px 0
+        3px;
+
+    color: #0874e5;
+}
+
+.member-role {
+    margin: 0;
+
+    color: #15233c;
+}
+
+.member-description {
+    min-height: 52px;
+
+    margin: 15px 0;
+
+    font-size: 14px;
+    line-height: 1.5;
+
+    color: #566173;
+}
+
+.socials,
+.popup-socials {
+    display: flex;
+    justify-content: center;
+
+    gap: 20px;
+
+    font-weight: 700;
+    font-size: 20px;
+}
+
+.socials span:nth-child(2),
+.socials span:nth-child(3),
+.popup-socials span:nth-child(2),
+.popup-socials span:nth-child(3) {
+    color: #0874e5;
+}
+
+
+/* -------------------------
+   PROFILE POPUP
+------------------------- */
+
+.profile-popup {
+    position: absolute;
+
+    top: 75px;
+    left: 50%;
+
+    width: min(650px, 90%);
+
+    display: grid;
+
+    grid-template-columns:
+        240px 1fr;
+
+    gap: 20px;
+
+    padding: 24px;
+
+    border: 1px solid #dce4ee;
+    border-radius: 12px;
+
+    background: white;
+
+    box-shadow:
+        0 15px 45px
+        rgba(14, 41, 74, 0.24);
+
+    transform:
+        translateX(-5%);
+
+    z-index: 10;
+}
+
+.profile-popup.hidden {
+    display: none;
+}
+
+.close-popup {
+    position: absolute;
+
+    top: 10px;
+    right: 15px;
+
+    border: 0;
+    background: transparent;
+
+    font-size: 28px;
+
+    cursor: pointer;
+}
+
+.popup-photo {
+    height: 240px;
+}
+
+.popup-socials {
+    margin-top: 22px;
+}
+
+.popup-content h3 {
+    margin:
+        0
+        0
+        4px;
+
+    font-size: 25px;
+}
+
+.popup-role {
+    margin: 0;
+
+    color: #0874e5;
+
+    font-weight: 700;
+}
+
+.popup-description {
+    margin:
+        16px 0
+        20px;
+
+    padding-bottom: 17px;
+
+    border-bottom: 1px solid #e1e6ed;
+
+    line-height: 1.55;
+
+    color: #48566b;
+}
+
+.details {
+    display: flex;
+    flex-direction: column;
+
+    gap: 13px;
+}
+
+.detail-row {
+    display: grid;
+
+    grid-template-columns:
+        120px 1fr;
+
+    gap: 15px;
+
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.detail-row strong {
+    color: #172943;
+}
+
+.detail-row span {
+    color: #48566b;
+}
+
+.view-page-button {
+    display: block;
+
+    margin-top: 23px;
+
+    padding:
+        12px
+        20px;
+
+    border-radius: 5px;
+
+    background: #0874e5;
+
+    color: white;
+
+    text-align: center;
+    text-decoration: none;
+
+    transition: background 0.2s;
+}
+
+.view-page-button:hover {
+    background: #005fc4;
+}
+
+
+/* -------------------------
+   DEPLOYED SITE
+------------------------- */
+
+.deployed-panel {
+    margin:
+        25px 4%
+        40px;
+
+    padding:
+        20px 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 25px;
+
+    border:
+        1px solid
+        #d9e7fa;
+
+    border-radius: 9px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #f2f7ff,
+            #e9f3ff
+        );
+}
+
+.deployed-info {
+    display: flex;
+    align-items: center;
+
+    gap: 20px;
+}
+
+.globe {
+    font-size: 50px;
+
+    color: #0874e5;
+}
+
+.deployed-info h3 {
+    margin:
+        0
+        0
+        4px;
+
+    font-size: 20px;
+}
+
+.deployed-info p {
+    margin: 0;
+
+    color: #526079;
+}
+
+.deployed-button {
+    padding:
+        12px
+        24px;
+
+    border-radius: 5px;
+
+    background: #0874e5;
+
+    color: white;
+
+    text-decoration: none;
+    white-space: nowrap;
+
+    transition:
+        background 0.2s;
+}
+
+.deployed-button:hover {
+    background: #005fc4;
+}
+
+
+/* -------------------------
+   RESPONSIVE
+------------------------- */
+
+@media (max-width: 950px) {
+
+    .hero {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-art {
+        max-width: 650px;
+        margin: auto;
+    }
+
+    .team-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .profile-popup {
+        position: fixed;
+
+        top: 50%;
+        left: 50%;
+
+        max-height: 90vh;
+
+        overflow-y: auto;
+
+        transform:
+            translate(-50%, -50%);
+    }
+}
+
+
+@media (max-width: 650px) {
+
+    .topbar {
+        padding: 0 20px;
+    }
+
+    .hero {
+        padding:
+            35px
+            20px;
+    }
+
+    .team-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-popup {
+        grid-template-columns: 1fr;
+
+        width: 92%;
+    }
+
+    .popup-photo {
+        height: 200px;
+    }
+
+    .deployed-panel {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .deployed-button {
+        width: 100%;
+
+        text-align: center;
+    }
+}

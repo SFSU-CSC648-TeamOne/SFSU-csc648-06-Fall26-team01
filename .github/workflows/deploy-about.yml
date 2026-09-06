@@ -1,0 +1,29 @@
+name: Deploy About Page
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/frontend/about/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/gcp_key
+          chmod 600 ~/.ssh/gcp_key
+          ssh-keyscan -H "${{ secrets.GCP_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy About page
+        run: |
+          scp -i ~/.ssh/gcp_key \
+            -r app/frontend/about/* \
+            "${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }}:/var/www/html/about/"
