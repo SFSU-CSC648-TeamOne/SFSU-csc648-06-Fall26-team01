@@ -304,10 +304,13 @@ body {
 .profile-popup {
     position: absolute;
 
-    top: 75px;
-    left: 50%;
+    top: 0;
+    left: 0;
 
-    width: min(650px, 90%);
+    width: min(650px, calc(100vw - 40px));
+    max-height: calc(100vh - 30px);
+    overflow-x: hidden;
+    overflow-y: auto;
 
     display: grid;
 
@@ -327,13 +330,23 @@ body {
         0 15px 45px
         rgba(14, 41, 74, 0.24);
 
-    transform:
-        translateX(-5%);
-
     z-index: 10;
 }
 
 .profile-popup.hidden {
+    display: none;
+}
+
+.member-card.zoomed {
+    position: relative;
+    height: 355px;
+    min-height: 355px;
+    z-index: 20;
+
+    transform: none;
+}
+
+.member-card.zoomed > :not(.profile-popup) {
     display: none;
 }
 
@@ -547,18 +560,11 @@ body {
     }
 
     .profile-popup {
-        position: fixed;
-
-        top: 50%;
-        left: 50%;
-
         max-height: 90vh;
 
         overflow-y: auto;
-
-        transform:
-            translate(-50%, -50%);
     }
+
 }
 
 
@@ -581,7 +587,7 @@ body {
     .profile-popup {
         grid-template-columns: 1fr;
 
-        width: 92%;
+        width: calc(100vw - 40px);
     }
 
     .popup-photo {
