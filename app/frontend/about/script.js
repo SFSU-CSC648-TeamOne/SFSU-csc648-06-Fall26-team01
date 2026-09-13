@@ -14,6 +14,28 @@ const detailEducation = document.getElementById("detail-education");
 const detailAbout = document.getElementById("detail-about");
 
 const popupPhoto = document.getElementById("popup-photo");
+const popupParent = popup.parentElement;
+const popupNextSibling = popup.nextElementSibling;
+
+let activeCard = null;
+let suppressHover = false;
+
+
+function closeProfile() {
+
+    popup.classList.add("hidden");
+
+    if (activeCard) {
+        activeCard.classList.remove("selected");
+        activeCard.classList.remove("zoomed");
+    }
+
+    if (popup.parentElement !== popupParent) {
+        popupParent.insertBefore(popup, popupNextSibling);
+    }
+
+    activeCard = null;
+}
 
 
 function openProfile(card) {
@@ -21,6 +43,7 @@ function openProfile(card) {
     cards.forEach(c => c.classList.remove("selected"));
 
     card.classList.add("selected");
+    activeCard = card;
 
 
     popupName.textContent =
@@ -63,7 +86,21 @@ function openProfile(card) {
         portrait.textContent;
 
 
+    card.appendChild(popup);
+    card.classList.add("zoomed");
     popup.classList.remove("hidden");
+
+    const cardRect = card.getBoundingClientRect();
+    const viewportMargin = 20;
+    const popupLeft = Math.max(
+        viewportMargin,
+        Math.min(
+            cardRect.left,
+            window.innerWidth - viewportMargin - popup.offsetWidth
+        )
+    );
+
+    popup.style.left = `${popupLeft - cardRect.left}px`;
 }
 
 
@@ -71,7 +108,11 @@ cards.forEach(card => {
 
     card.addEventListener(
         "mouseenter",
-        () => openProfile(card)
+        () => {
+            if (!suppressHover) {
+                openProfile(card);
+            }
+        }
     );
 
     card.addEventListener(
@@ -79,19 +120,57 @@ cards.forEach(card => {
         () => openProfile(card)
     );
 
+    card.addEventListener(
+        "mouseleave",
+        event => {
+            if (!popup.contains(event.relatedTarget)) {
+                closeProfile();
+            }
+        }
+    );
+
 });
 
 
 closeButton.addEventListener(
     "click",
-    () => {
+    event => {
+        event.stopPropagation();
+        suppressHover = true;
+        closeProfile();
+    }
+);
 
-        popup.classList.add("hidden");
 
-        cards.forEach(
-            card =>
-                card.classList.remove("selected")
-        );
+popup.addEventListener(
+    "mouseleave",
+    event => {
+        if (!activeCard || !activeCard.contains(event.relatedTarget)) {
+            closeProfile();
+        }
+    }
+);
 
+
+document.addEventListener(
+    "mousemove",
+    event => {
+        if (
+            !event.target.closest(".member-card") &&
+            !popup.contains(event.target)
+        ) {
+            suppressHover = false;
+        }
+    }
+);
+
+
+document.addEventListener(
+    "keydown",
+    event => {
+        if (event.key === "Escape" && activeCard) {
+            suppressHover = true;
+            closeProfile();
+        }
     }
 );
