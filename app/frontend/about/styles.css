@@ -224,7 +224,14 @@ body {
             #135fc4
         );
 }
-
+.portrait-red {
+    background:
+        linear-gradient(
+            135deg,
+            #ff5f5f,
+            #b31217
+        );
+}
 .portrait-green {
     background:
         linear-gradient(
