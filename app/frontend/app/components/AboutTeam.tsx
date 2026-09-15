@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Member = { name: string; initials: string; role: string; description: string; focus: string; education: string; about: string; color: string; page?: string; github?: string; email?: string };
 const members: Member[] = [
@@ -23,11 +23,15 @@ function HeroArt() { return <div className="hero-art"><svg viewBox="0 0 600 280"
 
 export default function AboutTeam() {
   const [selected, setSelected] = useState<Member | null>(null);
-  useEffect(() => { const close = (event: KeyboardEvent) => event.key === "Escape" && setSelected(null); window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); }, []);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelClose = () => { if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; } };
+  const closeProfile = () => { cancelClose(); setSelected(null); };
+  const scheduleClose = () => { cancelClose(); closeTimer.current = setTimeout(() => setSelected(null), 250); };
+  useEffect(() => { const close = (event: KeyboardEvent) => event.key === "Escape" && closeProfile(); window.addEventListener("keydown", close); return () => { window.removeEventListener("keydown", close); cancelClose(); }; }, []);
   return <main>
     <section className="hero"><div className="hero-text"><h1>ABOUT OUR TEAM</h1><div className="title-line" /><p>We are a group of passionate students working together to build innovative solutions. Each team member brings unique skills and perspectives to help us achieve our goals.</p></div><HeroArt /></section>
-    <section className="team-section"><h2>MEET OUR TEAM</h2><div className="section-line" /><div className="team-grid">
-      {members.map((member) => <article className={`member-card ${selected?.name === member.name ? "selected" : ""}`} key={member.name} onMouseEnter={() => setSelected(member)} onClick={() => setSelected(member)}>
+    <section className="team-section" onMouseMove={cancelClose} onMouseLeave={scheduleClose}><h2>MEET OUR TEAM</h2><div className="section-line" /><div className="team-grid">
+      {members.map((member) => <article className={`member-card ${selected?.name === member.name ? "selected" : ""}`} key={member.name} onMouseEnter={() => { cancelClose(); setSelected(member); }} onMouseLeave={scheduleClose} onClick={() => { cancelClose(); setSelected(member); }}>
         <div className={`portrait portrait-${member.color}`}>{member.initials}</div><h3>{member.name}</h3><p className="member-role">{member.role}</p><p className="member-description">{member.description}</p><div className="socials"><span>{member.github ? <a href={member.github} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>GitHub</a> : "●"}</span><span>{member.email ? <a href={`mailto:${member.email}`} onClick={(e) => e.stopPropagation()}>✉</a> : "in"}</span></div>
       </article>)}
     </div>
