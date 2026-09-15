@@ -44,6 +44,18 @@ body {
     color: white;
 }
 
+.topbar-link {
+    margin-left: auto;
+
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.topbar-link:hover {
+    text-decoration: underline;
+}
+
 .brand {
     display: flex;
     align-items: center;
@@ -54,7 +66,8 @@ body {
 }
 
 .brand-icon {
-    font-size: 34px;
+    width: 38px;
+    height: 38px;
 }
 
 
@@ -149,6 +162,18 @@ body {
     background: #1681f5;
 }
 
+.construction-copy {
+    max-width: 600px;
+
+    margin: 0 auto 22px;
+
+    font-size: 17px;
+    line-height: 1.55;
+
+    color: #536079;
+    text-align: center;
+}
+
 
 /* -------------------------
    MEMBER CARDS
@@ -214,6 +239,12 @@ body {
     font-weight: 700;
 
     color: white;
+}
+
+.individual-portrait {
+    width: min(360px, 100%);
+    height: 280px;
+    margin: auto;
 }
 
 .portrait-blue {
@@ -373,6 +404,17 @@ body {
 
 .popup-photo {
     height: 240px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 7px;
+
+    font-size: 54px;
+    font-weight: 700;
+
+    color: white;
 }
 
 .popup-socials {
