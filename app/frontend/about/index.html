@@ -13,9 +13,21 @@
 
 <header class="topbar">
     <div class="brand">
-        <span class="brand-icon">👥</span>
+        <svg class="brand-icon" viewBox="0 0 48 48" role="img" aria-label="Fitness and AI">
+            <circle cx="24" cy="24" r="21" fill="#1681f5" />
+            <path d="M24 10 L17 17 M24 10 L31 17 M17 17 H31" fill="none" stroke="#ffb72d" stroke-width="2" stroke-linecap="round" />
+            <circle cx="24" cy="10" r="3" fill="#ffb72d" />
+            <circle cx="17" cy="17" r="3" fill="#ffb72d" />
+            <circle cx="31" cy="17" r="3" fill="#ffb72d" />
+            <path d="M17 27 H31" stroke="white" stroke-width="4" stroke-linecap="round" />
+            <path d="M12 22 V32 M16 20 V34 M32 20 V34 M36 22 V32" stroke="white" stroke-width="3" stroke-linecap="round" />
+        </svg>
         <span>TeamProject</span>
     </div>
+
+    <a class="topbar-link" href="../index.html">
+        Home
+    </a>
 </header>
 
 
@@ -264,32 +276,42 @@
             <article
                 class="member-card"
                 data-name="Zaw Htut"
-                data-role="Github Lord"
-                data-description="Creates responsive and user-friendly web interfaces."
-                data-focus="React, TypeScript, UI/UX"
+                data-role="Git Master"
+                data-description="Manages source control, CI/CD pipelines, and cloud infrastructure to keep the team shipping reliably."
+                data-focus="Git, CI/CD, Cloud Infrastructure"
                 data-joined="August 2026"
                 data-education="Computer Science, San Francisco State University"
-                data-about="Outside of coding, Carla enjoys photography, hiking, and coffee."
+                data-about="Focused on source control, automated delivery pipelines, and reliable cloud environments."
+                data-page="../zaw/index.html"
             >
 
                 <div class="portrait portrait-purple">
-                    CM
+                    ZH
                 </div>
 
                 <h3>Zaw Htut</h3>
 
                 <p class="member-role">
-                    Github Lord
+                    Git Master
                 </p>
 
                 <p class="member-description">
-                    Creates responsive and user-friendly web interfaces.
+                    Manages source control, CI/CD pipelines, and cloud infrastructure to keep the team shipping reliably.
                 </p>
 
                 <div class="socials">
-                    <span>●</span>
-                    <span>in</span>
-                    <span>✉</span>
+                    <span>
+                        <a
+                            href="https://github.com/zawhtut"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            GitHub
+                        </a>
+                    </span>
+                    <span>
+                        <a href="mailto:zawhtut@gmail.com">✉</a>
+                    </span>
                 </div>
 
             </article>
@@ -501,6 +523,7 @@
 
 
                 <a
+                    id="view-page-button"
                     href="#"
                     class="view-page-button"
                 >

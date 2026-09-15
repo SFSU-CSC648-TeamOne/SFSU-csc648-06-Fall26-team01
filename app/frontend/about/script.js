@@ -14,6 +14,8 @@ const detailEducation = document.getElementById("detail-education");
 const detailAbout = document.getElementById("detail-about");
 
 const popupPhoto = document.getElementById("popup-photo");
+const popupSocials = document.querySelector(".popup-socials");
+const viewPageButton = document.getElementById("view-page-button");
 const popupParent = popup.parentElement;
 const popupNextSibling = popup.nextElementSibling;
 
@@ -84,6 +86,12 @@ function openProfile(card) {
 
     popupPhoto.textContent =
         portrait.textContent;
+
+    popupSocials.innerHTML =
+        card.querySelector(".socials").innerHTML;
+
+    viewPageButton.href =
+        card.dataset.page || "#";
 
 
     card.appendChild(popup);
