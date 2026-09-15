@@ -59,6 +59,11 @@ production site when a commit is pushed to `main` and includes frontend files.
 The About page also has a dedicated deployment workflow for changes under
 `app/frontend/about/`.
 
+### Deployed Site
+
+- [TeamProject homepage](https://frontend-phi-hazel-cmbz8sepjp.vercel.app/)
+- [About Our Team](https://frontend-phi-hazel-cmbz8sepjp.vercel.app/about/)
+
 ## Team Development Workflow
 
 Team members should create a branch for their work, make focused commits, and
