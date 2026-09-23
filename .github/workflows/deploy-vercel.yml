@@ -27,4 +27,4 @@ jobs:
             --yes \
             --token=${{ secrets.VERCEL_TOKEN }} \
             --scope=team01-0e5b \
-            
+            --cwd=app/frontend
