@@ -5,16 +5,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/about",
-        destination: "/about/",
-        permanent: false,
-      },
-    ];
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/about/",
         destination: "/about/index.html",
+        permanent: false,
       },
     ];
   },
