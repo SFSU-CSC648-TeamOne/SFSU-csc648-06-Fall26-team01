@@ -62,7 +62,7 @@ def list_workout_sessions(
     muscle: Optional[str] = Query(None, description="muscle group name"),
     difficulty: Optional[ExperienceLevel] = None,
     max_minutes: Optional[int] = Query(None, ge=1, le=600, description="expected length, up to"),
-    limit: Limit = 20,
+    limit: Limit = 100,
     offset: Offset = 0,
 ):
     items, total = service.search_workout_sessions(
