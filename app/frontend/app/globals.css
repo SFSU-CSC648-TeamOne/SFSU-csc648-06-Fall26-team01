@@ -1421,3 +1421,197 @@ footer {
     gap: 20px;
   }
 }
+
+/* Demo video and 3D viewing thingie CSS */
+.exercise-lab {
+  padding: 120px 8vw;
+  border-top: 1px solid rgba(244, 241, 234, 0.1);
+}
+
+.lab-heading {
+  max-width: 760px;
+  margin-bottom: 55px;
+}
+
+.lab-heading h2 {
+  margin: 25px 0;
+  font-size: clamp(3.5rem, 7vw, 7rem);
+  line-height: 0.9;
+  letter-spacing: -0.06em;
+}
+
+.lab-heading h2 span {
+  color: #4f7cff;
+}
+
+.lab-heading > p {
+  max-width: 550px;
+  color: #8e98a8;
+  line-height: 1.7;
+}
+
+.lab-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.viewer-panel,
+.video-panel {
+  min-width: 0;
+  background: rgba(36, 41, 50, 0.75);
+  border: 1px solid rgba(244, 241, 234, 0.1);
+  backdrop-filter: blur(18px);
+}
+
+.lab-panel-top,
+.viewer-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  color: #8e98a8;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
+.lab-panel-top {
+  border-bottom: 1px solid rgba(244, 241, 234, 0.08);
+}
+
+.viewer-status,
+.model-format {
+  color: #a7d46f;
+}
+
+.viewer-placeholder {
+  min-height: 440px;
+  padding: 35px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(79, 124, 255, 0.12),
+      transparent 55%
+    );
+}
+
+.viewer-orbit {
+  width: 170px;
+  height: 170px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-bottom: 30px;
+}
+
+.orbit-ring {
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(79, 124, 255, 0.6);
+  border-radius: 50%;
+  transform: rotateX(60deg) rotate(-25deg);
+  box-shadow: 0 0 35px rgba(79, 124, 255, 0.1);
+}
+
+.orbit-core {
+  width: 85px;
+  height: 85px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(79, 124, 255, 0.5);
+  background: rgba(79, 124, 255, 0.12);
+  color: #4f7cff;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.viewer-placeholder h3 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+}
+
+.viewer-placeholder p {
+  max-width: 350px;
+  color: #8e98a8;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.model-format {
+  margin-top: 15px;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
+.viewer-footer {
+  border-top: 1px solid rgba(244, 241, 234, 0.08);
+  font-size: 0.58rem;
+}
+
+.video-count {
+  color: #4f7cff;
+}
+
+.video-panel {
+  padding-bottom: 5px;
+}
+
+.demo-video {
+  margin: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(244, 241, 234, 0.1);
+  background: #171a1f;
+}
+
+.demo-video video {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: #0c0e12;
+}
+
+.video-info {
+  padding: 18px;
+}
+
+.video-info > span {
+  color: #a7d46f;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+}
+
+.video-info h3 {
+  margin: 10px 0;
+  font-size: 1.05rem;
+}
+
+.video-info p {
+  margin-bottom: 0;
+  color: #8e98a8;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .exercise-lab {
+    padding: 90px 6vw;
+  }
+
+  .lab-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .viewer-placeholder {
+    min-height: 350px;
+  }
+}
