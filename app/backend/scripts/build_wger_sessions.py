@@ -1,7 +1,6 @@
 # Builds workout sessions out of the exercises imported from wger, so the workout
 # selection page has plenty to filter by muscle group, difficulty and length.
-#
-# wger only provides single exercises, not workouts, so the grouping rules are ours 
+# wger only provides single exercises, not workouts, so the grouping rules are ours (can change if needed)
 
 import argparse
 from typing import Optional
@@ -15,16 +14,16 @@ from app.models import (Exercise, ExerciseMuscle, SessionExercise, TrainingProgr
                         WorkoutSession)
 
 # Difficulty levels that get sessions. wger data is only rated beginner/intermediate by
-# our import rules, so there is no advanced pool to draw from yet.
+# our import rules, I don't see advanced rules yet
 LEVELS = ["beginner", "intermediate"]
 
-# size name -> (core exercises wanted, accessory exercises wanted, fewest exercises allowed)
+# size name - aka: core exercises wanted, accessory exercises wanted, fewest exercises allowed
 SIZES = {
     "Short": (2, 1, 3),
     "Full": (3, 3, 4),
 }
 
-# level -> role -> (sets, reps)
+# level - role - sets, reps
 PRESCRIPTION = {
     "beginner": {"core": (3, 10), "accessory": (2, 12)},
     "intermediate": {"core": (4, 8), "accessory": (3, 12)},
@@ -33,7 +32,7 @@ PRESCRIPTION = {
 PROGRAM_GOAL = "general fitness"
 PROGRAM_WEEKS = 4
 
-# ---------- choosing exercises (no database needed) ----------
+# choosing the exercise (no database required)
 def eligible(difficulty: Optional[str], level: str) -> bool:
     if level == "beginner":
         return difficulty == "beginner"
@@ -44,7 +43,7 @@ def choose(exercises: list, level: str, size: str) -> list:
     core_wanted, accessory_wanted, minimum = SIZES[size]
 
     pool = [e for e in exercises if eligible(e.difficulty, level)]
-    # prefer exercises rated exactly at this level, then alphabetical so results are stable
+    # prefer exercises rated exactly at this level, then alphabetical 
     pool.sort(key=lambda e: (0 if e.difficulty == level else 1, e.name.lower()))
 
     core = [e for e in pool if e.default_role == "core"]
@@ -75,7 +74,7 @@ def plan_sessions(by_muscle: dict) -> list:
 def minutes_of(items: list) -> int:
     return sum(e.default_minutes for e, _ in items)
 
-# ---------- database ----------
+# database
 def load_by_muscle(db) -> dict:
     """wger exercises grouped by their primary muscle group's name."""
     exercises = db.scalars(

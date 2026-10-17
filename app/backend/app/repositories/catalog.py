@@ -71,7 +71,7 @@ def list_workout_sessions(db: Session, *, muscle: Optional[str], difficulty: Opt
     if difficulty:
         stmt = stmt.where(TrainingProgram.experience_level == difficulty)
     if muscle:
-        # "targets this muscle" = at least one exercise in the session works it as a primary muscle
+        # targets this muscle - at least one exercise in the session works it as a primary muscle
         stmt = stmt.where(WorkoutSession.items.any(SessionExercise.exercise.has(
             Exercise.muscle_links.any(and_(
                 ExerciseMuscle.is_primary.is_(True),

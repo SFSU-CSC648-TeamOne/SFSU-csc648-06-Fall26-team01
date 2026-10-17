@@ -3,8 +3,8 @@
 # from our own database, so it still works if wger is slow or offline.
 #
 # Run from app/backend with the venv active:
-#   python -m scripts.import_wger --max 20     small test first
-#   python -m scripts.import_wger              everything (English exercises)
+#   python -m scripts.import_wger --max 20     small test first (worked)
+#   python -m scripts.import_wger              everything (English exercises) (worked)
 #
 # Safe to run again: rows are matched on wger_id, so nothing is duplicated.
 
@@ -27,16 +27,14 @@ BASE = "https://wger.de/api/v2"
 ENGLISH = 2          # wger's language id for English
 PAGE_SIZE = 100
 
-# Optional: wger names a few muscles differently from our demo data. Fill this in after you
-# near-duplicates. Example:  {"Quads": "Quadriceps"}
-MUSCLE_RENAMES: dict = {}
+MUSCLE_RENAMES: dict = {} #used for demo data test
 
-# wger has no difficulty, role or duration, so we assign them with simple rules.
-# These are our own defaults, not wger data. Change them if everyone prefers other rules.
+# I don't see wger has difficulty, role or duration.
+# These are our own defaults, not wger data. Change them if needed
 HARDER_EQUIPMENT = {"barbell", "sz-bar", "kettlebell"}
 CORE_MINUTES, ACCESSORY_MINUTES = 8, 5
 
-# ---------- talking to wger api ----------
+# connecting with wger api
 def fetch_json(url: str) -> dict:
     request = urllib.request.Request(
         url, headers={"Accept": "application/json", "User-Agent": "ascenda-csc648-import"})
@@ -59,7 +57,7 @@ def paginate(url: str) -> Iterator[dict]:
         if url:
             url = url.replace("http://", "https://", 1)
 
-# ---------- cleaning and rules (no database needed) ----------
+# cleaning and rules (no database needed)
 def clean_text(value: Optional[str]) -> str:
     """wger descriptions contain HTML such as <p>; keep plain text."""
     text = re.sub(r"<[^>]+>", " ", value or "")
@@ -82,10 +80,10 @@ def guess_difficulty(equipment_names: list) -> str:
     return "intermediate" if any(n.lower() in HARDER_EQUIPMENT for n in equipment_names) else "beginner"
 
 def guess_role(secondary_muscle_count: int) -> str:
-    # exercises that also work other muscles are treated as compound movements
+    # exercises that work multiple other muscles are treated as compound exercises
     return "core" if secondary_muscle_count > 0 else "accessory"
 
-# ---------- writing to our database ----------
+# writing to the database
 def upsert_lookup(db, model, wger_id: int, name: str):
     """Finds a muscle/equipment row by wger_id, then by name (e.g. one of our demo rows)."""
     row = db.scalar(select(model).where(model.wger_id == wger_id))
