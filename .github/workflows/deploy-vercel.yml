@@ -62,7 +62,6 @@ jobs:
             vercel project create "$BACKEND_PROJECT" --scope "$VERCEL_ORG_ID" --token "$VERCEL_TOKEN"
           fi
           vercel link --yes --project "$BACKEND_PROJECT" --scope "$VERCEL_ORG_ID" --token "$VERCEL_TOKEN"
-          echo "VERCEL_PROJECT_ID=$(jq -r '.projectId' .vercel/project.json)" >> "$GITHUB_ENV"
 
       # Each branch has its own backend project. Its production alias is publicly
       # reachable under standard protection; generated deployment URLs are not.
