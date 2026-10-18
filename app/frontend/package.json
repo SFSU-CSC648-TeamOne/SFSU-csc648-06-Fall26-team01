@@ -11,12 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@react-three/drei": "^10.7.9",
-    "@react-three/fiber": "^9.8.2",
     "next": "^16.3.5",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "three": "^0.186.1"
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
