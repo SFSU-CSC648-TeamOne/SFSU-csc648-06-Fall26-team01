@@ -5,11 +5,25 @@ on:
   push:
     branches:
       - main
-      - demo-presentation-branch
     paths:
       - "app/frontend/**"
       - "app/backend/**"
       - ".github/workflows/deploy-vercel.yml"
+
+      # Ignore documentation
+      - "!**/*.md"
+      - "!**/*.docx"
+      - "!**/*.pdf"
+      - "!**/*.txt"
+
+      # Ignore 3D models
+      - "!**/*.glb"
+      - "!**/*.gltf"
+
+      # Ignore videos
+      - "!**/*.mp4"
+      - "!**/*.mov"
+      - "!**/*.webm"
 
 permissions:
   contents: read
