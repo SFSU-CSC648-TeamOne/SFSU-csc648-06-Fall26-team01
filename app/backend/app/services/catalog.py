@@ -7,6 +7,7 @@ from app.repositories import catalog as repo
 from app.schemas.catalog import (ExerciseOut, NamedOut, ProgramOut, WorkoutDetailOut,
                                  WorkoutExerciseOut, WorkoutSummaryOut)
 
+# returns correct id for each wger api call
 def exercise_to_out(ex: Exercise) -> ExerciseOut:
     primary = sorted(l.muscle.name for l in ex.muscle_links if l.is_primary)
     secondary = sorted(l.muscle.name for l in ex.muscle_links if not l.is_primary)
