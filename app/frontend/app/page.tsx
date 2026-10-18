@@ -1,4 +1,6 @@
+
 import Link from "next/link";
+import ModelViewer from "./about/ModelViewer";
 
 const features = [
   {
@@ -55,9 +57,7 @@ const exercises = [
 export default function HomePage() {
   return (
     <main className="site">
-
       {/* NAVIGATION */}
-
       <header className="navbar">
         <Link href="/" className="logo">
           <span className="logo-symbol">A</span>
@@ -67,6 +67,7 @@ export default function HomePage() {
         <nav>
           <a href="#features">Features</a>
           <a href="#catalog">Exercise Catalog</a>
+          <a href="#exercise-lab">Exercise Lab</a>
           <a href="#adaptive">Adaptive Training</a>
           <Link href="/about">Team</Link>
         </nav>
@@ -76,13 +77,9 @@ export default function HomePage() {
         </Link>
       </header>
 
-
       {/* HERO */}
-
       <section className="hero">
-
         <div className="hero-copy">
-
           <div className="eyebrow">
             <span className="status-dot" />
             ADAPTIVE FITNESS PLATFORM
@@ -102,24 +99,18 @@ export default function HomePage() {
 
           <div className="hero-actions">
             <a href="#features" className="button-primary">
-              EXPLORE ASCENDA
-              <span>↗</span>
+              EXPLORE ASCENDA <span>↗</span>
             </a>
 
             <a href="#catalog" className="button-secondary">
               VIEW CATALOG
             </a>
           </div>
-
         </div>
 
-
-        {/* PRODUCT UI */}
-
+        {/* PRODUCT PREVIEW */}
         <div className="hero-product">
-
           <div className="product-window">
-
             <div className="window-top">
               <div className="window-dots">
                 <i />
@@ -128,22 +119,12 @@ export default function HomePage() {
               </div>
 
               <span>ASCENDA / SESSION</span>
-
-              <span className="ready">
-                ● READY
-              </span>
+              <span className="ready">● READY</span>
             </div>
 
-
             <div className="session">
-
-              <span className="mini-label">
-                TODAY'S SESSION
-              </span>
-
-              <h2>
-                UPPER BODY
-              </h2>
+              <span className="mini-label">TODAY'S SESSION</span>
+              <h2>UPPER BODY</h2>
 
               <div className="session-meta">
                 <div>
@@ -158,20 +139,15 @@ export default function HomePage() {
 
                 <div>
                   <span>STATUS</span>
-                  <strong className="lime">
-                    READY
-                  </strong>
+                  <strong className="lime">READY</strong>
                 </div>
               </div>
-
 
               <div className="session-progress">
                 <div />
               </div>
 
-
               <div className="session-exercises">
-
                 <div>
                   <span>01</span>
                   <strong>Barbell Bench Press</strong>
@@ -189,32 +165,21 @@ export default function HomePage() {
                   <strong>Cable Fly</strong>
                   <small>ACCESSORY · 06 MIN</small>
                 </div>
-
               </div>
-
             </div>
-
           </div>
-
 
           <div className="time-card">
             <span>AVAILABLE TIME</span>
             <strong>35 MIN</strong>
             <small>Workout can adapt</small>
           </div>
-
         </div>
-
       </section>
 
-
       {/* INTRO */}
-
       <section className="intro">
-
-        <span className="section-number">
-          01 — ASCENDA
-        </span>
+        <span className="section-number">01 — ASCENDA</span>
 
         <h2>
           FITNESS SHOULD
@@ -226,67 +191,31 @@ export default function HomePage() {
           Real schedules change. Equipment availability changes.
           Your training shouldn't have to completely fall apart when they do.
         </p>
-
       </section>
-
 
       {/* FEATURES */}
-
       <section className="features" id="features">
-
         <div className="section-heading">
-
-          <span>
-            02 — FEATURES
-          </span>
-
-          <p>
-            FIVE PARTS OF THE ASCENDA EXPERIENCE
-          </p>
-
+          <span>02 — FEATURES</span>
+          <p>FIVE PARTS OF THE ASCENDA EXPERIENCE</p>
         </div>
-
 
         <div className="feature-list">
-
           {features.map((feature) => (
-
             <div className="feature" key={feature.number}>
-
-              <span className="feature-number">
-                {feature.number}
-              </span>
-
-              <h3>
-                {feature.title}
-              </h3>
-
-              <p>
-                {feature.text}
-              </p>
-
-              <span className="feature-arrow">
-                ↗
-              </span>
-
+              <span className="feature-number">{feature.number}</span>
+              <h3>{feature.title}</h3>
+              <p>{feature.text}</p>
+              <span className="feature-arrow">↗</span>
             </div>
-
           ))}
-
         </div>
-
       </section>
 
-
-      {/* CATALOG */}
-
+      {/* EXERCISE CATALOG */}
       <section className="catalog" id="catalog">
-
         <div className="catalog-copy">
-
-          <span className="section-number">
-            03 — EXERCISE CATALOG
-          </span>
+          <span className="section-number">03 — EXERCISE CATALOG</span>
 
           <h2>
             FIND THE
@@ -298,94 +227,133 @@ export default function HomePage() {
             Browse exercises based on muscle group, equipment,
             duration, and training requirements.
           </p>
-
         </div>
 
-
         <div className="catalog-ui">
-
           <div className="catalog-top">
-
             <div className="search">
               <span>⌕</span>
               Search exercises...
             </div>
 
             <button>
-              MUSCLE GROUP
-              <span>⌄</span>
+              MUSCLE GROUP <span>⌄</span>
             </button>
 
             <button>
-              EQUIPMENT
-              <span>⌄</span>
+              EQUIPMENT <span>⌄</span>
             </button>
-
           </div>
 
-
           <div className="exercise-table">
-
             {exercises.map((exercise, index) => (
-
               <div className="exercise" key={exercise.name}>
-
-                <span className="exercise-index">
-                  0{index + 1}
-                </span>
+                <span className="exercise-index">0{index + 1}</span>
 
                 <div className="exercise-title">
-                  <strong>
-                    {exercise.name}
-                  </strong>
-
-                  <small>
-                    {exercise.muscle}
-                  </small>
+                  <strong>{exercise.name}</strong>
+                  <small>{exercise.muscle}</small>
                 </div>
 
-                <span>
-                  {exercise.equipment}
-                </span>
+                <span>{exercise.equipment}</span>
+                <span>{exercise.duration}</span>
 
-                <span>
-                  {exercise.duration}
-                </span>
-
-                <b className={exercise.type === "CORE" ? "core" : "accessory-tag"}>
+                <b
+                  className={
+                    exercise.type === "CORE" ? "core" : "accessory-tag"
+                  }
+                >
                   {exercise.type}
                 </b>
-
               </div>
-
             ))}
-
           </div>
 
           <div className="catalog-footer">
-            <span>
-              DATABASE / EXERCISES
-            </span>
-
-            <span>
-              10+ EXERCISES
-            </span>
+            <span>DATABASE / EXERCISES</span>
+            <span>10+ EXERCISES</span>
           </div>
-
         </div>
-
       </section>
 
+      {/* INTERACTIVE EXERCISE LAB */}
+      <section className="exercise-lab" id="exercise-lab">
+        <div className="lab-heading">
+          <span className="section-number">
+            04 — INTERACTIVE EXERCISE LAB
+          </span>
+
+          <h2>
+            EXPLORE THE
+            <br />
+            <span>MOVEMENT.</span>
+          </h2>
+
+          <p>
+            Explore exercise equipment in 3D and watch demonstrations
+            to learn proper exercise technique.
+          </p>
+        </div>
+
+        <div className="lab-grid">
+          {/* INTERACTIVE 3D MODEL */}
+          <div className="viewer-panel">
+            <div className="lab-panel-top">
+              <span>3D MODEL VIEWER</span>
+              <span className="viewer-status">INTERACTIVE</span>
+            </div>
+
+            <ModelViewer />
+
+            <div className="viewer-footer">
+              <span>DRAG TO ROTATE · SCROLL TO ZOOM</span>
+              <span>DRAG TO ROTATE · SCROLL TO ZOOM</span>
+            </div>
+          </div>
+
+          {/* VIDEO DEMONSTRATIONS */}
+          <div className="video-panel">
+            <div className="lab-panel-top">
+              <span>EXERCISE DEMONSTRATIONS</span>
+              <span className="video-count">02 VIDEOS</span>
+            </div>
+
+            <div className="demo-video">
+              <video controls preload="metadata" playsInline>
+                <source src="/about/demo_one.mp4" type="video/mp4" />
+                Your browser does not support this video.
+              </video>
+
+              <div className="video-info">
+                <span>DEMO / 01</span>
+                <h3>Hercules Squat</h3>
+                <p>
+                  Watch the movement and review the exercise technique in the
+                  3D scanned room.
+                </p>
+              </div>
+            </div>
+
+            <div className="demo-video">
+              <video controls preload="metadata" playsInline>
+                <source src="/about/demo_two.mp4" type="video/mp4" />
+                Your browser does not support this video.
+              </video>
+
+              <div className="video-info">
+                <span>DEMO / 02</span>
+                <h3>Pistol Squat Jesus</h3>
+                <p>Follow the demonstration to understand the movement.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ADAPTIVE TRAINING */}
-
       <section className="adaptive" id="adaptive">
-
         <div className="adaptive-copy">
-
-          <span className="section-number">
-            04 — ADAPTIVE TRAINING
-          </span>
+          <span className="section-number">05 — ADAPTIVE TRAINING</span>
 
           <h2>
             LESS TIME?
@@ -398,12 +366,9 @@ export default function HomePage() {
             allowing lower-priority movements to be removed when your
             available time is shorter than the expected workout duration.
           </p>
-
         </div>
 
-
         <div className="adaptive-ui">
-
           <div className="available">
             <span>AVAILABLE TIME</span>
             <strong>35 MIN</strong>
@@ -414,14 +379,11 @@ export default function HomePage() {
             <strong>45 MIN</strong>
           </div>
 
-
           <div className="adaptive-line">
             <span />
           </div>
 
-
           <div className="adaptive-exercises">
-
             <div className="keep">
               <span>✓</span>
               <strong>CORE EXERCISES</strong>
@@ -433,30 +395,20 @@ export default function HomePage() {
               <strong>ACCESSORY EXERCISES</strong>
               <small>OPTIONAL</small>
             </div>
-
           </div>
-
 
           <div className="result">
             <span>ADAPTED SESSION</span>
             <strong>32 MIN</strong>
             <b>TRAINING GOAL PRESERVED</b>
           </div>
-
         </div>
-
       </section>
 
-
-      {/* PROGRESS */}
-
+      {/* WORKOUT HISTORY */}
       <section className="progress">
-
         <div className="progress-copy">
-
-          <span className="section-number">
-            05 — WORKOUT HISTORY
-          </span>
+          <span className="section-number">06 — WORKOUT HISTORY</span>
 
           <h2>
             SEE YOUR
@@ -468,12 +420,9 @@ export default function HomePage() {
             Completed workouts and performance history give users
             a measurable record of their training over time.
           </p>
-
         </div>
 
-
         <div className="progress-card">
-
           <div className="progress-card-top">
             <span>TRAINING HISTORY</span>
             <span>SEPTEMBER</span>
@@ -485,15 +434,12 @@ export default function HomePage() {
           </div>
 
           <div className="chart">
-
             <div className="chart-line line-one" />
             <div className="chart-line line-two" />
             <div className="chart-line line-three" />
-
           </div>
 
           <div className="progress-stats">
-
             <div>
               <strong>18</strong>
               <span>WORKOUTS</span>
@@ -508,23 +454,15 @@ export default function HomePage() {
               <strong>+12%</strong>
               <span>PROGRESS</span>
             </div>
-
           </div>
-
         </div>
-
       </section>
 
-
       {/* FINAL CTA */}
-
       <section className="final">
-
         <div className="final-glow" />
 
-        <span className="section-number">
-          ASCENDA
-        </span>
+        <span className="section-number">ASCENDA</span>
 
         <h2>
           KEEP
@@ -538,32 +476,21 @@ export default function HomePage() {
         </p>
 
         <a href="#features" className="button-primary">
-          EXPLORE ASCENDA
-          <span>↗</span>
+          EXPLORE ASCENDA <span>↗</span>
         </a>
-
       </section>
 
-
       {/* FOOTER */}
-
       <footer>
-
         <Link href="/" className="logo">
-          <span className="logo-symbol">
-            A
-          </span>
+          <span className="logo-symbol">A</span>
           ASCENDA
         </Link>
 
-        <span>
-          SFSU CSC648 · FALL 2026
-        </span>
+        <span>SFSU CSC648 · FALL 2026</span>
 
         <Link href="/about">OUR TEAM ↗</Link>
-
       </footer>
-
     </main>
   );
 }
