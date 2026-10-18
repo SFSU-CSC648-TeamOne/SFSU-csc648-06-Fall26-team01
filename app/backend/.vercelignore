@@ -1,0 +1,10 @@
+# Informs Vercel which files to leave out when uploading the backend
+# (this file technically holds all secret pws, etc)
+# remove these after reading
+
+venv/
+.venv/
+.env
+__pycache__/
+tests/
+scripts/
