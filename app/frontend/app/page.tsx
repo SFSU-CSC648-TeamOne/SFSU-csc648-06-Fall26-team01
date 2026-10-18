@@ -1,5 +1,6 @@
 
 import Link from "next/link";
+import ModelViewer from "./about/ModelViewer";
 
 const features = [
   {
@@ -295,38 +296,22 @@ export default function HomePage() {
         </div>
 
         <div className="lab-grid">
-          {/* 3D VIEWER PLACEHOLDER */}
+          {/* INTERACTIVE 3D MODEL */}
           <div className="viewer-panel">
             <div className="lab-panel-top">
               <span>3D MODEL VIEWER</span>
-              <span className="viewer-status">MODEL PENDING</span>
+              <span className="viewer-status">INTERACTIVE</span>
             </div>
 
-            <div className="viewer-placeholder">
-              <div className="viewer-orbit">
-                <div className="orbit-ring" />
-                <div className="orbit-core">3D</div>
-              </div>
-
-              <h3>3D model here</h3>
-
-              <p>
-                
-                 Here is where GLTF file go from github
-              </p>
-
-              <span className="model-format">
-                SUPPORTED FORMATS · GLB / GLTF
-              </span>
-            </div>
+            <ModelViewer />
 
             <div className="viewer-footer">
-              <span>ASCENDA / 3D LAB</span>
-              <span>INTERACTIVE VIEWER COMING SOON</span>
+              <span>DRAG TO ROTATE · SCROLL TO ZOOM</span>
+              <span>DRAG TO ROTATE · SCROLL TO ZOOM</span>
             </div>
           </div>
 
-          {/* VIDEO DEMOS */}
+          {/* VIDEO DEMONSTRATIONS */}
           <div className="video-panel">
             <div className="lab-panel-top">
               <span>EXERCISE DEMONSTRATIONS</span>
@@ -335,10 +320,7 @@ export default function HomePage() {
 
             <div className="demo-video">
               <video controls preload="metadata" playsInline>
-                <source
-                  src="/about/demo_one.mp4"
-                  type="video/mp4"
-                />
+                <source src="/about/demo_one.mp4" type="video/mp4" />
                 Your browser does not support this video.
               </video>
 
@@ -346,26 +328,22 @@ export default function HomePage() {
                 <span>DEMO / 01</span>
                 <h3>Hercules Squat</h3>
                 <p>
-                  Watch the movement and review the exercise technique in the 3D scanned room.
+                  Watch the movement and review the exercise technique in the
+                  3D scanned room.
                 </p>
               </div>
             </div>
 
             <div className="demo-video">
               <video controls preload="metadata" playsInline>
-                <source
-                  src="/about/demo_two.mp4"
-                  type="video/mp4"
-                />
+                <source src="/about/demo_two.mp4" type="video/mp4" />
                 Your browser does not support this video.
               </video>
 
               <div className="video-info">
                 <span>DEMO / 02</span>
                 <h3>Pistol Squat Jesus</h3>
-                <p>
-                  Follow the demonstration to understand the movement.
-                </p>
+                <p>Follow the demonstration to understand the movement.</p>
               </div>
             </div>
           </div>
