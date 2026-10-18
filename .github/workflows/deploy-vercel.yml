@@ -5,26 +5,109 @@ on:
   push:
     branches:
       - main
+      - demo-presentation-branch
     paths:
       - "app/frontend/**"
+      - "app/backend/**"
       - ".github/workflows/deploy-vercel.yml"
 
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
 jobs:
-  deploy:
+  backend:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/demo-presentation-branch'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BACKEND_PROJECT: ${{ github.ref == 'refs/heads/main' && 'ascenda-api' || 'ascenda-api-demo' }}
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check deployment settings
+        run: |
+          for name in VERCEL_TOKEN VERCEL_ORG_ID DATABASE_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing $name. See docs/vercel-deployment.md."
+              exit 1
+            fi
+          done
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Deploy to Vercel
+      - name: Create or link backend project
+        working-directory: app/backend
         run: |
-          vercel deploy \
-            --prod \
-            --yes \
-            --token=${{ secrets.VERCEL_TOKEN }} \
-            --scope=team01-0e5b \
-            --cwd=app/frontend
+          if ! vercel project inspect "$BACKEND_PROJECT" --scope "$VERCEL_ORG_ID" --token "$VERCEL_TOKEN" > /dev/null 2>&1; then
+            vercel project create "$BACKEND_PROJECT" --scope "$VERCEL_ORG_ID" --token "$VERCEL_TOKEN"
+          fi
+          vercel link --yes --project "$BACKEND_PROJECT" --scope "$VERCEL_ORG_ID" --token "$VERCEL_TOKEN"
+
+      # Each branch has its own backend project. Its production alias is publicly
+      # reachable under standard protection; generated deployment URLs are not.
+      - name: Deploy backend
+        id: deploy
+        working-directory: app/backend
+        run: |
+          url=$(vercel deploy --prod --yes --token "$VERCEL_TOKEN" \
+            --env "DATABASE_URL=$DATABASE_URL")
+          # Filter the API response immediately: never log deployment env values.
+          host=$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID" \
+            | jq -er '[.alias[] | select(endswith(".vercel.app"))] | sort_by(length) | .[0] // error("No production alias assigned")')
+          echo "url=https://$host" >> "$GITHUB_OUTPUT"
+          echo "Backend: https://$host" >> "$GITHUB_STEP_SUMMARY"
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+            "https://$host/api/health" | jq -e '.status == "healthy"'
+          curl --fail --silent --show-error \
+            "https://$host/api/muscle-groups" | jq -e 'type == "array"'
+
+  frontend:
+    needs: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Existing frontend project, verified in the Team01 dashboard.
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_FRONTEND_PROJECT_ID || secrets.VERCEL_FRONTEND_PROJECT_ID || 'prj_89BOBTqpvgGInTOiNjlruWAdEQA9' }}
+      BACKEND_URL: ${{ needs.backend.outputs.url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # Existing frontend project has an empty Root Directory; upload its folder.
+      - name: Deploy frontend connected to this backend
+        run: |
+          args=(--yes --token="$VERCEL_TOKEN" --build-env "BACKEND_URL=$BACKEND_URL" --env "BACKEND_URL=$BACKEND_URL")
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            args+=(--prod)
+          fi
+          url=$(vercel deploy --cwd=app/frontend "${args[@]}")
+          echo "Frontend: $url" >> "$GITHUB_STEP_SUMMARY"
