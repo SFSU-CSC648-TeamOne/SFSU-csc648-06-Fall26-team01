@@ -54,6 +54,8 @@ class WorkoutExerciseOut(BaseModel):
     minutes: int
     equipment: list[str]
     primary_muscles: list[str]
+    model_url: Optional[str] = None     # shows 3D model of exercise if available 
+    video_url: Optional[str] = None     # demo video if available
 
 class WorkoutDetailOut(WorkoutSummaryOut):
     guidance: Optional[str]

@@ -2,8 +2,8 @@ from typing import Optional
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session, selectinload
-from app.models import (Equipment, Exercise, ExerciseMuscle, MuscleGroup, SessionExercise,
-                        TrainingProgram, WorkoutSession)
+from app.models import (Equipment, Exercise, ExerciseModel, ExerciseMuscle, MuscleGroup,
+                        SessionExercise, TrainingProgram, WorkoutSession)
 
 def _exercise_loads():
     return (selectinload(Exercise.equipment),
@@ -51,7 +51,7 @@ def search_programs(
     return list(rows), total
 
 def _session_loads():
-    """Everything needed to describe a Workout Session without extra queries per row."""
+    # Everything needed to describe a Workout Session without extra queries per row
     items_exercise = selectinload(WorkoutSession.items).selectinload(SessionExercise.exercise)
     return (
         selectinload(WorkoutSession.program),
@@ -65,13 +65,12 @@ def existing_exercise_ids(db: Session, ids: set) -> set:
     return set(db.scalars(select(Exercise.id).where(Exercise.id.in_(ids))))
 
 def list_workout_sessions(db: Session, *, muscle: Optional[str], difficulty: Optional[str]) -> list:
-    """Filters that SQL does well (muscle group, difficulty). Length is computed in the
-    service because it is a sum over the session's exercises."""
+    # muscle group, difficulty. Length
     stmt = select(WorkoutSession).join(TrainingProgram, WorkoutSession.program_id == TrainingProgram.id)
     if difficulty:
         stmt = stmt.where(TrainingProgram.experience_level == difficulty)
     if muscle:
-        # targets this muscle - at least one exercise in the session works it as a primary muscle
+        # tat least one exercise in the session works it as a primary muscle
         stmt = stmt.where(WorkoutSession.items.any(SessionExercise.exercise.has(
             Exercise.muscle_links.any(and_(
                 ExerciseMuscle.is_primary.is_(True),
@@ -81,3 +80,10 @@ def list_workout_sessions(db: Session, *, muscle: Optional[str], difficulty: Opt
 
 def get_workout_session(db: Session, session_id: int) -> Optional[WorkoutSession]:
     return db.scalar(select(WorkoutSession).options(*_session_loads()).where(WorkoutSession.id == session_id))
+
+def models_for_exercises(db: Session, ids: set) -> dict:
+    # {exercise_id: ExerciseModel} for the exercises that have a 3D model / demo video
+    if not ids:
+        return {}
+    rows = db.scalars(select(ExerciseModel).where(ExerciseModel.exercise_id.in_(ids)))
+    return {m.exercise_id: m for m in rows}

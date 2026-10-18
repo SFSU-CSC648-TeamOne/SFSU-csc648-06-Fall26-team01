@@ -3,11 +3,9 @@
 
 from fastapi import APIRouter
 
-# from app.api.routes import auth, catalog, health, workouts
-from app.api.routes import media
-api_router.include_router(media.router)
+from app.api.routes import auth, catalog, health, media, workouts
 
 api_router = APIRouter()
-for module in (health, auth, catalog, workouts):
+for module in (health, auth, catalog, workouts, media):
     api_router.include_router(module.router)
     

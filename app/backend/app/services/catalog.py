@@ -70,6 +70,7 @@ def get_workout_session(db: Session, session_id: int) -> WorkoutDetailOut:
     if ws is None:
         raise NotFoundError("Workout session not found.")
     summary = _summary(ws)
+    demos = repo.models_for_exercises(db, {i.exercise_id for i in ws.items})
     return WorkoutDetailOut(
         **summary.model_dump(), guidance=ws.guidance,
         exercises=[
@@ -77,5 +78,7 @@ def get_workout_session(db: Session, session_id: int) -> WorkoutDetailOut:
                 id=i.id, exercise_id=i.exercise_id, name=i.exercise.name, position=i.position,
                 role=i.role, droppable=(i.role == "accessory"), sets=i.sets, reps=i.reps,
                 minutes=_item_minutes(i), equipment=sorted(e.name for e in i.exercise.equipment),
-                primary_muscles=_primary_muscles(i.exercise))
+                primary_muscles=_primary_muscles(i.exercise),
+                model_url=demos[i.exercise_id].model_url if i.exercise_id in demos else None,
+                video_url=demos[i.exercise_id].video_url if i.exercise_id in demos else None)
             for i in ws.items])
