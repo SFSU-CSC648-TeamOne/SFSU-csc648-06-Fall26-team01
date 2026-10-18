@@ -1,12 +1,6 @@
 # Imports muscles, equipment and exercises from the public wger API into our database.
 # wger is only called here, once, from your computer. The website itself keeps reading
 # from our own database, so it still works if wger is slow or offline.
-#
-# Run from app/backend with the venv active:
-#   python -m scripts.import_wger --max 20     small test first (worked)
-#   python -m scripts.import_wger              everything (English exercises) (worked)
-#
-# Safe to run again: rows are matched on wger_id, so nothing is duplicated.
 
 import argparse
 import html

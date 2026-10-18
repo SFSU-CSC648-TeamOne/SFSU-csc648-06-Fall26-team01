@@ -1,3 +1,6 @@
+# creating FastAPI app, turns on CORS (Cross origin), handles errors
+# and mounts all files under /api
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

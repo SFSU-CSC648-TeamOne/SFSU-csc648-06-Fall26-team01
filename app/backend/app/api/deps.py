@@ -1,4 +1,4 @@
-# checks who is logged in
+# checks who is logged in for the database session
 
 from typing import Annotated, Optional
 
