@@ -1,3 +1,4 @@
+
 name: Deploy to Vercel
 
 on:
@@ -38,13 +39,12 @@ env:
 
 jobs:
   backend:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/demo-presentation-branch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      VERCEL_PROJECT_ID: prj_Eg3tYYKefBJARj8rjqV3rExgCt18
-      BACKEND_PROJECT: ${{ github.ref == 'refs/heads/main' && 'ascenda-api' || 'ascenda-api-demo' }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_BACKEND_PROJECT_ID }}
+      BACKEND_PROJECT: ascenda-api
     outputs:
       url: ${{ steps.deploy.outputs.url }}
 
@@ -59,7 +59,7 @@ jobs:
 
       - name: Check deployment settings
         run: |
-          for name in VERCEL_TOKEN VERCEL_ORG_ID DATABASE_URL; do
+          for name in VERCEL_TOKEN VERCEL_ORG_ID DATABASE_URL VERCEL_PROJECT_ID; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing $name. See docs/vercel-deployment.md."
               exit 1
@@ -77,23 +77,26 @@ jobs:
           fi
           vercel link --yes --project "$BACKEND_PROJECT" --scope "$VERCEL_ORG_ID" --token "$VERCEL_TOKEN"
 
-      # Each branch has its own backend project. Its production alias is publicly
-      # reachable under standard protection; generated deployment URLs are not.
+      # Production backend deployment
       - name: Deploy backend
         id: deploy
         working-directory: app/backend
         run: |
           url=$(vercel deploy --prod --yes --token "$VERCEL_TOKEN" \
             --env "DATABASE_URL=$DATABASE_URL")
-          # Filter the API response immediately: never log deployment env values.
+
+          # Retrieve the production alias without logging environment values.
           host=$(curl --fail --silent --show-error \
             -H "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID" \
             | jq -er '[.alias[] | select(endswith(".vercel.app"))] | sort_by(length) | .[0] // error("No production alias assigned")')
+
           echo "url=https://$host" >> "$GITHUB_OUTPUT"
           echo "Backend: https://$host" >> "$GITHUB_STEP_SUMMARY"
+
           curl --fail --silent --show-error --retry 3 --retry-delay 5 \
             "https://$host/api/health" | jq -e '.status == "healthy"'
+
           curl --fail --silent --show-error \
             "https://$host/api/muscle-groups" | jq -e 'type == "array"'
 
@@ -102,9 +105,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      # Existing frontend project, verified in the Team01 dashboard.
-      VERCEL_PROJECT_ID: ${{ vars.VERCEL_FRONTEND_PROJECT_ID || secrets.VERCEL_FRONTEND_PROJECT_ID || 'prj_89BOBTqpvgGInTOiNjlruWAdEQA9' }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_FRONTEND_PROJECT_ID }}
       BACKEND_URL: ${{ needs.backend.outputs.url }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -117,12 +120,12 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      # Existing frontend project has an empty Root Directory; upload its folder.
-      - name: Deploy frontend connected to this backend
+      - name: Deploy frontend connected to backend
         run: |
-          args=(--yes --token="$VERCEL_TOKEN" --build-env "BACKEND_URL=$BACKEND_URL" --env "BACKEND_URL=$BACKEND_URL")
-          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            args+=(--prod)
-          fi
-          url=$(vercel deploy --cwd=app/frontend "${args[@]}")
+          url=$(vercel deploy --prod --yes \
+            --cwd=app/frontend \
+            --token "$VERCEL_TOKEN" \
+            --build-env "BACKEND_URL=$BACKEND_URL" \
+            --env "BACKEND_URL=$BACKEND_URL")
+
           echo "Frontend: $url" >> "$GITHUB_STEP_SUMMARY"
