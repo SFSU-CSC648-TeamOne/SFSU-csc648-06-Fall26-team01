@@ -1,3 +1,5 @@
+# URL endponts for 3D models and videos (.glb, mp4, etc)
+
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException

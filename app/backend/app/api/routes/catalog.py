@@ -1,4 +1,4 @@
-# endpoints for searching exercises by name, muscle, equipment and difficulty,
+# URL endpoints for searching exercises by name, muscle, equipment and difficulty,
 # listing the filter options, and searching programs by goal and length
 
 from typing import Annotated, Optional

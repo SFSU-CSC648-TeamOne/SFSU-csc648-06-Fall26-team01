@@ -1,5 +1,5 @@
-# Creates connect to Supabase and the get_db function gives each request
-# their own database session. 
+# creates connection to Supabase and the get_db function gives 
+# each request their own database session. 
 
 import os
 from typing import Iterator

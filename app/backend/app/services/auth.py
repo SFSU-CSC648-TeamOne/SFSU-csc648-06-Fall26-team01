@@ -1,4 +1,4 @@
-# register and login rules
+# rules for registration and login status
 
 from typing import Optional
 
@@ -10,7 +10,7 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.models import User
 from app.repositories import users as users_repo
 
-# Verifying against a dummy hash keeps login timing similar for unknown emails.
+# verifying against a dummy hash keeps login timing similar for unknown emails.
 _DUMMY_HASH = hash_password("not-a-real-password")
 
 def register(db: Session, *, email: str, password: str, display_name: Optional[str]) -> tuple:

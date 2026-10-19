@@ -1,5 +1,5 @@
-# Imports muscles, equipment and exercises from the public wger API into our database.
-# wger is only called here, once, from your computer. The website itself keeps reading
+# imports muscles, equipment and exercises from the public WGER API into our database.
+# WGER is only called once from your computer. The website itself keeps reading
 # from our own database, so it still works if wger is slow or offline.
 
 import argparse
@@ -18,17 +18,17 @@ from app.db.session import SessionLocal
 from app.models import Equipment, Exercise, ExerciseMuscle, MuscleGroup
 
 BASE = "https://wger.de/api/v2"
-ENGLISH = 2          # wger's language id for English
+ENGLISH = 2 # wger's language id for English
 PAGE_SIZE = 100
 
-MUSCLE_RENAMES: dict = {} #used for demo data test
+MUSCLE_RENAMES: dict = {} # used for demo data test
 
 # I don't see wger has difficulty, role or duration.
 # These are our own defaults, not wger data. Change them if needed
 HARDER_EQUIPMENT = {"barbell", "sz-bar", "kettlebell"}
 CORE_MINUTES, ACCESSORY_MINUTES = 8, 5
 
-# connecting with wger api
+# connecting with WGER API
 def fetch_json(url: str) -> dict:
     request = urllib.request.Request(
         url, headers={"Accept": "application/json", "User-Agent": "ascenda-csc648-import"})
@@ -104,7 +104,7 @@ def import_lookups(db) -> tuple:
 
 def import_exercises(db, muscles: dict, equipment: dict, limit: int) -> dict:
     def muscle_for(m: dict):
-        if m["id"] not in muscles:  # a muscle the /muscle/ list did not include
+        if m["id"] not in muscles: # a muscle group the /muscle/ list did not include
             muscles[m["id"]] = upsert_lookup(db, MuscleGroup, m["id"], muscle_label(m))
         return muscles[m["id"]]
 
@@ -148,7 +148,7 @@ def import_exercises(db, muscles: dict, equipment: dict, limit: int) -> dict:
             counts["updated"] += 1
             continue
 
-        # names must be unique in our catalog; skip wger exercises that repeat an existing name
+        # names must be unique in our catalog, skip wger exercises that repeat an existing name
         taken = db.scalar(select(Exercise.id).where(func.lower(Exercise.name) == name.lower()))
         if taken is not None:
             counts["skipped"] += 1

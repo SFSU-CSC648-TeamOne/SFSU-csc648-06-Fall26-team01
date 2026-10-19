@@ -1,4 +1,4 @@
-# endpoint to check server is running (looking for {"status": "healthy"})
+# endpoint to check server is running (looking for healthy status)
 
 from fastapi import APIRouter
 router = APIRouter(tags=["health"])

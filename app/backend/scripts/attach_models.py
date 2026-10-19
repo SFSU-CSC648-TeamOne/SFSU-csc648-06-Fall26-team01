@@ -1,4 +1,5 @@
-# links .glb files to exercises
+# links .glb files to exercises (if any)
+
 from sqlalchemy import select
 
 import app.models

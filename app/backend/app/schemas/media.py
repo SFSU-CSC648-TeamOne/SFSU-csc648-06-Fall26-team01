@@ -1,3 +1,6 @@
+# defines the 3D models and video file JSON data and checks 
+# if they match the data from models tables
+
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict

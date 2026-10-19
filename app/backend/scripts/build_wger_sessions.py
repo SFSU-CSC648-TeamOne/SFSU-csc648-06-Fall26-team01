@@ -1,6 +1,6 @@
-# Builds workout sessions out of the exercises imported from wger, so the workout
-# selection page has plenty to filter by muscle group, difficulty and length.
-# wger only provides single exercises, not workouts, so the grouping rules are ours (can change if needed)
+# builds workout sessions out of the exercises imported from WGER, so the workout
+# selection page has exercises to filter by muscle group, difficulty and length.
+# WGER only provides single exercises, not workouts, so the grouping rules are ours (can change if needed)
 
 import argparse
 from typing import Optional
@@ -13,11 +13,11 @@ from app.db.session import SessionLocal
 from app.models import (Exercise, ExerciseMuscle, SessionExercise, TrainingProgram,
                         WorkoutSession)
 
-# Difficulty levels that get sessions. wger data is only rated beginner/intermediate by
+# difficulty levels that get sessions. WGER data is only rated beginner/intermediate by
 # our import rules, I don't see advanced rules yet
 LEVELS = ["beginner", "intermediate"]
 
-# size name - aka: core exercises wanted, accessory exercises wanted, fewest exercises allowed
+# size name - core exercises wanted, accessory exercises wanted, fewest exercises allowed
 SIZES = {
     "Short": (2, 1, 3),
     "Full": (3, 3, 4),

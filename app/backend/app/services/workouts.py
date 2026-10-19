@@ -1,4 +1,4 @@
-# validates, saves, and keeps private records of teh user
+# rules that validate, save, and keeps private records of teh user
 
 from datetime import datetime, timezone
 
@@ -44,7 +44,7 @@ def list_history(db: Session, user: User, limit: int, offset: int) -> tuple:
 
 def get_record(db: Session, user: User, record_id: int) -> WorkoutRecordOut:
     r = repo.get_record(db, record_id, user.id)
-    if r is None:  # also 404 for other people's records, so ids can't be probed
+    if r is None:  # also 404 for other people's records, so ids can't be looked at
         raise NotFoundError("Workout record not found.")
     return WorkoutRecordOut(
         **_summary(r, len(r.entries)), notes=r.notes,

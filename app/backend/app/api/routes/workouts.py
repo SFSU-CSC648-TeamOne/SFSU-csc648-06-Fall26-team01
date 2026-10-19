@@ -1,3 +1,5 @@
+# URL endpoints for logging completed workouts (if any)
+
 from typing import Annotated
 
 from fastapi import APIRouter, Query, status

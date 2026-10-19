@@ -1,3 +1,6 @@
+# rules for searching exercises by listing the filter options, 
+# and searching programs by goal and length, returning a response
+
 from typing import Optional
 from sqlalchemy.orm import Session
 

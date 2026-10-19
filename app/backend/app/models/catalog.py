@@ -1,5 +1,5 @@
-# Class searches for exercise catalog tables (equpment, muscle_groups, exercises) 
-# and links them with program tables (training_prgrams, workout_sessions, and session_exercises)
+# defines the data tables for exercise catalog (equpment, muscle_groups, exercises) 
+# and links them with the correctprogram tables (training_prgrams, workout_sessions, and session_exercises)
 
 from typing import List, Optional
 

@@ -1,5 +1,5 @@
-# List of allowed values for certain fields in the database. 
-# These are used to validate input and ensure consistency across the application.
+# list of allowed values for certain fields in the database. 
+# used to validate input and ensure consistency across the application.
  
 from enum import Enum
 

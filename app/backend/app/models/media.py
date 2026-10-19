@@ -1,3 +1,5 @@
+# define tables for 3D models and videos (if any)
+
 from typing import Optional
 
 from sqlalchemy import ForeignKey, String

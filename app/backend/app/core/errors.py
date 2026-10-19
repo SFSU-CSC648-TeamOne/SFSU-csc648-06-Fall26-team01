@@ -1,3 +1,5 @@
+# handles NotFoundErrors and turns them into JSON errors
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 

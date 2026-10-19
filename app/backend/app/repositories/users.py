@@ -1,4 +1,5 @@
-# user queries
+# runs SQL queries and communicate with db to return
+# registered users or creates new users
 from typing import Optional
 
 from sqlalchemy import select

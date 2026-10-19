@@ -1,3 +1,6 @@
+# hashes user passwords and checks with corresponding tokens
+# to verify the user
+
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 

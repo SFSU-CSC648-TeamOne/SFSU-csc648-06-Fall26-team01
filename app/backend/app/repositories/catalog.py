@@ -1,3 +1,6 @@
+# runs SQL queries and communicate with db to return
+# requested/called exercsie group, muscle, equipment, etc
+
 from typing import Optional
 
 from sqlalchemy import and_, func, select

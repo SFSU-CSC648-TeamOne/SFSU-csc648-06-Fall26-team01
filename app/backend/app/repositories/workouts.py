@@ -1,4 +1,6 @@
-# workout queries
+# runs SQL queries and communicate with db 
+# to return logged workouts
+
 from typing import Optional
 
 from sqlalchemy import func, select

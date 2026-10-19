@@ -1,4 +1,4 @@
-# collects route files into a single router, 
+# collects route files into a single router
 # add auth or workouts later when needed
 
 from fastapi import APIRouter

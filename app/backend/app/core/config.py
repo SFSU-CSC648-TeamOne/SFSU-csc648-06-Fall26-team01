@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str
+    jwt_secret: str
+    jwt_algorithm: str = "HS265"
+    access_tokens_minutes: int = 60
     api_prefix: str = "/api"
     cors_origins: str = "http://localhost:3000"
     cors_origin_regex: Optional[str] = None

@@ -1,4 +1,5 @@
-# logging the workouts from the user
+# defines the logged workout JSON data and checks if 
+# they match the data from models tables
 
 from datetime import datetime
 from typing import Optional

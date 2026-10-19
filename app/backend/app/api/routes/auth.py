@@ -1,4 +1,5 @@
-# handles register, login, and who currently logged in endpoints
+# URL endpoints for handling user registration, login, 
+# and who arecurrently logged in
 
 from fastapi import APIRouter, status
 
