@@ -290,12 +290,15 @@ export default function HomePage() {
           </h2>
 
           <p>
-            Explore exercise equipment in 3D and watch demonstrations
-            to learn proper exercise technique.
+            Explore the scanned workout space and view looping exercise
+            demonstrations placed directly inside the 3D environment.
           </p>
         </div>
 
-        <div className="lab-grid">
+        <div 
+          className="lab-grid"
+          style={{ gridTemplateColumns: "minmax(0, 1fr)" }}
+        >
           {/* INTERACTIVE 3D MODEL */}
           <div className="viewer-panel">
             <div className="lab-panel-top">
@@ -307,44 +310,7 @@ export default function HomePage() {
 
             <div className="viewer-footer">
               <span>DRAG TO ROTATE · SCROLL TO ZOOM</span>
-              <span>DRAG TO ROTATE · SCROLL TO ZOOM</span>
-            </div>
-          </div>
-
-          {/* VIDEO DEMONSTRATIONS */}
-          <div className="video-panel">
-            <div className="lab-panel-top">
-              <span>EXERCISE DEMONSTRATIONS</span>
-              <span className="video-count">02 VIDEOS</span>
-            </div>
-
-            <div className="demo-video">
-              <video controls preload="metadata" playsInline>
-                <source src="/about/demo_one.mp4" type="video/mp4" />
-                Your browser does not support this video.
-              </video>
-
-              <div className="video-info">
-                <span>DEMO / 01</span>
-                <h3>Hercules Squat</h3>
-                <p>
-                  Watch the movement and review the exercise technique in the
-                  3D scanned room.
-                </p>
-              </div>
-            </div>
-
-            <div className="demo-video">
-              <video controls preload="metadata" playsInline>
-                <source src="/about/demo_two.mp4" type="video/mp4" />
-                Your browser does not support this video.
-              </video>
-
-              <div className="video-info">
-                <span>DEMO / 02</span>
-                <h3>Pistol Squat Jesus</h3>
-                <p>Follow the demonstration to understand the movement.</p>
-              </div>
+              <span>ADJUST VIDEO POSITION BELOW</span>
             </div>
           </div>
         </div>

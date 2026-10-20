@@ -1,223 +1,288 @@
-Section 5 — High-Level UML Diagrams
-Project: Ascenda — CSC 648/848, Section 06, Team 1
-Milestone: M2 (October 20, 2026)
-These diagrams describe Ascenda's core application objects and six representative functional flows. Unless explicitly marked “implemented,” diagrams show the proposed M2 design, not functionality confirmed to be running. The current repository snapshot includes a Next.js frontend with static exercise examples and a Scaniverse-derived 3D model viewer with separate MP4 exercise demonstrations. The FastAPI and PostgreSQL integration is a target design pending implementation verification.
-5.1 High-Level UML Class Diagram — Proposed Design
-The class diagram focuses on Ascenda's main domain objects. SessionExercise links a reusable Exercise to an individual WorkoutSession; its core/accessory designation and duration depend on the session, not on the exercise catalog entry. The diagram models intended application responsibilities, not a claim that these classes have already been implemented.
+# Section 5 — High-Level UML Diagrams
+
+**Project:** Ascenda — CSC 648/848, Section 06, Team 1  
+**Milestone:** M2 — October 20, 2026  
+**Source snapshot:** GitHub `main`, commit `9139ccd99c76c22e8c452f80d4b1d7cc2fb2d5c6` (October 20, 2026 UTC).
+
+**Status convention:** *Implemented in source* indicates relevant backend classes, routes or frontend components exist. *Proposed* means the described behavior is not implemented. All sequences show logical calls; they do not establish deployed service health or populated database records.
+
+## 5.1 High-level UML class diagram — implemented core domain model
+
+The diagram uses selected **actual SQLAlchemy ORM classes** in `app/backend/app/models/`. It is high-level rather than a complete database entity-relationship diagram. `SessionExercise.role` and `SessionExercise.minutes` override or contextualize an `Exercise`'s defaults. `Assessment` is a persisted model; automated evaluation of its results is not represented as implemented. `ExerciseModel` stores metadata rather than playing videos itself.
+
 ```mermaid
 classDiagram
     direction LR
-
     class User {
-        +userId: UUID
-        +register()
-        +login()
+        +int id
+        +str email
+        +str password_hash
+        +str role
     }
     class UserProfile {
-        +goals
-        +experienceLevel
-        +availableEquipment
-        +weeklySchedule
-        +updatePreferences()
+        +int user_id
+        +list goals
+        +str experience_level
+        +int days_per_week
+        +int session_minutes
     }
-    class FitnessAssessment {
-        +assessmentId: UUID
-        +assessmentDate: Date
-        +results
-        +evaluateStartingLevel()
+    class Assessment {
+        +int user_id
+        +dict answers
+        +int score
+        +str experience_level
     }
     class TrainingProgram {
-        +programId: UUID
-        +name: String
-        +expectedLength
-        +getSessions()
+        +int id
+        +str name
+        +str goal
+        +int length_weeks
     }
     class WorkoutSession {
-        +sessionId: UUID
-        +expectedDuration
-        +adaptToAvailableTime()
+        +int id
+        +int program_id
+        +str name
+        +int position
     }
     class SessionExercise {
-        +sequenceOrder: Integer
-        +classification: String
-        +estimatedDuration
-        +prescribedSets
-        +prescribedReps
+        +int workout_session_id
+        +int exercise_id
+        +str role
+        +int sets
+        +int reps
+        +int minutes
     }
     class Exercise {
-        +exerciseId: UUID
-        +name: String
-        +muscleGroup
-        +requiredEquipment
-        +instructions
+        +int id
+        +int wger_id
+        +str name
+        +str description
+        +str default_role
+        +int default_minutes
+    }
+    class Equipment {
+        +int id
+        +str name
+    }
+    class MuscleGroup {
+        +int id
+        +str name
     }
     class WorkoutRecord {
-        +recordId: UUID
-        +completedAt: DateTime
-        +save()
+        +int id
+        +int user_id
+        +datetime performed_at
+        +int available_minutes
     }
     class PerformanceEntry {
-        +completedReps
-        +weight
-        +elapsedTime
+        +int id
+        +int exercise_id
+        +int reps
+        +float weight_kg
+        +str status
     }
-
-    User "1" *-- "1" UserProfile : owns
-    User "1" --> "0..*" FitnessAssessment : completes
-    User "1" --> "0..*" WorkoutRecord : logs
-    TrainingProgram "1" *-- "1..*" WorkoutSession : includes
-    WorkoutSession "1" *-- "1..*" SessionExercise : prescribes
-    SessionExercise "0..*" --> "1" Exercise : references
-    WorkoutRecord "0..*" --> "1" WorkoutSession : records
-    WorkoutRecord "1" *-- "0..*" PerformanceEntry : contains
-    PerformanceEntry "0..*" --> "1" Exercise : measures
+    class ExerciseModel {
+        +int exercise_id
+        +str model_url
+        +str video_url
+    }
+    User "1" --> "0..1" UserProfile : profile
+    User "1" --> "0..*" Assessment : assessments
+    User "1" --> "0..*" WorkoutRecord : owns
+    TrainingProgram "1" *-- "0..*" WorkoutSession : sessions
+    WorkoutSession "1" *-- "0..*" SessionExercise : items
+    SessionExercise "0..*" --> "1" Exercise : exercise
+    Exercise "*" --> "*" Equipment : exercise_equipment
+    Exercise "*" --> "*" MuscleGroup : exercise_muscles
+    UserProfile "*" --> "*" Equipment : user_equipment
+    WorkoutRecord "0..*" --> "0..1" WorkoutSession : session
+    WorkoutRecord "1" *-- "0..*" PerformanceEntry : entries
+    PerformanceEntry "0..*" --> "1" Exercise : exercise
+    Exercise "1" --> "0..1" ExerciseModel : model metadata
 ```
-Scope note: The training-program association to a specific user, full assessment definitions, substitutions, physical constraints, gym data, and historical program snapshots belong in the expanded data model but are omitted here to keep this high-level class diagram readable. Attributes are conceptual, and their exact names/types must be aligned with the team's approved M2 Data Definitions V2 before final submission.
-5.2 UML Sequence Diagrams
-5.2.1 Registration and Profile Setup — R1, R2 (Proposed)
+
+**Scope:** Additional attributes, primary/foreign keys, check constraints, join-table classes (including `ExerciseMuscle` with `is_primary`), serializers, repositories and service modules are present in the source but omitted for readability. Not all represented ORM classes have corresponding user-facing web screens.
+
+## 5.2 High-level UML sequence diagrams
+
+### 5.2.1 Registration and profile setup — R1/R2 (registration implemented in backend; profile editing proposed)
+
 ```mermaid
 sequenceDiagram
     actor User
-    participant UI as Next.js Registration / Profile UI
-    participant API as FastAPI
+    participant UI as Proposed account UI
+    participant Auth as FastAPI /api/auth/register
+    participant Service as auth service
+    participant Repo as users repository
     participant DB as PostgreSQL
-
-    User->>UI: Submit registration information
-    UI->>API: POST registration request
-    API->>DB: Create account record
-    DB-->>API: Account created
-    API-->>UI: Registration success
-    UI-->>User: Show profile setup
-    User->>UI: Enter goals, equipment and schedule
-    UI->>API: Save profile preferences
-    API->>DB: Store User Profile
-    DB-->>API: Profile saved
-    API-->>UI: Confirmation
-    UI-->>User: Display profile
+    User->>UI: Enter email, password, optional name
+    UI->>Auth: POST registration
+    Auth->>Service: register()
+    Service->>Repo: check email and create user
+    Repo->>DB: Query / insert users
+    DB-->>Repo: User row
+    Repo-->>Service: Registered user
+    Service-->>Auth: User and bearer token
+    Auth-->>UI: TokenOut
+    UI-->>User: Registration confirmation
+    Note over User,DB: UserProfile ORM exists no profile-update route was found.
 ```
-The authentication provider and exact endpoint paths are not finalized in the inspected repository; this is the intended interaction, not a claim of a working authentication flow.
-5.2.2 Initial Fitness Assessment — R4 (Proposed)
+
+The backend also implements `POST /api/auth/login` and `GET /api/auth/me`; it uses password hashing and a bearer-token dependency. The Next.js account-registration/profile workflow is not shown as implemented.
+
+### 5.2.2 Initial fitness assessment — R4 (proposed application flow)
+
 ```mermaid
 sequenceDiagram
     actor User
-    participant UI as Assessment UI
-    participant API as FastAPI
-    participant Rules as Assessment Logic
-    participant DB as PostgreSQL
-
-    User->>UI: Begin initial assessment
-    UI->>API: Request assessment definition
-    API->>DB: Read required assessment items
-    DB-->>API: Assessment items
-    API-->>UI: Assessment questions / tests
-    User->>UI: Submit results
-    UI->>API: Send assessment results
-    API->>Rules: Evaluate results
-    Rules-->>API: Starting experience level
-    API->>DB: Save assessment and results
-    DB-->>API: Saved
-    API-->>UI: Level and result summary
-    UI-->>User: Show starting level
+    participant UI as Proposed assessment UI
+    participant API as Proposed assessment endpoint
+    participant Rules as Proposed scoring logic
+    participant DB as PostgreSQL Assessment model
+    User->>UI: Start assessment and enter answers
+    UI->>API: Submit assessment answers
+    API->>Rules: Calculate score and starting level
+    Rules-->>API: Score and experience level
+    API->>DB: Persist Assessment
+    DB-->>API: Stored assessment
+    API-->>UI: Assessment results
+    UI-->>User: Display starting experience level
 ```
-Assessment questions, scoring rules, and whether an assessment modifies the user profile must be specified in the functional requirements and data definitions; this diagram does not invent those policies.
-5.2.3 Exercise Catalog Search — R3, R5 (Proposed Vertical Prototype)
+
+`app/backend/app/models/users.py` defines `Assessment` (`answers`, `score`, `experience_level`) but no implemented assessment endpoint/service or scoring rules were identified in the reviewed source.
+
+### 5.2.3 Filter and view workout sessions — R3/R5/R6 (implemented frontend/backend integration path)
+
 ```mermaid
 sequenceDiagram
-    actor User
-    participant UI as Exercise Catalog UI
-    participant API as FastAPI
+    actor Visitor
+    participant UI as Next.js /workouts
+    participant Proxy as Next.js API rewrite
+    participant Route as FastAPI catalog route
+    participant Service as catalog service
+    participant Repo as catalog repository
     participant DB as PostgreSQL
-
-    User->>UI: Enter name / equipment / muscle filters
-    UI->>API: Request matching exercises
-    API->>DB: Query exercise records
-    DB-->>API: Matching exercise rows
-    API-->>UI: Exercise list as JSON
-    UI-->>User: Display exercise results
-
-    alt No matches
-        UI-->>User: Show no-results message
+    Visitor->>UI: Select muscle, difficulty, maximum minutes
+    UI->>Proxy: GET /api/workout-sessions?filters
+    Proxy->>Route: Forward request to backend
+    Route->>Service: search_workout_sessions()
+    Service->>Repo: list_workout_sessions()
+    Repo->>DB: Query stored session/exercise relations
+    DB-->>Repo: Stored rows
+    Repo-->>Service: WorkoutSession objects
+    Service-->>Route: Paginated summaries and computed durations
+    Route-->>UI: JSON workout-session results
+    UI-->>Visitor: Display matching sessions
+    opt Visitor requests exercises
+        Visitor->>UI: Click show exercises
+        UI->>Route: GET /api/workout-sessions/{id} via rewrite
+        Route->>Service: get_workout_session()
+        Service->>Repo: Read session and model metadata
+        Repo-->>Service: Prescriptions and model/video URLs
+        Service-->>UI: Workout detail as JSON
+        UI-->>Visitor: Show exercises, role, sets and reps
     end
 ```
-Acceptance criterion for the M2 vertical prototype: list and search exercises stored in the database via the deployed frontend, API, and database. The currently inspected frontend instead displays hardcoded exercise examples, so this sequence remains a target until the integration is demonstrated.
-5.2.4 Adapt Workout to Available Time — R6 (Proposed)
+
+The `/workouts` page and FastAPI routes exist in source. The **homepage** exercise catalog still contains hardcoded examples; this diagram does not claim the homepage search controls are connected. Filtering sessions by `max_minutes` is implemented; dynamically modifying a selected workout to fit a time budget is not.
+
+### 5.2.4 Adapt workout to available time — R6 (proposed advanced adaptation)
+
 ```mermaid
 sequenceDiagram
     actor User
-    participant UI as Workout Session UI
-    participant API as FastAPI
-    participant Logic as Workout Adjustment Logic
+    participant UI as Proposed adjustment UI
+    participant API as Proposed adaptation endpoint
+    participant Rules as Proposed duration adaptation logic
     participant DB as PostgreSQL
-
-    User->>UI: Enter available workout time
+    User->>UI: Enter available minutes
     UI->>API: Request adjusted session
-    API->>DB: Load session and prescribed exercises
-    DB-->>API: Core / accessory exercises and estimates
-    API->>Logic: Evaluate available time
-    Logic->>Logic: Preserve core exercises
-    Logic->>Logic: Consider accessory removal
-
-    alt Session can fit available time
-        Logic-->>API: Adjusted exercise list and duration
-        API-->>UI: Return adjusted session
-        UI-->>User: Show kept / optional exercises
-    else Core work exceeds available time
-        Logic-->>API: Session cannot fit as specified
-        API-->>UI: Return constraint and options
-        UI-->>User: Explain why more adjustment is required
+    API->>DB: Fetch SessionExercise prescriptions
+    DB-->>API: Roles and exercise minutes
+    API->>Rules: Preserve core work and evaluate accessories
+    alt Fits after removing permitted accessories
+        Rules-->>API: Shortened exercise list
+        API-->>UI: Proposed adjusted session
+        UI-->>User: Display retained and removed exercises
+    else Core exercises exceed available time
+        Rules-->>API: Infeasible within time limit
+        API-->>UI: Explain constraint
+        UI-->>User: Offer another session / time option
     end
 ```
-A session-level classification distinguishes core from accessory work. The model does not assume that removing accessories always makes a workout fit the available time.
-5.2.5 Log Workout and View History — R8, R9 (Proposed)
+
+The actual backend exposes `SessionExercise.role` and computed workout durations, but no implemented `adapt-session` endpoint or dynamic exercise-removal algorithm was identified. Therefore this is an intended enhancement, distinct from current listing filters.
+
+### 5.2.5 Log workout and retrieve history — R8/R9 (backend implemented; frontend integration unverified)
+
 ```mermaid
 sequenceDiagram
     actor User
-    participant UI as Workout / History UI
-    participant API as FastAPI
+    participant Client as Proposed workout logging client
+    participant Route as /api/workout-records
+    participant Identity as CurrentUser bearer dependency
+    participant Service as workouts service
+    participant Repo as workouts repository
     participant DB as PostgreSQL
-
-    User->>UI: Enter completed sets and reps
-    UI->>API: Submit workout record and entries
-    API->>DB: Save Workout Record and Performance Entries
-    DB-->>API: Save confirmed
-    API-->>UI: Record saved
-    UI-->>User: Show completion confirmation
-
-    User->>UI: Open workout history
-    UI->>API: Request user's workout history
-    API->>DB: Query user's saved records
-    DB-->>API: Workout records and entries
-    API-->>UI: Return history
-    UI-->>User: Display previous workouts
+    User->>Client: Enter workout and performance entries
+    Client->>Route: POST /api/workout-records with bearer token
+    Route->>Identity: Resolve authenticated user
+    Identity-->>Route: User
+    Route->>Service: create_record()
+    Service->>DB: Validate referenced session/exercises
+    Service->>Repo: Add WorkoutRecord and PerformanceEntries
+    Repo->>DB: Persist records
+    DB-->>Service: Saved record
+    Service-->>Client: WorkoutRecordOut
+    User->>Client: Open history
+    Client->>Route: GET /api/workout-records with bearer token
+    Route->>Identity: Resolve user
+    Route->>Service: list_history()
+    Service->>Repo: Retrieve records scoped to user_id
+    Repo->>DB: Filter by user ownership
+    DB-->>Service: Records and counts
+    Service-->>Client: Paginated history
+    Client-->>User: Show completed workouts
 ```
-Workout data should be scoped to the authenticated user in the eventual implementation; access-control details are omitted here because the diagram is high-level.
-5.2.6 View Spatial Exercise Demonstration — R3 Supporting Demonstration (Implemented Frontend)
+
+Authentication, write/read routes, validation and user-scoped history retrieval are implemented in the backend source. The inspected Next.js routes do not demonstrate a connected workout logging/history screen.
+
+### 5.2.6 View Scaniverse exercise demonstration — R3 supporting feature (implemented frontend)
+
 ```mermaid
 sequenceDiagram
-    actor Visitor as Website Visitor
-    participant Page as HomePage / Exercise Lab
-    participant Viewer as ModelViewer
-    participant Assets as Public Static Assets
-
-    Visitor->>Page: Open page and scroll to Exercise Lab
-    Page->>Viewer: Mount 3D viewer
+    actor Visitor
+    participant Page as Next.js HomePage / Exercise Lab
+    participant Viewer as ModelViewer / React Three Fiber
+    participant Assets as Vercel static public/about assets
+    Visitor->>Page: Open Exercise Lab
+    Page->>Viewer: Mount GLB viewer
     Viewer->>Assets: Load Scaniverse-exported GLB
-    Assets-->>Viewer: Return 3D model
-    Viewer-->>Visitor: Show rotatable / zoomable scene
-    Visitor->>Page: Click play on MP4 video
-    Page->>Assets: Request demonstration MP4
-    Assets-->>Page: Return video media
-    Page-->>Visitor: Play exercise demonstration
+    Assets-->>Viewer: Model data
+    Viewer-->>Visitor: Show rotatable and zoomable scene
+    Visitor->>Page: Play exercise demonstration
+    Page->>Assets: Request MP4
+    Assets-->>Page: Video bytes
+    Page-->>Visitor: Play HTML5 video
 ```
-Implementation boundary: The current React Three Fiber viewer loads a Scaniverse-derived .glb asset, while standard HTML video players play separate .mp4 files on the same page. The exercise video is not yet positioned or rendered inside the 3D environment, and the demo does not establish 360-degree video or volumetric capture. This is an R3 exercise-demonstration use case; do not label it R13 unless the team's Functional Requirements V2 explicitly renumbers or expands that requirement (M1 R13 covers scanned-equipment details).
-5.3 Traceability and Implementation Status
-Diagram	Relevant M1 requirements	Status at reviewed repository snapshot
-Registration / Profile	R1, R2	Proposed
-Initial Fitness Assessment	R4	Proposed
-Exercise Catalog Search	R3, R5	Proposed vertical prototype; current examples are hardcoded
-Workout Duration Adjustment	R6, core/accessory concept	Proposed
-Workout Logging and History	R8, R9	Proposed
-Spatial Exercise Demonstration	R3 exercise demonstrations	Implemented frontend demonstration with separate model and videos
 
+The GLB model and MP4 demonstrations remain separate media elements in the homepage. The backend additionally defines an `ExerciseModel` table and read endpoints for linked model/video metadata, but the hardcoded homepage GLB viewer does not use that API. No live Niantic REST call, in-scene video plane, 360° recorded playback or volumetric capture is established by this diagram.
 
-The diagrams should be checked against the final code, database relations, and the team's approved Data Definitions V2 before the M2 document is submitted. This Markdown file is the working source for Section 5; the final consolidated milestone document must retain the course-required section numbering and formatting.
+## 5.3 Traceability and implementation status
+
+| Sequence | M1 requirement(s) | Status at source snapshot |
+|---|---|---|
+| Registration and profile | R1, R2 | Registration/auth endpoints implemented in backend; profile UI/updates proposed |
+| Initial fitness assessment | R4 | Assessment ORM exists; scoring and submission flow proposed |
+| Filter/view workout sessions | R3, R5, R6 | Next.js `/workouts` and database-backed API code exists; deployed dataset not verified |
+| Adapt workout to available time | R6 and core/accessory concept | Prescribed roles/durations implemented; adaptive re-planning proposed |
+| Log workout and view history | R8, R9 | Backend implemented; user-facing UI integration unverified |
+| Spatial exercise demonstration | R3 | Homepage React Three Fiber GLB viewer + independent MP4 playback implemented |
+
+## 5.4 Verification notes for M2 submission
+
+1. Compare attributes against the final Data Definitions V2. The class diagram reflects current backend code, which may not represent every element of the team's planned conceptual data model.
+2. Demonstrate `/workouts` returning real persisted workout sessions and detail on the live deployed site; a source-level FastAPI route is not proof of production DB content.
+3. Do not describe Niantic capture as a live backend API integration. It is currently an exported GLB embedded in the web product.
+4. Treat the registered user's experience assessment and adaptive session modification as proposed unless separately implemented after this commit.
+5. If Section 5 is placed in the final DOCX, preserve the headings and Mermaid previews as rendered diagrams/images (rather than raw code blocks) according to instructor formatting.
