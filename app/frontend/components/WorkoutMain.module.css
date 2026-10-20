@@ -5,6 +5,7 @@
   background: transparent;
   color: var(--off-white);
   font: inherit;
+  font-size: 10px;
 }
 
 .searchInput::placeholder {
@@ -20,7 +21,12 @@
   color: var(--slate);
   padding: 0 15px;
   font-family: "DM Mono", monospace;
-  font-size: 8px;
+  font-size: 10px;
+}
+
+.catalogTop .search,
+.catalogTop button {
+  font-size: 10px;
 }
 
 .catalogFilter > span:last-child {
@@ -59,6 +65,7 @@
   width: 100%;
   text-align: left;
   cursor: pointer;
+  font-size: 10px;
 }
 
 .exerciseGroup {
@@ -82,7 +89,7 @@
   min-height: 42px;
   color: var(--slate);
   font-family: "DM Mono", monospace;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .exerciseSubitem strong {
@@ -101,7 +108,11 @@
   border-bottom: 1px solid rgba(244, 241, 234, 0.06);
   color: var(--slate);
   font-family: "DM Mono", monospace;
-  font-size: 8px;
+  font-size: 10px;
+}
+
+.catalogFooter {
+  font-size: 10px;
 }
 
 .error {

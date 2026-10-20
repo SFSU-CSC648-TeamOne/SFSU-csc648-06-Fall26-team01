@@ -45,8 +45,8 @@ export default function WorkoutMain() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [details, setDetails] = useState<Record<number, WorkoutDetail>>({});
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
-  const [loading, setLoading] = useState(true);
-  const [loadingDetails, setLoadingDetails] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -56,35 +56,50 @@ export default function WorkoutMain() {
   }, []);
 
   useEffect(() => {
+    const term = search.trim();
+    if (!term) {
+      setWorkouts([]);
+      setDetails({});
+      setExpanded({});
+      setLoading(false);
+      setLoadingDetails(false);
+      setError("");
+      return;
+    }
+
     const params = new URLSearchParams({ limit: "100" });
     if (muscle) params.set("muscle", muscle);
     if (difficulty) params.set("difficulty", difficulty);
     if (maxMinutes) params.set("max_minutes", maxMinutes);
 
-    setLoading(true);
-    setLoadingDetails(true);
-    setError("");
+    const timeout = window.setTimeout(() => {
+      setLoading(true);
+      setLoadingDetails(true);
+      setError("");
 
-    get<{ items: Workout[]; total: number }>(`/workout-sessions?${params}`)
-      .then(async (page) => {
-        setWorkouts(page.items);
-        const loadedDetails = await Promise.all(
-          page.items.map((workout) =>
-            get<WorkoutDetail>(`/workout-sessions/${workout.id}`),
-          ),
-        );
-        setDetails(
-          Object.fromEntries(
-            loadedDetails.map((detail) => [detail.id, detail]),
-          ),
-        );
-      })
-      .catch((reason) => setError(String(reason)))
-      .finally(() => {
-        setLoading(false);
-        setLoadingDetails(false);
-      });
-  }, [muscle, difficulty, maxMinutes]);
+      get<{ items: Workout[]; total: number }>(`/workout-sessions?${params}`)
+        .then(async (page) => {
+          setWorkouts(page.items);
+          const loadedDetails = await Promise.all(
+            page.items.map((workout) =>
+              get<WorkoutDetail>(`/workout-sessions/${workout.id}`),
+            ),
+          );
+          setDetails(
+            Object.fromEntries(
+              loadedDetails.map((detail) => [detail.id, detail]),
+            ),
+          );
+        })
+        .catch((reason) => setError(String(reason)))
+        .finally(() => {
+          setLoading(false);
+          setLoadingDetails(false);
+        });
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [difficulty, maxMinutes, muscle, search]);
 
   const filteredWorkouts = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -115,7 +130,7 @@ export default function WorkoutMain() {
 
   return (
     <>
-      <div className="catalog-top">
+      <div className={`catalog-top ${styles.catalogTop}`}>
         <label className="search">
           <span>⌕</span>
           <input
@@ -222,7 +237,7 @@ export default function WorkoutMain() {
         })}
       </div>
 
-      <div className="catalog-footer">
+      <div className={`catalog-footer ${styles.catalogFooter}`}>
         <span>DATABASE / WORKOUTS</span>
         <span>{filteredWorkouts.length} WORKOUTS</span>
       </div>
