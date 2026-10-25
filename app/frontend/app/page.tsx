@@ -1,56 +1,40 @@
 
+"use client";
+
 import Link from "next/link";
 import ModelViewer from "./about/ModelViewer";
+import WorkoutMain from "../components/WorkoutMain";
 
 const features = [
   {
     number: "01",
     title: "PROFILE",
     text: "Set your goals, experience, equipment, and schedule.",
+    href: "/profile",
   },
   {
     number: "02",
     title: "ASSESSMENT",
     text: "Establish your fitness experience and training starting point.",
+    href: "/assessment",
   },
   {
     number: "03",
     title: "EXERCISE CATALOG",
     text: "Search and filter exercises by muscle, equipment, and duration.",
+    href: "/search",
   },
   {
     number: "04",
     title: "ADAPTIVE WORKOUTS",
-    text: "Adjust your session when time or equipment changes.",
+    text: "Explore workouts and find sessions that fit your schedule.",
+    href: "/workouts",
   },
   {
     number: "05",
     title: "WORKOUT HISTORY",
-    text: "Log completed workouts and follow your progress over time.",
-  },
-];
-
-const exercises = [
-  {
-    name: "Barbell Bench Press",
-    muscle: "CHEST",
-    equipment: "BARBELL",
-    duration: "08 MIN",
-    type: "CORE",
-  },
-  {
-    name: "Lat Pulldown",
-    muscle: "BACK",
-    equipment: "MACHINE",
-    duration: "07 MIN",
-    type: "CORE",
-  },
-  {
-    name: "Cable Fly",
-    muscle: "CHEST",
-    equipment: "CABLE",
-    duration: "06 MIN",
-    type: "ACCESSORY",
+    text: "Review completed workouts and track your progress.",
+    href: "/history",
   },
 ];
 
@@ -72,9 +56,14 @@ export default function HomePage() {
           <Link href="/about">Team</Link>
         </nav>
 
-        <Link href="#features" className="nav-button">
-          EXPLORE
-        </Link>
+        <div className="auth-nav">
+          <Link href="/login" className="nav-button">
+            LOG IN
+          </Link>
+          <Link href="/signup" className="button-primary">
+            SIGN UP ↗
+          </Link>
+        </div>
       </header>
 
       {/* HERO */}
@@ -102,9 +91,9 @@ export default function HomePage() {
               EXPLORE ASCENDA <span>↗</span>
             </a>
 
-            <a href="#catalog" className="button-secondary">
+            <Link href="/search" className="button-secondary">
               VIEW CATALOG
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -117,7 +106,6 @@ export default function HomePage() {
                 <i />
                 <i />
               </div>
-
               <span>ASCENDA / SESSION</span>
               <span className="ready">● READY</span>
             </div>
@@ -131,12 +119,10 @@ export default function HomePage() {
                   <span>DURATION</span>
                   <strong>42 MIN</strong>
                 </div>
-
                 <div>
                   <span>EXERCISES</span>
                   <strong>06</strong>
                 </div>
-
                 <div>
                   <span>STATUS</span>
                   <strong className="lime">READY</strong>
@@ -153,13 +139,11 @@ export default function HomePage() {
                   <strong>Barbell Bench Press</strong>
                   <small>CORE · 08 MIN</small>
                 </div>
-
                 <div>
                   <span>02</span>
                   <strong>Lat Pulldown</strong>
                   <small>CORE · 07 MIN</small>
                 </div>
-
                 <div className="accessory">
                   <span>03</span>
                   <strong>Cable Fly</strong>
@@ -180,20 +164,18 @@ export default function HomePage() {
       {/* INTRO */}
       <section className="intro">
         <span className="section-number">01 — ASCENDA</span>
-
         <h2>
           FITNESS SHOULD
           <br />
           <span>ADAPT TO YOU.</span>
         </h2>
-
         <p>
-          Real schedules change. Equipment availability changes.
-          Your training shouldn't have to completely fall apart when they do.
+          Real schedules change. Equipment availability changes. Your training
+          shouldn't have to completely fall apart when they do.
         </p>
       </section>
 
-      {/* FEATURES */}
+      {/* CLICKABLE FEATURES */}
       <section className="features" id="features">
         <div className="section-heading">
           <span>02 — FEATURES</span>
@@ -202,12 +184,19 @@ export default function HomePage() {
 
         <div className="feature-list">
           {features.map((feature) => (
-            <div className="feature" key={feature.number}>
+            <Link
+              href={feature.href}
+              className="feature"
+              key={feature.number}
+              aria-label={`Open ${feature.title}`}
+            >
               <span className="feature-number">{feature.number}</span>
               <h3>{feature.title}</h3>
               <p>{feature.text}</p>
-              <span className="feature-arrow">↗</span>
-            </div>
+              <span className="feature-arrow" aria-hidden="true">
+                ↗
+              </span>
+            </Link>
           ))}
         </div>
       </section>
@@ -215,64 +204,23 @@ export default function HomePage() {
       {/* EXERCISE CATALOG */}
       <section className="catalog" id="catalog">
         <div className="catalog-copy">
-          <span className="section-number">03 — EXERCISE CATALOG</span>
-
+          <span className="section-number">03 — WORKOUT SEARCH</span>
           <h2>
             FIND THE
             <br />
-            <span>RIGHT MOVEMENT.</span>
+            <span>RIGHT WORKOUT.</span>
           </h2>
-
           <p>
-            Browse exercises based on muscle group, equipment,
-            duration, and training requirements.
+            Search and filter database-backed workouts by exercise, muscle
+            group, difficulty, and duration.
           </p>
+          <Link href="/workouts" className="button-primary">
+            FIND WORKOUTS <span>↗</span>
+          </Link>
         </div>
 
         <div className="catalog-ui">
-          <div className="catalog-top">
-            <div className="search">
-              <span>⌕</span>
-              Search exercises...
-            </div>
-
-            <button>
-              MUSCLE GROUP <span>⌄</span>
-            </button>
-
-            <button>
-              EQUIPMENT <span>⌄</span>
-            </button>
-          </div>
-
-          <div className="exercise-table">
-            {exercises.map((exercise, index) => (
-              <div className="exercise" key={exercise.name}>
-                <span className="exercise-index">0{index + 1}</span>
-
-                <div className="exercise-title">
-                  <strong>{exercise.name}</strong>
-                  <small>{exercise.muscle}</small>
-                </div>
-
-                <span>{exercise.equipment}</span>
-                <span>{exercise.duration}</span>
-
-                <b
-                  className={
-                    exercise.type === "CORE" ? "core" : "accessory-tag"
-                  }
-                >
-                  {exercise.type}
-                </b>
-              </div>
-            ))}
-          </div>
-
-          <div className="catalog-footer">
-            <span>DATABASE / EXERCISES</span>
-            <span>10+ EXERCISES</span>
-          </div>
+          <WorkoutMain />
         </div>
       </section>
 
@@ -282,24 +230,18 @@ export default function HomePage() {
           <span className="section-number">
             04 — INTERACTIVE EXERCISE LAB
           </span>
-
           <h2>
             EXPLORE THE
             <br />
             <span>MOVEMENT.</span>
           </h2>
-
           <p>
-            Explore the scanned workout space and view looping exercise
-            demonstrations placed directly inside the 3D environment.
+            Explore exercise equipment in 3D and watch demonstrations to learn
+            proper exercise technique.
           </p>
         </div>
 
-        <div 
-          className="lab-grid"
-          style={{ gridTemplateColumns: "minmax(0, 1fr)" }}
-        >
-          {/* INTERACTIVE 3D MODEL */}
+        <div className="lab-grid">
           <div className="viewer-panel">
             <div className="lab-panel-top">
               <span>3D MODEL VIEWER</span>
@@ -310,7 +252,40 @@ export default function HomePage() {
 
             <div className="viewer-footer">
               <span>DRAG TO ROTATE · SCROLL TO ZOOM</span>
-              <span>ADJUST VIDEO POSITION BELOW</span>
+            </div>
+          </div>
+
+          <div className="video-panel">
+            <div className="lab-panel-top">
+              <span>EXERCISE DEMONSTRATIONS</span>
+              <span className="video-count">02 VIDEOS</span>
+            </div>
+
+            <div className="demo-video">
+              <video controls preload="metadata" playsInline>
+                <source src="/about/demo_one.mp4" type="video/mp4" />
+                Your browser does not support this video.
+              </video>
+              <div className="video-info">
+                <span>DEMO / 01</span>
+                <h3>Hercules Squat</h3>
+                <p>
+                  Watch the movement and review the exercise technique in the
+                  3D scanned room.
+                </p>
+              </div>
+            </div>
+
+            <div className="demo-video">
+              <video controls preload="metadata" playsInline>
+                <source src="/about/demo_two.mp4" type="video/mp4" />
+                Your browser does not support this video.
+              </video>
+              <div className="video-info">
+                <span>DEMO / 02</span>
+                <h3>Pistol Squat Jesus</h3>
+                <p>Follow the demonstration to understand the movement.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -320,18 +295,19 @@ export default function HomePage() {
       <section className="adaptive" id="adaptive">
         <div className="adaptive-copy">
           <span className="section-number">05 — ADAPTIVE TRAINING</span>
-
           <h2>
             LESS TIME?
             <br />
             <span>NO PROBLEM.</span>
           </h2>
-
           <p>
-            Ascenda separates core exercises from accessory exercises,
-            allowing lower-priority movements to be removed when your
-            available time is shorter than the expected workout duration.
+            Ascenda separates core exercises from accessory exercises, allowing
+            lower-priority movements to be removed when available time is
+            shorter than the expected workout duration.
           </p>
+          <Link href="/workouts" className="button-secondary">
+            EXPLORE WORKOUTS
+          </Link>
         </div>
 
         <div className="adaptive-ui">
@@ -339,30 +315,25 @@ export default function HomePage() {
             <span>AVAILABLE TIME</span>
             <strong>35 MIN</strong>
           </div>
-
           <div className="expected">
             EXPECTED SESSION
             <strong>45 MIN</strong>
           </div>
-
           <div className="adaptive-line">
             <span />
           </div>
-
           <div className="adaptive-exercises">
             <div className="keep">
               <span>✓</span>
               <strong>CORE EXERCISES</strong>
               <small>KEEP</small>
             </div>
-
             <div className="remove">
               <span>−</span>
               <strong>ACCESSORY EXERCISES</strong>
               <small>OPTIONAL</small>
             </div>
           </div>
-
           <div className="result">
             <span>ADAPTED SESSION</span>
             <strong>32 MIN</strong>
@@ -372,50 +343,46 @@ export default function HomePage() {
       </section>
 
       {/* WORKOUT HISTORY */}
-      <section className="progress">
+      <section className="progress" id="history">
         <div className="progress-copy">
           <span className="section-number">06 — WORKOUT HISTORY</span>
-
           <h2>
             SEE YOUR
             <br />
             <span>PROGRESS.</span>
           </h2>
-
           <p>
-            Completed workouts and performance history give users
-            a measurable record of their training over time.
+            Completed workouts and performance history give users a measurable
+            record of their training over time.
           </p>
+          <Link href="/history" className="button-primary">
+            VIEW HISTORY <span>↗</span>
+          </Link>
         </div>
 
         <div className="progress-card">
           <div className="progress-card-top">
             <span>TRAINING HISTORY</span>
-            <span>SEPTEMBER</span>
+            <span>EXAMPLE</span>
           </div>
-
           <div className="progress-number">
             89%
             <small>CONSISTENCY</small>
           </div>
-
           <div className="chart">
             <div className="chart-line line-one" />
             <div className="chart-line line-two" />
             <div className="chart-line line-three" />
           </div>
-
           <div className="progress-stats">
             <div>
               <strong>18</strong>
               <span>WORKOUTS</span>
             </div>
-
             <div>
               <strong>16</strong>
               <span>COMPLETED</span>
             </div>
-
             <div>
               <strong>+12%</strong>
               <span>PROGRESS</span>
@@ -427,23 +394,16 @@ export default function HomePage() {
       {/* FINAL CTA */}
       <section className="final">
         <div className="final-glow" />
-
         <span className="section-number">ASCENDA</span>
-
         <h2>
           KEEP
           <br />
           <span>ASCENDING.</span>
         </h2>
-
-        <p>
-          Structured training. Flexible workouts.
-          Measurable progress.
-        </p>
-
-        <a href="#features" className="button-primary">
-          EXPLORE ASCENDA <span>↗</span>
-        </a>
+        <p>Structured training. Flexible workouts. Measurable progress.</p>
+        <Link href="/signup" className="button-primary">
+          GET STARTED <span>↗</span>
+        </Link>
       </section>
 
       {/* FOOTER */}
@@ -452,9 +412,7 @@ export default function HomePage() {
           <span className="logo-symbol">A</span>
           ASCENDA
         </Link>
-
         <span>SFSU CSC648 · FALL 2026</span>
-
         <Link href="/about">OUR TEAM ↗</Link>
       </footer>
     </main>
