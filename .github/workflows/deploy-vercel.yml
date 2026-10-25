@@ -43,6 +43,7 @@ jobs:
     timeout-minutes: 20
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
       CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
       VERCEL_PROJECT_ID: ${{ vars.VERCEL_BACKEND_PROJECT_ID }}
       BACKEND_PROJECT: ascenda-api
@@ -60,7 +61,7 @@ jobs:
 
       - name: Check deployment settings
         run: |
-          for name in VERCEL_TOKEN VERCEL_ORG_ID DATABASE_URL VERCEL_PROJECT_ID; do
+          for name in VERCEL_TOKEN VERCEL_ORG_ID DATABASE_URL JWT_SECRET VERCEL_PROJECT_ID; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing $name. See docs/vercel-deployment.md."
               exit 1
@@ -85,6 +86,7 @@ jobs:
         run: |
           url=$(vercel deploy --prod --yes --token "$VERCEL_TOKEN" \
             --env "DATABASE_URL=$DATABASE_URL" \
+            --env "JWT_SECRET=$JWT_SECRET" \
             --env "CORS_ORIGINS=$CORS_ORIGINS")
 
           # Retrieve the production alias without logging environment values.
