@@ -2,8 +2,36 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { api, saveSession } from "../lib/api";
 
+// added functions for signing up / handling submit logic
 export default function LoginPage() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    const form = new FormData(event.currentTarget);
+
+    try {
+      const data = await api("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: form.get("email"),
+          password: form.get("password"),
+        }),
+      });
+      saveSession(data);
+      router.push("/profile");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Login failed");
+    }
+  }
+
+  // original code from frontend
   return (
     <main className="site">
       <header className="navbar">
