@@ -4,6 +4,7 @@
 import Link from "next/link";
 import ModelViewer from "./about/ModelViewer";
 import WorkoutMain from "../components/WorkoutMain";
+import Navbar from "../components/Navbar";
 
 const features = [
   {
@@ -41,30 +42,8 @@ const features = [
 export default function HomePage() {
   return (
     <main className="site">
-      {/* NAVIGATION */}
-      <header className="navbar">
-        <Link href="/" className="logo">
-          <span className="logo-symbol">A</span>
-          ASCENDA
-        </Link>
-
-        <nav>
-          <a href="#features">Features</a>
-          <a href="#catalog">Exercise Catalog</a>
-          <a href="#exercise-lab">Exercise Lab</a>
-          <a href="#adaptive">Adaptive Training</a>
-          <Link href="/about">Team</Link>
-        </nav>
-
-        <div className="auth-nav">
-          <Link href="/login" className="nav-button">
-            LOG IN
-          </Link>
-          <Link href="/signup" className="button-primary">
-            SIGN UP ↗
-          </Link>
-        </div>
-      </header>
+      {/* SHARED HAMBURGER NAVIGATION */}
+      <Navbar />
 
       {/* HERO */}
       <section className="hero">
