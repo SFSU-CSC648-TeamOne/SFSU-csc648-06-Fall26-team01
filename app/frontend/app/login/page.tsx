@@ -1,73 +1,40 @@
-
 "use client";
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { api, saveSession } from "../lib/api";
+import Navbar from "../../components/Navbar";
+import { login } from "../../lib/auth";
+import s from "../screens.module.css";
 
-// added functions for signing up / handling submit logic
 export default function LoginPage() {
-  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    const form = new FormData(event.currentTarget);
-
-    try {
-      const data = await api("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          email: form.get("email"),
-          password: form.get("password"),
-        }),
-      });
-      saveSession(data);
-      router.push("/profile");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Login failed");
-    }
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true); setError("");
+    try { await login(email, password); window.location.href = "/programs"; }
+    catch (err) { setError(err instanceof Error ? err.message : "Could not log in"); setBusy(false); }
   }
 
-  // original code from frontend
   return (
-    <main className="site">
-      <header className="navbar">
-        <Link href="/" className="logo">
-          <span className="logo-symbol">A</span>
-          ASCENDA
-        </Link>
-        <Link href="/" className="nav-button">
-          ← BACK TO HOME
-        </Link>
-      </header>
-
-      <section className="intro">
-        <span className="section-number">ACCOUNT / 01</span>
-        <h2>
-          WELCOME
-          <br />
-          <span>BACK.</span>
-        </h2>
-        <p>Log in to access your fitness profile and training journey.</p>
-
-        <form className="auth-form" onSubmit={(event) => event.preventDefault()}>
-          <label htmlFor="email">EMAIL ADDRESS</label>
-          <input id="email" type="email" placeholder="you@example.com" required />
-
-          <label htmlFor="password">PASSWORD</label>
-          <input id="password" type="password" placeholder="Enter your password" required />
-
-          <button className="button-primary" type="submit">
-            LOG IN ↗
-          </button>
-          <p>
-            Don't have an account? <Link href="/signup">Sign up</Link>
-          </p>
+    <main className={s.page}>
+      <Navbar />
+      <div className={`${s.wrap} ${s.narrow}`}>
+        <p className={s.kicker}>Log in</p>
+        <h1 className={s.h1}>Welcome <span>back.</span></h1>
+        <form className={s.form} onSubmit={submit}>
+          <div className={s.field}><label htmlFor="email">Email</label>
+            <input id="email" className={s.input} type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+          <div className={s.field}><label htmlFor="pw">Password</label>
+            <input id="pw" className={s.input} type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+          {error && <p className={s.error} role="alert">{error}</p>}
+          <button className={s.btn} disabled={busy}>{busy ? "Logging in..." : "Log in ↗"}</button>
         </form>
-      </section>
+        <p className={s.swap}>New here? <Link href="/signup">Create an account</Link></p>
+      </div>
     </main>
   );
 }
