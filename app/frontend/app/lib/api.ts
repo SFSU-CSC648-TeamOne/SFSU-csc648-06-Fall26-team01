@@ -9,7 +9,7 @@ export async function api(path: string, options: RequestInit = {}) {
         ...options,
         headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorized: `Bearer ${token}` } : {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...options.headers,
         },
     });
