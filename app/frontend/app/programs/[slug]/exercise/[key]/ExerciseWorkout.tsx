@@ -44,10 +44,15 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
   const [mediaLoading, setMediaLoading] = useState(true);
   // Video and scans are looked up by this database name (the `demo` field in programsData.ts, else the exercise name).
   const name = item ? item.exercise.demo ?? item.exercise.name : undefined;
+  // Video file in public/ (the `video` field in programsData.ts), used when the database has no video for `name`.
+  const fallbackVideo = item?.exercise.video ?? null;
 
   useEffect(() => {
     if (!name) return;
     let live = true;
+    // This component is reused when moving to the next exercise, so clear the previous one's media first.
+    setVideo(fallbackVideo);
+    setScans([]);
     setMediaLoading(true);
     (async () => {
       try {
@@ -58,11 +63,11 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
           api<Model>(`/exercises/${hit.id}/model`).catch(() => ({} as Model)),
           api<Scan[]>(`/exercises/${hit.id}/scans`).catch(() => [] as Scan[]),
         ]);
-        if (live) { setVideo(m.video_url ?? null); setScans([...sc].sort((a, b) => a.position - b.position)); }
+        if (live) { setVideo(m.video_url ?? fallbackVideo); setScans([...sc].sort((a, b) => a.position - b.position)); }
       } catch {} finally { if (live) setMediaLoading(false); }
     })();
     return () => { live = false; };
-  }, [name]);
+  }, [name, fallbackVideo]);
 
   // ---- big timer (stopwatch) ----
   const [elapsed, setElapsed] = useState(0);

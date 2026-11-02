@@ -12,6 +12,8 @@ export type Exercise = {
   baseMinutes: number; // minutes in week 1 (sets + rest)
   /** Name of the exercise in the database whose video/scans to show. Leave out when it is the same as `name`. */
   demo?: string;
+  /** Video file in public/ to show when the database has no video for `demo` (or `name`). */
+  video?: string;
 };
 
 export type DayTemplate = {
@@ -46,8 +48,8 @@ const BW: Program = {
   equipment: ["No equipment", "Exercise mat (optional)", "Bench or chair"],
   exercises: [
     { id: "push-up", name: "Push-Up", muscle: "Chest", equipment: "None", baseMinutes: 5 },
-    { id: "bodyweight-squat", name: "Bodyweight Squat", muscle: "Legs", equipment: "None", baseMinutes: 5, demo: "Hercules Squat" },
-    { id: "reverse-lunge", name: "Reverse Lunge", muscle: "Legs", equipment: "None", baseMinutes: 5, demo: "Pistol Squat Jesus" },
+    { id: "bodyweight-squat", name: "Bodyweight Squat", muscle: "Legs", equipment: "None", baseMinutes: 5, demo: "Hercules Squat", video: "/about/demo_one.mp4" },
+    { id: "reverse-lunge", name: "Reverse Lunge", muscle: "Legs", equipment: "None", baseMinutes: 5, demo: "Pistol Squat Jesus", video: "/about/demo_two.mp4" },
     { id: "glute-bridge", name: "Glute Bridge", muscle: "Glutes", equipment: "Mat", baseMinutes: 4 },
     { id: "plank", name: "Plank", muscle: "Core", equipment: "Mat", baseMinutes: 3 },
     { id: "pike-push-up", name: "Pike Push-Up", muscle: "Shoulders", equipment: "None", baseMinutes: 5 },
@@ -96,12 +98,12 @@ const LDW: Program = {
   equipment: ["Barbell", "Dumbbells", "Cable machine", "Bench"],
   exercises: [
     { id: "barbell-bench-press", name: "Barbell Bench Press", muscle: "Chest", equipment: "Barbell, bench", baseMinutes: 7 },
-    { id: "barbell-back-squat", name: "Barbell Back Squat", muscle: "Legs", equipment: "Barbell, rack", baseMinutes: 7, demo: "Hercules Squat" },
+    { id: "barbell-back-squat", name: "Barbell Back Squat", muscle: "Legs", equipment: "Barbell, rack", baseMinutes: 7, demo: "Hercules Squat", video: "/about/demo_one.mp4" },
     { id: "romanian-deadlift", name: "Romanian Deadlift", muscle: "Hamstrings", equipment: "Barbell", baseMinutes: 7 },
     { id: "lat-pulldown", name: "Lat Pulldown", muscle: "Back", equipment: "Cable machine", baseMinutes: 6 },
     { id: "dumbbell-shoulder-press", name: "Dumbbell Shoulder Press", muscle: "Shoulders", equipment: "Dumbbells", baseMinutes: 6 },
     { id: "dumbbell-row", name: "Dumbbell Row", muscle: "Back", equipment: "Dumbbell, bench", baseMinutes: 6 },
-    { id: "dumbbell-lunge", name: "Dumbbell Lunge", muscle: "Legs", equipment: "Dumbbells", baseMinutes: 6, demo: "Pistol Squat Jesus" },
+    { id: "dumbbell-lunge", name: "Dumbbell Lunge", muscle: "Legs", equipment: "Dumbbells", baseMinutes: 6, demo: "Pistol Squat Jesus", video: "/about/demo_two.mp4" },
     { id: "dumbbell-curl", name: "Dumbbell Biceps Curl", muscle: "Biceps", equipment: "Dumbbells", baseMinutes: 4 },
     { id: "triceps-pushdown", name: "Triceps Pushdown", muscle: "Triceps", equipment: "Cable machine", baseMinutes: 4 },
     { id: "cable-fly", name: "Cable Fly", muscle: "Chest", equipment: "Cable machine", baseMinutes: 5 },
