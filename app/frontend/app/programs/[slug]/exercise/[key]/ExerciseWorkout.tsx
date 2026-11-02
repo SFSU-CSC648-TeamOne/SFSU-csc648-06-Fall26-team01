@@ -42,7 +42,8 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
   const [video, setVideo] = useState<string | null>(null);
   const [scans, setScans] = useState<Scan[]>([]);
   const [mediaLoading, setMediaLoading] = useState(true);
-  const name = item?.exercise.name;
+  // Video and scans are looked up by this database name (the `demo` field in programsData.ts, else the exercise name).
+  const name = item ? item.exercise.demo ?? item.exercise.name : undefined;
 
   useEffect(() => {
     if (!name) return;

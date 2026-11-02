@@ -13,8 +13,8 @@ from sqlalchemy.engine import make_url
 import app.models
 from app.core.config import get_settings
 from app.db.session import SessionLocal
-from app.models import (Equipment, Exercise, ExerciseMuscle, MuscleGroup, SessionExercise,
-                        TrainingProgram, WorkoutSession)
+from app.models import (Equipment, Exercise, ExerciseModel, ExerciseMuscle, MuscleGroup,
+                        SessionExercise, TrainingProgram, WorkoutSession)
 
 PROGRAM_NAME = "Local Dev Starter"
 
@@ -44,6 +44,15 @@ SESSIONS = [
         ("Reverse Lunge", "core", 3, 10),
         ("Plank", "accessory", 2, None),
     ]),
+]
+
+# Demo videos shown on the program exercise pages (programsData.ts `demo` field) and the landing page.
+# Files live in app/frontend/public/about/. Same scan .glb as scripts/attach_models.py.
+SCAN_URL = "/about/Scaniverse%202026-10-15%20121405.glb"
+DEMO_VIDEOS = [
+    # name, primary muscle, video
+    ("Hercules Squat", "Legs", "/about/demo_one.mp4"),
+    ("Pistol Squat Jesus", "Legs", "/about/demo_two.mp4"),
 ]
 
 def ensure_sqlite() -> None:
@@ -94,11 +103,30 @@ def seed(db) -> str:
     return (f"Seeded {len(EQUIPMENT)} equipment, {len(MUSCLES)} muscle groups, "
             f"{len(EXERCISES)} exercises, 1 program with {len(SESSIONS)} sessions.")
 
+def seed_demo_videos(db) -> str:
+    # runs separately from seed() so databases seeded before the videos were added get them too
+    added = []
+    for name, muscle, video_url in DEMO_VIDEOS:
+        ex = db.scalar(select(Exercise).where(Exercise.name == name))
+        if ex is None:
+            ex = Exercise(name=name, category="Legs", difficulty="intermediate", default_role="core",
+                          default_minutes=5, source="manual",
+                          description=f"{name}: team demo video.",
+                          equipment=[get_or_create(db, Equipment, name="Bodyweight")])
+            ex.muscle_links = [ExerciseMuscle(muscle=get_or_create(db, MuscleGroup, name=muscle), is_primary=True)]
+            db.add(ex)
+            db.flush()
+        if db.scalar(select(ExerciseModel).where(ExerciseModel.exercise_id == ex.id)) is None:
+            db.add(ExerciseModel(exercise_id=ex.id, model_url=SCAN_URL, video_url=video_url,
+                                 credit="Scan by our team"))
+            added.append(name)
+    return f"Demo videos linked: {', '.join(added)}." if added else "Demo videos already linked."
+
 def main() -> None:
     ensure_sqlite()
     with SessionLocal() as db:
         try:
-            message = seed(db)
+            message = seed(db) + " " + seed_demo_videos(db)
             db.commit()
         except Exception:
             db.rollback()
