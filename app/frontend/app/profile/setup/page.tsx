@@ -7,6 +7,7 @@ import s from "../../screens.module.css";
 
 export default function ProfileSetupPage() {
   const { user } = useRequireAuth();
+
   return (
     <main className={s.page}>
       <Navbar />
@@ -16,6 +17,7 @@ export default function ProfileSetupPage() {
         title={<>Set up <span>your profile.</span></>}
         lead="Tell us your goal, level, schedule and equipment. You can change all of this later from Profile."
         submitLabel="Save profile"
+        afterSaveHref="/profile" // redirect after saving profile (first-time setup)
       />
     </main>
   );

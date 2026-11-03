@@ -15,7 +15,7 @@ export default function LoginPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setError("");
-    try { await login(email, password); window.location.href = "/programs"; }
+    try { await login(email, password); window.location.replace("/profile"); } // Redirect to profile page on successful login to match M2.
     catch (err) { setError(err instanceof Error ? err.message : "Could not log in"); setBusy(false); }
   }
 
