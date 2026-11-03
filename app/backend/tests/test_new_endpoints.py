@@ -8,6 +8,7 @@ import app.models
 from app.main import app
 from app.models import Equipment, Exercise
 from app.models.scans import ExerciseScan
+from app.services import chat as chat_service
 
 Base.metadata.create_all(engine)
 c = TestClient(app)
@@ -31,7 +32,12 @@ def test_profile_roundtrip():
     assert c.put("/api/profile", json={**body, "equipment_ids": [9999]}, headers=h).status_code == 422
     assert c.get("/api/profile").status_code == 401
 
-def test_chat_flow_and_isolation():
+def test_chat_flow_and_isolation(monkeypatch):
+    monkeypatch.setattr(
+        chat_service,
+        "generate_reply",
+        lambda history, user, profile: f"Test reply to: {history[-1].content}",
+    )
     h = auth("b@x.com"); h2 = auth("c@x.com")
     cid = c.post("/api/chat/conversations", headers=h).json()["id"]
     r = c.post(f"/api/chat/conversations/{cid}/messages", json={"content": "How many sets?"}, headers=h)
