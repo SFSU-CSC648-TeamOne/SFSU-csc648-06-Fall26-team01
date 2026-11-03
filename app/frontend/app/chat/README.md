@@ -1,7 +1,9 @@
 # Ascenda chatbot (widget + /chat page)
 
-1. Copy this `chat/` folder to `app/frontend/app/chat/`.
-2. In your existing `app/layout.tsx`, wrap the body content and add the widget:
+The chat feature is already wired into the application. The backend uses Gemini
+when `GEMINI_API_KEY` is configured.
+
+1. In `app/layout.tsx`, keep the provider and widget around the page content:
 
    import ChatProvider from "./chat/ChatProvider";
    import ChatWidget from "./chat/ChatWidget";
@@ -12,9 +14,7 @@
      <ChatWidget />
    </ChatProvider>
 
-3. Add "AI Chat" -> /chat to the sidebar menu (decision pending with the team).
-4. `ChatWidget.tsx` HIDDEN list: change if your signed-out routes differ.
-5. `page.tsx`: replace USER_NAME with the signed-in user's first name (GET /api/auth/me).
-6. `chatApi.ts`: replace the placeholder with the real /api/chat/* calls. Conversations are kept in
-   localStorage for now; once the backend saves them, load them from the server in ChatProvider.
-7. `.fullPage` height assumes a 54px header; adjust to your header.
+2. `ChatWidget.tsx` hides the floating widget on `/chat`, where the full-page
+   experience is rendered.
+3. `chatApi.ts` calls the persisted `/api/chat/*` endpoints.
+4. `.fullPage` height assumes a 54px header; adjust to your header if needed.

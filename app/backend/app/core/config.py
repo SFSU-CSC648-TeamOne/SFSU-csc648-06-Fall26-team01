@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
     cors_origins: str = "http://localhost:3000"
     cors_origin_regex: Optional[str] = None
+    gemini_api_key: Optional[str] = None
+    gemini_model: str = "gemini-3.5-flash-lite"
 
     @field_validator("database_url")
     @classmethod
