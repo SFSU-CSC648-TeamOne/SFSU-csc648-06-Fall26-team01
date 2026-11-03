@@ -1,0 +1,90 @@
+
+.page {
+  min-height: 100vh;
+  background: #101318;
+  color: #f4f5f7;
+  padding: 90px 7%;
+}
+
+.heading {
+  max-width: 750px;
+  margin-bottom: 65px;
+}
+
+.eyebrow,
+.label {
+  color: #7798ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.heading h1 {
+  font-size: clamp(48px, 8vw, 88px);
+  line-height: 0.95;
+  letter-spacing: -4px;
+  margin: 25px 0;
+}
+
+.heading h1 span {
+  color: #6688ff;
+}
+
+.heading p {
+  max-width: 520px;
+  color: #a3a9b5;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.catalog {
+  border: 1px solid #303744;
+  background: #171c24;
+  padding: 30px;
+  border-radius: 8px;
+}
+
+.catalogHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid #303744;
+  padding-bottom: 25px;
+  margin-bottom: 30px;
+}
+
+.catalogHeader h2 {
+  font-size: 25px;
+  margin: 10px 0 0;
+}
+
+.count {
+  color: #9ba3b1;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.searchContent {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 650px) {
+  .page {
+    padding: 55px 5%;
+  }
+
+  .catalog {
+    padding: 18px;
+  }
+
+  .catalogHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .heading h1 {
+    letter-spacing: -2px;
+  }
+}
