@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, displayName, type User } from "../lib/auth";
 import styles from "./ProfileForm.module.css";
+import { useRouter } from "next/navigation"; // For redirect after saving profile and first-time setup.
 
 // Matches GET/PUT /api/profile (user_profiles table). Equipment comes from GET /api/equipment as ids.
 type Profile = {
@@ -30,10 +31,17 @@ const LIMITS = ["Knee", "Lower back", "Shoulder", "Wrist"];
 
 const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
-type Props = { user: User | null; kicker: string; title: React.ReactNode; lead: string; submitLabel: string };
+type Props = { user: User | null; 
+  kicker: string; 
+  title: React.ReactNode; 
+  lead: string; 
+  submitLabel: string;
+  afterSaveHref?: string; // redirect after saving profile (first-time setup)
+  };
 
 /** Full-page profile editor, used by Profile setup (first time) and Profile (edit later). */
-export default function ProfileForm({ user, kicker, title, lead, submitLabel }: Props) {
+export default function ProfileForm({ user, kicker, title, lead, submitLabel, afterSaveHref, }: Props) {
+  const router = useRouter(); // For redirect after saving profile and first-time setup.
   const [p, setP] = useState<Profile>(EMPTY);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [existing, setExisting] = useState(false); // a profile was already saved before
@@ -56,14 +64,26 @@ export default function ProfileForm({ user, kicker, title, lead, submitLabel }: 
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true); setError("");
+    if (busy) return;
+
+    setBusy(true); 
+    setError("");
+    
     try {
-      await api("/profile", { method: "PUT", body: JSON.stringify(p) });
-      setSaved(true); setExisting(true); setToast(true);
+      await api("/profile", { method: "PUT", body: JSON.stringify(p), });
+      setSaved(true); 
+      setExisting(true); 
+
+      if (afterSaveHref) {router.replace(afterSaveHref); return;} // Redirect after saving profile (first-time setup)
+
+      setToast(true); 
+
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => setToast(false), 4000);
-    } catch (err) { setError(err instanceof Error ? err.message : "Could not save"); }
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not save Profile");
+    } finally {
     setBusy(false);
+    }
   }
 
   const eqNames = useMemo(() => equipment.filter((q) => p.equipment_ids.includes(q.id)).map((q) => q.name), [equipment, p.equipment_ids]);
