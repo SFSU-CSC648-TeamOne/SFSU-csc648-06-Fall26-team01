@@ -7,3 +7,4 @@ out/
 /tsconfig.tsbuildinfo
 /AGENTS.md
 /CLAUDE.md
+.DS_Store
