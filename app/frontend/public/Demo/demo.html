@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Ascenda Programs</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0a0d14;
+            font-family: system-ui, sans-serif
+        }
+
+        .top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 24px;
+            border-bottom: 1px solid #243047;
+            color: #e8ecf4
+        }
+
+        .top nav {
+            margin-left: auto;
+            display: flex;
+            gap: 22px;
+            font-size: 14px;
+            color: #8e9bb3
+        }
+
+        .top nav .on {
+            color: #3b82f6
+        }
+
+        .top b {
+            letter-spacing: .14em
+        }
+
+        .page {
+            --bg: #0a0d14;
+            --panel: #121722;
+            --panel2: #181f2e;
+            --line: #243047;
+            --text: #e8ecf4;
+            --mute: #8e9bb3;
+            --blue: #3b82f6;
+            --green: #34d399;
+            --cream: #f3ead7;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 32px 20px 64px;
+            max-width: 1200px;
+            margin: 0 auto
+        }
+
+        .page button {
+            font: inherit;
+            color: inherit;
+            cursor: pointer
+        }
+
+        .kicker,
+        .label {
+            font-family: ui-monospace, Menlo, monospace;
+            font-size: 11px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--mute);
+            margin: 0
+        }
+
+        .h1 {
+            font-size: clamp(28px, 4vw, 44px);
+            font-weight: 800;
+            text-transform: uppercase;
+            line-height: 1.05;
+            margin: 0
+        }
+
+        .h2 {
+            font-size: 22px;
+            margin: 4px 0
+        }
+
+        .accent {
+            color: var(--blue);
+            display: block
+        }
+
+        .lead {
+            color: var(--mute);
+            max-width: 560px
+        }
+
+        .back {
+            color: var(--mute);
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+            margin-bottom: 16px
+        }
+
+        .pageHead {
+            margin-bottom: 28px
+        }
+
+        .cardGrid {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px
+        }
+
+        .programCard {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 24px;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color .15s, transform .15s
+        }
+
+        .programCard:hover {
+            border-color: var(--blue);
+            transform: translateY(-2px)
+        }
+
+        .programCode {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--blue)
+        }
+
+        .programName {
+            font-size: 20px;
+            font-weight: 700
+        }
+
+        .programTag {
+            color: var(--mute)
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px
+        }
+
+        .chip {
+            font-family: ui-monospace, monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 4px 10px;
+            color: var(--mute)
+        }
+
+        .cta {
+            color: var(--green);
+            font-weight: 600;
+            margin-top: 6px
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 28px;
+            align-items: start
+        }
+
+        @media(max-width:860px) {
+            .layout {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .info {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            position: sticky;
+            top: 16px
+        }
+
+        @media(max-width:860px) {
+            .info {
+                position: static
+            }
+        }
+
+        .hero {
+            height: 160px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1d3a8a, #0a0d14);
+            display: grid;
+            place-items: center
+        }
+
+        .heroCode {
+            font-size: 56px;
+            font-weight: 800;
+            letter-spacing: .04em
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 0
+        }
+
+        .stats div {
+            background: var(--panel2);
+            border-radius: 8px;
+            padding: 10px
+        }
+
+        .stats dt {
+            font-family: ui-monospace, monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: var(--mute)
+        }
+
+        .stats dd {
+            margin: 2px 0 0;
+            font-weight: 700
+        }
+
+        .equipLine {
+            margin: 0;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px
+        }
+
+        .details {
+            margin: 0;
+            font-size: 14px;
+            color: var(--mute);
+            line-height: 1.5
+        }
+
+        .linkBtn {
+            background: none;
+            border: 0;
+            padding: 0;
+            color: var(--blue);
+            text-decoration: underline
+        }
+
+        .progressWrap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px
+        }
+
+        .progressTop {
+            display: flex;
+            justify-content: space-between
+        }
+
+        .bar {
+            height: 6px;
+            background: var(--panel2);
+            border-radius: 99px;
+            overflow: hidden
+        }
+
+        .barFill {
+            height: 100%;
+            background: var(--green);
+            transition: width .3s
+        }
+
+        .content {
+            min-width: 0
+        }
+
+        .titleRow {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 18px
+        }
+
+        .toggle {
+            display: flex;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            overflow: hidden;
+            flex-shrink: 0
+        }
+
+        .toggle button {
+            background: none;
+            border: 0;
+            padding: 8px 16px;
+            font-size: 13px;
+            color: var(--mute)
+        }
+
+        .toggleOn {
+            background: var(--blue) !important;
+            color: #fff !important
+        }
+
+        .stripWrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px
+        }
+
+        .arrow {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+            font-size: 20px;
+            line-height: 1
+        }
+
+        .strip {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            flex: 1;
+            padding: 2px
+        }
+
+        .strip::-webkit-scrollbar {
+            display: none
+        }
+
+        .dayTab {
+            flex-shrink: 0;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 8px 16px;
+            font-size: 13px;
+            white-space: nowrap
+        }
+
+        .dayTabOn {
+            background: var(--blue) !important;
+            border-color: var(--blue) !important;
+            color: #fff
+        }
+
+        .dayTabRest {
+            color: var(--mute);
+            border-style: dashed
+        }
+
+        .dayTabDone {
+            border-color: var(--green)
+        }
+
+        .dayCard {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 22px
+        }
+
+        .dayHead {
+            margin-bottom: 18px
+        }
+
+        .meta {
+            color: var(--mute);
+            font-size: 14px;
+            margin: 4px 0 0
+        }
+
+        .timeline {
+            list-style: none;
+            margin: 0;
+            padding: 0 0 0 4px;
+            position: relative
+        }
+
+        .timeline::before {
+            content: "";
+            position: absolute;
+            left: 17px;
+            top: 10px;
+            bottom: 10px;
+            width: 2px;
+            background: var(--line)
+        }
+
+        .tItem {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 14px;
+            position: relative
+        }
+
+        .marker,
+        .markerOn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 2px solid var(--line);
+            background: var(--bg);
+            display: grid;
+            place-items: center;
+            font-size: 14px;
+            z-index: 1
+        }
+
+        .markerOn {
+            background: var(--green);
+            border-color: var(--green);
+            color: #052e1d
+        }
+
+        .pillRow {
+            margin: 0 0 14px 42px
+        }
+
+        .pillDone,
+        .pillOpt {
+            font-family: ui-monospace, monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            padding: 5px 14px;
+            border-radius: 999px;
+            display: inline-block
+        }
+
+        .pillDone {
+            background: rgba(52, 211, 153, .15);
+            color: var(--green)
+        }
+
+        .pillOpt {
+            background: var(--cream);
+            color: #2b2414
+        }
+
+        .workoutCard {
+            flex: 1;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            background: var(--panel2);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 10px 14px 10px 10px;
+            min-width: 0
+        }
+
+        .cardThumb {
+            position: relative;
+            width: 84px;
+            height: 64px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #1e3a8a, #111827);
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            font-size: 20px;
+            flex-shrink: 0
+        }
+
+        .badge {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            font-size: 10px;
+            background: rgba(0, 0, 0, .65);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 500
+        }
+
+        .cardBody {
+            flex: 1;
+            min-width: 0
+        }
+
+        .cardBody h3 {
+            margin: 0;
+            font-size: 15px
+        }
+
+        .cardBody p {
+            margin: 2px 0 0;
+            font-size: 13px;
+            color: var(--mute)
+        }
+
+        .equip {
+            font-size: 12px !important
+        }
+
+        .optTag {
+            font-size: 11px;
+            color: var(--cream);
+            font-weight: 400
+        }
+
+        .info2 {
+            width: 26px;
+            height: 26px;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 13px;
+            font-style: italic;
+            color: var(--mute);
+            text-decoration: none;
+            flex-shrink: 0
+        }
+
+        .info2:hover {
+            border-color: var(--blue);
+            color: var(--blue)
+        }
+
+        .completeRow {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px solid var(--line)
+        }
+
+        .dateLabel {
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        .dateLabel input {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 9px 12px;
+            font: inherit;
+            color-scheme: dark
+        }
+
+        .btnPrimary,
+        .btnGhost {
+            border-radius: 10px;
+            padding: 12px 22px;
+            font-weight: 700;
+            border: 1px solid var(--blue)
+        }
+
+        .btnPrimary {
+            background: var(--blue);
+            color: #fff
+        }
+
+        .btnGhost {
+            background: none
+        }
+
+        .restBox {
+            background: var(--panel2);
+            border-radius: 10px;
+            padding: 24px;
+            color: var(--mute);
+            text-align: center
+        }
+
+        .pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px
+        }
+
+        .pill,
+        .pillOn {
+            border-radius: 999px;
+            padding: 8px 18px;
+            font-family: ui-monospace, monospace;
+            font-size: 12px;
+            letter-spacing: .06em;
+            border: 1px solid var(--line);
+            background: var(--panel)
+        }
+
+        .pillOn {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: #fff
+        }
+
+        .banner {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--blue);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: var(--mute);
+            margin: 0 0 18px
+        }
+
+        .weekHead {
+            font-family: ui-monospace, monospace;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: .12em;
+            color: var(--mute);
+            margin: 22px 0 10px
+        }
+
+        .listGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 14px
+        }
+
+        .listCard {
+            text-align: left;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        button.listCard:hover {
+            border-color: var(--blue)
+        }
+
+        .listCard h4 {
+            margin: 0;
+            font-size: 16px
+        }
+
+        .listRest {
+            border-style: dashed;
+            background: transparent
+        }
+
+        .restTitle {
+            margin: 0;
+            font-weight: 700;
+            color: var(--mute)
+        }
+
+        .metaSmall {
+            margin: 0;
+            font-size: 12px;
+            color: var(--mute)
+        }
+
+        .tick {
+            color: var(--green)
+        }
+
+        .thumbs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px
+        }
+
+        .thumb {
+            width: 38px;
+            height: 38px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #1e3a8a, #111827);
+            display: grid;
+            place-items: center;
+            font-size: 11px;
+            font-weight: 700
+        }
+
+        .page {
+            margin: 0 auto
+        }
+
+        .hide {
+            display: none !important
+        }
+    </style>
+</head>
+
+<body>
+    <header class="top"><span style="font-size:22px">☰</span><b>ASCENDA</b>
+        <nav><span>Home</span><span>Exercises</span><span
+                class="on">Programs</span><span>Progress</span><span>Profile</span></nav>
+    </header>
+    <div id="app"></div>
+    <script>
+        const DATA = { "bw": { "program": { "name": "BW", "fullName": "Body-Weight Program", "tagline": "No equipment. Train anywhere.", "description": "Ten body-weight exercises combined into five training days a week for four weeks. Sets, reps and session length increase each week.", "equipment": ["No equipment", "Exercise mat (optional)", "Bench or chair"] }, "days": [{ "week": 1, "day": 1, "number": 1, "rest": false, "title": "Upper Body Push", "focus": "Chest, shoulders, triceps", "exercises": [{ "key": "w1-d1-push-up", "exercise": { "id": "push-up", "name": "Push-Up", "muscle": "Chest", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d1-pike-push-up", "exercise": { "id": "pike-push-up", "name": "Pike Push-Up", "muscle": "Shoulders", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d1-bench-dip", "exercise": { "id": "bench-dip", "name": "Bench Dip", "muscle": "Triceps", "equipment": "Bench", "baseMinutes": 4 }, "role": "core", "sets": 3, "reps": 10, "minutes": 4 }, { "key": "w1-d1-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 3 }, { "key": "w1-d1-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 4 }], "coreMinutes": 14, "optionalMinutes": 7, "totalMinutes": 21 }, { "week": 1, "day": 2, "number": 2, "rest": false, "title": "Lower Body", "focus": "Legs and glutes", "exercises": [{ "key": "w1-d2-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d2-reverse-lunge", "exercise": { "id": "reverse-lunge", "name": "Reverse Lunge", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d2-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 3, "reps": 10, "minutes": 4 }, { "key": "w1-d2-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d2-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 3 }], "coreMinutes": 14, "optionalMinutes": 8, "totalMinutes": 22 }, { "week": 1, "day": 3, "number": 3, "rest": false, "title": "Core and Back", "focus": "Core stability and posture", "exercises": [{ "key": "w1-d3-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "core", "sets": 3, "reps": 10, "minutes": 3 }, { "key": "w1-d3-bird-dog", "exercise": { "id": "bird-dog", "name": "Bird Dog", "muscle": "Back", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 3, "reps": 10, "minutes": 4 }, { "key": "w1-d3-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 3, "reps": 10, "minutes": 4 }, { "key": "w1-d3-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 4 }, { "key": "w1-d3-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 5 }], "coreMinutes": 11, "optionalMinutes": 9, "totalMinutes": 20 }, { "week": 1, "day": 4, "number": 4, "rest": false, "title": "Full Body", "focus": "Whole-body strength", "exercises": [{ "key": "w1-d4-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d4-push-up", "exercise": { "id": "push-up", "name": "Push-Up", "muscle": "Chest", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d4-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d4-reverse-lunge", "exercise": { "id": "reverse-lunge", "name": "Reverse Lunge", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d4-bird-dog", "exercise": { "id": "bird-dog", "name": "Bird Dog", "muscle": "Back", "equipment": "Mat", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 4 }, { "key": "w1-d4-bench-dip", "exercise": { "id": "bench-dip", "name": "Bench Dip", "muscle": "Triceps", "equipment": "Bench", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 4 }], "coreMinutes": 15, "optionalMinutes": 13, "totalMinutes": 28 }, { "week": 1, "day": 5, "number": 5, "rest": false, "title": "Conditioning", "focus": "Endurance and core", "exercises": [{ "key": "w1-d5-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "core", "sets": 3, "reps": 10, "minutes": 4 }, { "key": "w1-d5-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d5-pike-push-up", "exercise": { "id": "pike-push-up", "name": "Pike Push-Up", "muscle": "Shoulders", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d5-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d5-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 3 }, { "key": "w1-d5-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 4 }], "coreMinutes": 14, "optionalMinutes": 12, "totalMinutes": 26 }, { "week": 1, "day": 6, "number": 6, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 1, "day": 7, "number": 7, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 2, "day": 1, "number": 8, "rest": false, "title": "Upper Body Push", "focus": "Chest, shoulders, triceps", "exercises": [{ "key": "w2-d1-push-up", "exercise": { "id": "push-up", "name": "Push-Up", "muscle": "Chest", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d1-pike-push-up", "exercise": { "id": "pike-push-up", "name": "Pike Push-Up", "muscle": "Shoulders", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d1-bench-dip", "exercise": { "id": "bench-dip", "name": "Bench Dip", "muscle": "Triceps", "equipment": "Bench", "baseMinutes": 4 }, "role": "core", "sets": 3, "reps": 12, "minutes": 4 }, { "key": "w2-d1-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 3 }, { "key": "w2-d1-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 4 }], "coreMinutes": 16, "optionalMinutes": 7, "totalMinutes": 23 }, { "week": 2, "day": 2, "number": 9, "rest": false, "title": "Lower Body", "focus": "Legs and glutes", "exercises": [{ "key": "w2-d2-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d2-reverse-lunge", "exercise": { "id": "reverse-lunge", "name": "Reverse Lunge", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d2-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 3, "reps": 12, "minutes": 4 }, { "key": "w2-d2-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d2-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 3 }], "coreMinutes": 16, "optionalMinutes": 9, "totalMinutes": 25 }, { "week": 2, "day": 3, "number": 10, "rest": false, "title": "Core and Back", "focus": "Core stability and posture", "exercises": [{ "key": "w2-d3-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "core", "sets": 3, "reps": 12, "minutes": 3 }, { "key": "w2-d3-bird-dog", "exercise": { "id": "bird-dog", "name": "Bird Dog", "muscle": "Back", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 3, "reps": 12, "minutes": 4 }, { "key": "w2-d3-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 3, "reps": 12, "minutes": 4 }, { "key": "w2-d3-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 4 }, { "key": "w2-d3-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 6 }], "coreMinutes": 11, "optionalMinutes": 10, "totalMinutes": 21 }, { "week": 2, "day": 4, "number": 11, "rest": false, "title": "Full Body", "focus": "Whole-body strength", "exercises": [{ "key": "w2-d4-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d4-push-up", "exercise": { "id": "push-up", "name": "Push-Up", "muscle": "Chest", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d4-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d4-reverse-lunge", "exercise": { "id": "reverse-lunge", "name": "Reverse Lunge", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d4-bird-dog", "exercise": { "id": "bird-dog", "name": "Bird Dog", "muscle": "Back", "equipment": "Mat", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 4 }, { "key": "w2-d4-bench-dip", "exercise": { "id": "bench-dip", "name": "Bench Dip", "muscle": "Triceps", "equipment": "Bench", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 4 }], "coreMinutes": 18, "optionalMinutes": 14, "totalMinutes": 32 }, { "week": 2, "day": 5, "number": 12, "rest": false, "title": "Conditioning", "focus": "Endurance and core", "exercises": [{ "key": "w2-d5-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "core", "sets": 3, "reps": 12, "minutes": 4 }, { "key": "w2-d5-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d5-pike-push-up", "exercise": { "id": "pike-push-up", "name": "Pike Push-Up", "muscle": "Shoulders", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d5-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 6 }, { "key": "w2-d5-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 3 }, { "key": "w2-d5-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 12, "minutes": 4 }], "coreMinutes": 16, "optionalMinutes": 13, "totalMinutes": 29 }, { "week": 2, "day": 6, "number": 13, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 2, "day": 7, "number": 14, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 3, "day": 1, "number": 15, "rest": false, "title": "Upper Body Push", "focus": "Chest, shoulders, triceps", "exercises": [{ "key": "w3-d1-push-up", "exercise": { "id": "push-up", "name": "Push-Up", "muscle": "Chest", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d1-pike-push-up", "exercise": { "id": "pike-push-up", "name": "Pike Push-Up", "muscle": "Shoulders", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d1-bench-dip", "exercise": { "id": "bench-dip", "name": "Bench Dip", "muscle": "Triceps", "equipment": "Bench", "baseMinutes": 4 }, "role": "core", "sets": 4, "reps": 10, "minutes": 5 }, { "key": "w3-d1-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 4 }, { "key": "w3-d1-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 5 }], "coreMinutes": 17, "optionalMinutes": 9, "totalMinutes": 26 }, { "week": 3, "day": 2, "number": 16, "rest": false, "title": "Lower Body", "focus": "Legs and glutes", "exercises": [{ "key": "w3-d2-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d2-reverse-lunge", "exercise": { "id": "reverse-lunge", "name": "Reverse Lunge", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d2-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 4, "reps": 10, "minutes": 5 }, { "key": "w3-d2-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d2-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 4 }], "coreMinutes": 17, "optionalMinutes": 10, "totalMinutes": 27 }, { "week": 3, "day": 3, "number": 17, "rest": false, "title": "Core and Back", "focus": "Core stability and posture", "exercises": [{ "key": "w3-d3-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "core", "sets": 4, "reps": 10, "minutes": 4 }, { "key": "w3-d3-bird-dog", "exercise": { "id": "bird-dog", "name": "Bird Dog", "muscle": "Back", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 4, "reps": 10, "minutes": 5 }, { "key": "w3-d3-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 4, "reps": 10, "minutes": 5 }, { "key": "w3-d3-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 5 }, { "key": "w3-d3-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 6 }], "coreMinutes": 14, "optionalMinutes": 11, "totalMinutes": 25 }, { "week": 3, "day": 4, "number": 18, "rest": false, "title": "Full Body", "focus": "Whole-body strength", "exercises": [{ "key": "w3-d4-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d4-push-up", "exercise": { "id": "push-up", "name": "Push-Up", "muscle": "Chest", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d4-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d4-reverse-lunge", "exercise": { "id": "reverse-lunge", "name": "Reverse Lunge", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d4-bird-dog", "exercise": { "id": "bird-dog", "name": "Bird Dog", "muscle": "Back", "equipment": "Mat", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 5 }, { "key": "w3-d4-bench-dip", "exercise": { "id": "bench-dip", "name": "Bench Dip", "muscle": "Triceps", "equipment": "Bench", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 5 }], "coreMinutes": 18, "optionalMinutes": 16, "totalMinutes": 34 }, { "week": 3, "day": 5, "number": 19, "rest": false, "title": "Conditioning", "focus": "Endurance and core", "exercises": [{ "key": "w3-d5-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "core", "sets": 4, "reps": 10, "minutes": 5 }, { "key": "w3-d5-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d5-pike-push-up", "exercise": { "id": "pike-push-up", "name": "Pike Push-Up", "muscle": "Shoulders", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d5-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 6 }, { "key": "w3-d5-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 4 }, { "key": "w3-d5-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 10, "minutes": 5 }], "coreMinutes": 17, "optionalMinutes": 15, "totalMinutes": 32 }, { "week": 3, "day": 6, "number": 20, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 3, "day": 7, "number": 21, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 4, "day": 1, "number": 22, "rest": false, "title": "Upper Body Push", "focus": "Chest, shoulders, triceps", "exercises": [{ "key": "w4-d1-push-up", "exercise": { "id": "push-up", "name": "Push-Up", "muscle": "Chest", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d1-pike-push-up", "exercise": { "id": "pike-push-up", "name": "Pike Push-Up", "muscle": "Shoulders", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d1-bench-dip", "exercise": { "id": "bench-dip", "name": "Bench Dip", "muscle": "Triceps", "equipment": "Bench", "baseMinutes": 4 }, "role": "core", "sets": 4, "reps": 12, "minutes": 5 }, { "key": "w4-d1-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 4 }, { "key": "w4-d1-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 5 }], "coreMinutes": 19, "optionalMinutes": 9, "totalMinutes": 28 }, { "week": 4, "day": 2, "number": 23, "rest": false, "title": "Lower Body", "focus": "Legs and glutes", "exercises": [{ "key": "w4-d2-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d2-reverse-lunge", "exercise": { "id": "reverse-lunge", "name": "Reverse Lunge", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d2-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 4, "reps": 12, "minutes": 5 }, { "key": "w4-d2-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d2-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 4 }], "coreMinutes": 19, "optionalMinutes": 11, "totalMinutes": 30 }, { "week": 4, "day": 3, "number": 24, "rest": false, "title": "Core and Back", "focus": "Core stability and posture", "exercises": [{ "key": "w4-d3-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "core", "sets": 4, "reps": 12, "minutes": 4 }, { "key": "w4-d3-bird-dog", "exercise": { "id": "bird-dog", "name": "Bird Dog", "muscle": "Back", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 4, "reps": 12, "minutes": 5 }, { "key": "w4-d3-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "core", "sets": 4, "reps": 12, "minutes": 5 }, { "key": "w4-d3-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 5 }, { "key": "w4-d3-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 7 }], "coreMinutes": 14, "optionalMinutes": 12, "totalMinutes": 26 }, { "week": 4, "day": 4, "number": 25, "rest": false, "title": "Full Body", "focus": "Whole-body strength", "exercises": [{ "key": "w4-d4-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d4-push-up", "exercise": { "id": "push-up", "name": "Push-Up", "muscle": "Chest", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d4-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d4-reverse-lunge", "exercise": { "id": "reverse-lunge", "name": "Reverse Lunge", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d4-bird-dog", "exercise": { "id": "bird-dog", "name": "Bird Dog", "muscle": "Back", "equipment": "Mat", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 5 }, { "key": "w4-d4-bench-dip", "exercise": { "id": "bench-dip", "name": "Bench Dip", "muscle": "Triceps", "equipment": "Bench", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 5 }], "coreMinutes": 21, "optionalMinutes": 17, "totalMinutes": 38 }, { "week": 4, "day": 5, "number": 26, "rest": false, "title": "Conditioning", "focus": "Endurance and core", "exercises": [{ "key": "w4-d5-mountain-climbers", "exercise": { "id": "mountain-climbers", "name": "Mountain Climbers", "muscle": "Core", "equipment": "None", "baseMinutes": 4 }, "role": "core", "sets": 4, "reps": 12, "minutes": 5 }, { "key": "w4-d5-burpee", "exercise": { "id": "burpee", "name": "Burpee", "muscle": "Full body", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d5-pike-push-up", "exercise": { "id": "pike-push-up", "name": "Pike Push-Up", "muscle": "Shoulders", "equipment": "None", "baseMinutes": 5 }, "role": "core", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d5-bodyweight-squat", "exercise": { "id": "bodyweight-squat", "name": "Bodyweight Squat", "muscle": "Legs", "equipment": "None", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 7 }, { "key": "w4-d5-plank", "exercise": { "id": "plank", "name": "Plank", "muscle": "Core", "equipment": "Mat", "baseMinutes": 3 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 4 }, { "key": "w4-d5-glute-bridge", "exercise": { "id": "glute-bridge", "name": "Glute Bridge", "muscle": "Glutes", "equipment": "Mat", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 12, "minutes": 5 }], "coreMinutes": 19, "optionalMinutes": 16, "totalMinutes": 35 }, { "week": 4, "day": 6, "number": 27, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 4, "day": 7, "number": 28, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }] }, "ldw": { "program": { "name": "LDW", "fullName": "Loaded / Weights Program", "tagline": "Barbells, dumbbells and cables.", "description": "Ten weighted exercises combined into five training days a week for four weeks. Load goes up as reps come down from week 2 to week 4.", "equipment": ["Barbell", "Dumbbells", "Cable machine", "Bench"] }, "days": [{ "week": 1, "day": 1, "number": 1, "rest": false, "title": "Push", "focus": "Chest, shoulders, triceps", "exercises": [{ "key": "w1-d1-barbell-bench-press", "exercise": { "id": "barbell-bench-press", "name": "Barbell Bench Press", "muscle": "Chest", "equipment": "Barbell, bench", "baseMinutes": 7 }, "role": "core", "sets": 3, "reps": 10, "minutes": 7 }, { "key": "w1-d1-dumbbell-shoulder-press", "exercise": { "id": "dumbbell-shoulder-press", "name": "Dumbbell Shoulder Press", "muscle": "Shoulders", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 10, "minutes": 6 }, { "key": "w1-d1-cable-fly", "exercise": { "id": "cable-fly", "name": "Cable Fly", "muscle": "Chest", "equipment": "Cable machine", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 5 }, { "key": "w1-d1-triceps-pushdown", "exercise": { "id": "triceps-pushdown", "name": "Triceps Pushdown", "muscle": "Triceps", "equipment": "Cable machine", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 4 }], "coreMinutes": 13, "optionalMinutes": 9, "totalMinutes": 22 }, { "week": 1, "day": 2, "number": 2, "rest": false, "title": "Pull", "focus": "Back and biceps", "exercises": [{ "key": "w1-d2-lat-pulldown", "exercise": { "id": "lat-pulldown", "name": "Lat Pulldown", "muscle": "Back", "equipment": "Cable machine", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 10, "minutes": 6 }, { "key": "w1-d2-dumbbell-row", "exercise": { "id": "dumbbell-row", "name": "Dumbbell Row", "muscle": "Back", "equipment": "Dumbbell, bench", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 10, "minutes": 6 }, { "key": "w1-d2-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 7 }, { "key": "w1-d2-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 4 }], "coreMinutes": 12, "optionalMinutes": 11, "totalMinutes": 23 }, { "week": 1, "day": 3, "number": 3, "rest": false, "title": "Legs", "focus": "Quads, hamstrings, glutes", "exercises": [{ "key": "w1-d3-barbell-back-squat", "exercise": { "id": "barbell-back-squat", "name": "Barbell Back Squat", "muscle": "Legs", "equipment": "Barbell, rack", "baseMinutes": 7 }, "role": "core", "sets": 3, "reps": 10, "minutes": 7 }, { "key": "w1-d3-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "core", "sets": 3, "reps": 10, "minutes": 7 }, { "key": "w1-d3-dumbbell-lunge", "exercise": { "id": "dumbbell-lunge", "name": "Dumbbell Lunge", "muscle": "Legs", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 10, "minutes": 6 }, { "key": "w1-d3-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 4 }], "coreMinutes": 20, "optionalMinutes": 4, "totalMinutes": 24 }, { "week": 1, "day": 4, "number": 4, "rest": false, "title": "Upper Body", "focus": "Chest, back, arms", "exercises": [{ "key": "w1-d4-barbell-bench-press", "exercise": { "id": "barbell-bench-press", "name": "Barbell Bench Press", "muscle": "Chest", "equipment": "Barbell, bench", "baseMinutes": 7 }, "role": "core", "sets": 3, "reps": 10, "minutes": 7 }, { "key": "w1-d4-lat-pulldown", "exercise": { "id": "lat-pulldown", "name": "Lat Pulldown", "muscle": "Back", "equipment": "Cable machine", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 10, "minutes": 6 }, { "key": "w1-d4-dumbbell-shoulder-press", "exercise": { "id": "dumbbell-shoulder-press", "name": "Dumbbell Shoulder Press", "muscle": "Shoulders", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 6 }, { "key": "w1-d4-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 4 }, { "key": "w1-d4-triceps-pushdown", "exercise": { "id": "triceps-pushdown", "name": "Triceps Pushdown", "muscle": "Triceps", "equipment": "Cable machine", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 4 }], "coreMinutes": 13, "optionalMinutes": 14, "totalMinutes": 27 }, { "week": 1, "day": 5, "number": 5, "rest": false, "title": "Lower and Pull", "focus": "Legs and back", "exercises": [{ "key": "w1-d5-barbell-back-squat", "exercise": { "id": "barbell-back-squat", "name": "Barbell Back Squat", "muscle": "Legs", "equipment": "Barbell, rack", "baseMinutes": 7 }, "role": "core", "sets": 3, "reps": 10, "minutes": 7 }, { "key": "w1-d5-dumbbell-lunge", "exercise": { "id": "dumbbell-lunge", "name": "Dumbbell Lunge", "muscle": "Legs", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 10, "minutes": 6 }, { "key": "w1-d5-dumbbell-row", "exercise": { "id": "dumbbell-row", "name": "Dumbbell Row", "muscle": "Back", "equipment": "Dumbbell, bench", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 10, "minutes": 6 }, { "key": "w1-d5-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 7 }, { "key": "w1-d5-cable-fly", "exercise": { "id": "cable-fly", "name": "Cable Fly", "muscle": "Chest", "equipment": "Cable machine", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 10, "minutes": 5 }], "coreMinutes": 19, "optionalMinutes": 12, "totalMinutes": 31 }, { "week": 1, "day": 6, "number": 6, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 1, "day": 7, "number": 7, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 2, "day": 1, "number": 8, "rest": false, "title": "Push", "focus": "Chest, shoulders, triceps", "exercises": [{ "key": "w2-d1-barbell-bench-press", "exercise": { "id": "barbell-bench-press", "name": "Barbell Bench Press", "muscle": "Chest", "equipment": "Barbell, bench", "baseMinutes": 7 }, "role": "core", "sets": 3, "reps": 8, "minutes": 7 }, { "key": "w2-d1-dumbbell-shoulder-press", "exercise": { "id": "dumbbell-shoulder-press", "name": "Dumbbell Shoulder Press", "muscle": "Shoulders", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 8, "minutes": 6 }, { "key": "w2-d1-cable-fly", "exercise": { "id": "cable-fly", "name": "Cable Fly", "muscle": "Chest", "equipment": "Cable machine", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 8, "minutes": 5 }, { "key": "w2-d1-triceps-pushdown", "exercise": { "id": "triceps-pushdown", "name": "Triceps Pushdown", "muscle": "Triceps", "equipment": "Cable machine", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 8, "minutes": 4 }], "coreMinutes": 13, "optionalMinutes": 9, "totalMinutes": 22 }, { "week": 2, "day": 2, "number": 9, "rest": false, "title": "Pull", "focus": "Back and biceps", "exercises": [{ "key": "w2-d2-lat-pulldown", "exercise": { "id": "lat-pulldown", "name": "Lat Pulldown", "muscle": "Back", "equipment": "Cable machine", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 8, "minutes": 6 }, { "key": "w2-d2-dumbbell-row", "exercise": { "id": "dumbbell-row", "name": "Dumbbell Row", "muscle": "Back", "equipment": "Dumbbell, bench", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 8, "minutes": 6 }, { "key": "w2-d2-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "accessory", "sets": 3, "reps": 8, "minutes": 7 }, { "key": "w2-d2-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 8, "minutes": 4 }], "coreMinutes": 12, "optionalMinutes": 11, "totalMinutes": 23 }, { "week": 2, "day": 3, "number": 10, "rest": false, "title": "Legs", "focus": "Quads, hamstrings, glutes", "exercises": [{ "key": "w2-d3-barbell-back-squat", "exercise": { "id": "barbell-back-squat", "name": "Barbell Back Squat", "muscle": "Legs", "equipment": "Barbell, rack", "baseMinutes": 7 }, "role": "core", "sets": 3, "reps": 8, "minutes": 7 }, { "key": "w2-d3-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "core", "sets": 3, "reps": 8, "minutes": 7 }, { "key": "w2-d3-dumbbell-lunge", "exercise": { "id": "dumbbell-lunge", "name": "Dumbbell Lunge", "muscle": "Legs", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 8, "minutes": 6 }, { "key": "w2-d3-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 8, "minutes": 4 }], "coreMinutes": 20, "optionalMinutes": 4, "totalMinutes": 24 }, { "week": 2, "day": 4, "number": 11, "rest": false, "title": "Upper Body", "focus": "Chest, back, arms", "exercises": [{ "key": "w2-d4-barbell-bench-press", "exercise": { "id": "barbell-bench-press", "name": "Barbell Bench Press", "muscle": "Chest", "equipment": "Barbell, bench", "baseMinutes": 7 }, "role": "core", "sets": 3, "reps": 8, "minutes": 7 }, { "key": "w2-d4-lat-pulldown", "exercise": { "id": "lat-pulldown", "name": "Lat Pulldown", "muscle": "Back", "equipment": "Cable machine", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 8, "minutes": 6 }, { "key": "w2-d4-dumbbell-shoulder-press", "exercise": { "id": "dumbbell-shoulder-press", "name": "Dumbbell Shoulder Press", "muscle": "Shoulders", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "accessory", "sets": 3, "reps": 8, "minutes": 6 }, { "key": "w2-d4-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 8, "minutes": 4 }, { "key": "w2-d4-triceps-pushdown", "exercise": { "id": "triceps-pushdown", "name": "Triceps Pushdown", "muscle": "Triceps", "equipment": "Cable machine", "baseMinutes": 4 }, "role": "accessory", "sets": 3, "reps": 8, "minutes": 4 }], "coreMinutes": 13, "optionalMinutes": 14, "totalMinutes": 27 }, { "week": 2, "day": 5, "number": 12, "rest": false, "title": "Lower and Pull", "focus": "Legs and back", "exercises": [{ "key": "w2-d5-barbell-back-squat", "exercise": { "id": "barbell-back-squat", "name": "Barbell Back Squat", "muscle": "Legs", "equipment": "Barbell, rack", "baseMinutes": 7 }, "role": "core", "sets": 3, "reps": 8, "minutes": 7 }, { "key": "w2-d5-dumbbell-lunge", "exercise": { "id": "dumbbell-lunge", "name": "Dumbbell Lunge", "muscle": "Legs", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 8, "minutes": 6 }, { "key": "w2-d5-dumbbell-row", "exercise": { "id": "dumbbell-row", "name": "Dumbbell Row", "muscle": "Back", "equipment": "Dumbbell, bench", "baseMinutes": 6 }, "role": "core", "sets": 3, "reps": 8, "minutes": 6 }, { "key": "w2-d5-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "accessory", "sets": 3, "reps": 8, "minutes": 7 }, { "key": "w2-d5-cable-fly", "exercise": { "id": "cable-fly", "name": "Cable Fly", "muscle": "Chest", "equipment": "Cable machine", "baseMinutes": 5 }, "role": "accessory", "sets": 3, "reps": 8, "minutes": 5 }], "coreMinutes": 19, "optionalMinutes": 12, "totalMinutes": 31 }, { "week": 2, "day": 6, "number": 13, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 2, "day": 7, "number": 14, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 3, "day": 1, "number": 15, "rest": false, "title": "Push", "focus": "Chest, shoulders, triceps", "exercises": [{ "key": "w3-d1-barbell-bench-press", "exercise": { "id": "barbell-bench-press", "name": "Barbell Bench Press", "muscle": "Chest", "equipment": "Barbell, bench", "baseMinutes": 7 }, "role": "core", "sets": 4, "reps": 8, "minutes": 8 }, { "key": "w3-d1-dumbbell-shoulder-press", "exercise": { "id": "dumbbell-shoulder-press", "name": "Dumbbell Shoulder Press", "muscle": "Shoulders", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 8, "minutes": 7 }, { "key": "w3-d1-cable-fly", "exercise": { "id": "cable-fly", "name": "Cable Fly", "muscle": "Chest", "equipment": "Cable machine", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 8, "minutes": 6 }, { "key": "w3-d1-triceps-pushdown", "exercise": { "id": "triceps-pushdown", "name": "Triceps Pushdown", "muscle": "Triceps", "equipment": "Cable machine", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 8, "minutes": 5 }], "coreMinutes": 15, "optionalMinutes": 11, "totalMinutes": 26 }, { "week": 3, "day": 2, "number": 16, "rest": false, "title": "Pull", "focus": "Back and biceps", "exercises": [{ "key": "w3-d2-lat-pulldown", "exercise": { "id": "lat-pulldown", "name": "Lat Pulldown", "muscle": "Back", "equipment": "Cable machine", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 8, "minutes": 7 }, { "key": "w3-d2-dumbbell-row", "exercise": { "id": "dumbbell-row", "name": "Dumbbell Row", "muscle": "Back", "equipment": "Dumbbell, bench", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 8, "minutes": 7 }, { "key": "w3-d2-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "accessory", "sets": 4, "reps": 8, "minutes": 8 }, { "key": "w3-d2-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 8, "minutes": 5 }], "coreMinutes": 14, "optionalMinutes": 13, "totalMinutes": 27 }, { "week": 3, "day": 3, "number": 17, "rest": false, "title": "Legs", "focus": "Quads, hamstrings, glutes", "exercises": [{ "key": "w3-d3-barbell-back-squat", "exercise": { "id": "barbell-back-squat", "name": "Barbell Back Squat", "muscle": "Legs", "equipment": "Barbell, rack", "baseMinutes": 7 }, "role": "core", "sets": 4, "reps": 8, "minutes": 8 }, { "key": "w3-d3-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "core", "sets": 4, "reps": 8, "minutes": 8 }, { "key": "w3-d3-dumbbell-lunge", "exercise": { "id": "dumbbell-lunge", "name": "Dumbbell Lunge", "muscle": "Legs", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 8, "minutes": 7 }, { "key": "w3-d3-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 8, "minutes": 5 }], "coreMinutes": 23, "optionalMinutes": 5, "totalMinutes": 28 }, { "week": 3, "day": 4, "number": 18, "rest": false, "title": "Upper Body", "focus": "Chest, back, arms", "exercises": [{ "key": "w3-d4-barbell-bench-press", "exercise": { "id": "barbell-bench-press", "name": "Barbell Bench Press", "muscle": "Chest", "equipment": "Barbell, bench", "baseMinutes": 7 }, "role": "core", "sets": 4, "reps": 8, "minutes": 8 }, { "key": "w3-d4-lat-pulldown", "exercise": { "id": "lat-pulldown", "name": "Lat Pulldown", "muscle": "Back", "equipment": "Cable machine", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 8, "minutes": 7 }, { "key": "w3-d4-dumbbell-shoulder-press", "exercise": { "id": "dumbbell-shoulder-press", "name": "Dumbbell Shoulder Press", "muscle": "Shoulders", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "accessory", "sets": 4, "reps": 8, "minutes": 7 }, { "key": "w3-d4-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 8, "minutes": 5 }, { "key": "w3-d4-triceps-pushdown", "exercise": { "id": "triceps-pushdown", "name": "Triceps Pushdown", "muscle": "Triceps", "equipment": "Cable machine", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 8, "minutes": 5 }], "coreMinutes": 15, "optionalMinutes": 17, "totalMinutes": 32 }, { "week": 3, "day": 5, "number": 19, "rest": false, "title": "Lower and Pull", "focus": "Legs and back", "exercises": [{ "key": "w3-d5-barbell-back-squat", "exercise": { "id": "barbell-back-squat", "name": "Barbell Back Squat", "muscle": "Legs", "equipment": "Barbell, rack", "baseMinutes": 7 }, "role": "core", "sets": 4, "reps": 8, "minutes": 8 }, { "key": "w3-d5-dumbbell-lunge", "exercise": { "id": "dumbbell-lunge", "name": "Dumbbell Lunge", "muscle": "Legs", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 8, "minutes": 7 }, { "key": "w3-d5-dumbbell-row", "exercise": { "id": "dumbbell-row", "name": "Dumbbell Row", "muscle": "Back", "equipment": "Dumbbell, bench", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 8, "minutes": 7 }, { "key": "w3-d5-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "accessory", "sets": 4, "reps": 8, "minutes": 8 }, { "key": "w3-d5-cable-fly", "exercise": { "id": "cable-fly", "name": "Cable Fly", "muscle": "Chest", "equipment": "Cable machine", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 8, "minutes": 6 }], "coreMinutes": 22, "optionalMinutes": 14, "totalMinutes": 36 }, { "week": 3, "day": 6, "number": 20, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 3, "day": 7, "number": 21, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 4, "day": 1, "number": 22, "rest": false, "title": "Push", "focus": "Chest, shoulders, triceps", "exercises": [{ "key": "w4-d1-barbell-bench-press", "exercise": { "id": "barbell-bench-press", "name": "Barbell Bench Press", "muscle": "Chest", "equipment": "Barbell, bench", "baseMinutes": 7 }, "role": "core", "sets": 4, "reps": 6, "minutes": 8 }, { "key": "w4-d1-dumbbell-shoulder-press", "exercise": { "id": "dumbbell-shoulder-press", "name": "Dumbbell Shoulder Press", "muscle": "Shoulders", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 6, "minutes": 7 }, { "key": "w4-d1-cable-fly", "exercise": { "id": "cable-fly", "name": "Cable Fly", "muscle": "Chest", "equipment": "Cable machine", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 6, "minutes": 6 }, { "key": "w4-d1-triceps-pushdown", "exercise": { "id": "triceps-pushdown", "name": "Triceps Pushdown", "muscle": "Triceps", "equipment": "Cable machine", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 6, "minutes": 5 }], "coreMinutes": 15, "optionalMinutes": 11, "totalMinutes": 26 }, { "week": 4, "day": 2, "number": 23, "rest": false, "title": "Pull", "focus": "Back and biceps", "exercises": [{ "key": "w4-d2-lat-pulldown", "exercise": { "id": "lat-pulldown", "name": "Lat Pulldown", "muscle": "Back", "equipment": "Cable machine", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 6, "minutes": 7 }, { "key": "w4-d2-dumbbell-row", "exercise": { "id": "dumbbell-row", "name": "Dumbbell Row", "muscle": "Back", "equipment": "Dumbbell, bench", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 6, "minutes": 7 }, { "key": "w4-d2-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "accessory", "sets": 4, "reps": 6, "minutes": 8 }, { "key": "w4-d2-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 6, "minutes": 5 }], "coreMinutes": 14, "optionalMinutes": 13, "totalMinutes": 27 }, { "week": 4, "day": 3, "number": 24, "rest": false, "title": "Legs", "focus": "Quads, hamstrings, glutes", "exercises": [{ "key": "w4-d3-barbell-back-squat", "exercise": { "id": "barbell-back-squat", "name": "Barbell Back Squat", "muscle": "Legs", "equipment": "Barbell, rack", "baseMinutes": 7 }, "role": "core", "sets": 4, "reps": 6, "minutes": 8 }, { "key": "w4-d3-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "core", "sets": 4, "reps": 6, "minutes": 8 }, { "key": "w4-d3-dumbbell-lunge", "exercise": { "id": "dumbbell-lunge", "name": "Dumbbell Lunge", "muscle": "Legs", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 6, "minutes": 7 }, { "key": "w4-d3-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 6, "minutes": 5 }], "coreMinutes": 23, "optionalMinutes": 5, "totalMinutes": 28 }, { "week": 4, "day": 4, "number": 25, "rest": false, "title": "Upper Body", "focus": "Chest, back, arms", "exercises": [{ "key": "w4-d4-barbell-bench-press", "exercise": { "id": "barbell-bench-press", "name": "Barbell Bench Press", "muscle": "Chest", "equipment": "Barbell, bench", "baseMinutes": 7 }, "role": "core", "sets": 4, "reps": 6, "minutes": 8 }, { "key": "w4-d4-lat-pulldown", "exercise": { "id": "lat-pulldown", "name": "Lat Pulldown", "muscle": "Back", "equipment": "Cable machine", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 6, "minutes": 7 }, { "key": "w4-d4-dumbbell-shoulder-press", "exercise": { "id": "dumbbell-shoulder-press", "name": "Dumbbell Shoulder Press", "muscle": "Shoulders", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "accessory", "sets": 4, "reps": 6, "minutes": 7 }, { "key": "w4-d4-dumbbell-curl", "exercise": { "id": "dumbbell-curl", "name": "Dumbbell Biceps Curl", "muscle": "Biceps", "equipment": "Dumbbells", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 6, "minutes": 5 }, { "key": "w4-d4-triceps-pushdown", "exercise": { "id": "triceps-pushdown", "name": "Triceps Pushdown", "muscle": "Triceps", "equipment": "Cable machine", "baseMinutes": 4 }, "role": "accessory", "sets": 4, "reps": 6, "minutes": 5 }], "coreMinutes": 15, "optionalMinutes": 17, "totalMinutes": 32 }, { "week": 4, "day": 5, "number": 26, "rest": false, "title": "Lower and Pull", "focus": "Legs and back", "exercises": [{ "key": "w4-d5-barbell-back-squat", "exercise": { "id": "barbell-back-squat", "name": "Barbell Back Squat", "muscle": "Legs", "equipment": "Barbell, rack", "baseMinutes": 7 }, "role": "core", "sets": 4, "reps": 6, "minutes": 8 }, { "key": "w4-d5-dumbbell-lunge", "exercise": { "id": "dumbbell-lunge", "name": "Dumbbell Lunge", "muscle": "Legs", "equipment": "Dumbbells", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 6, "minutes": 7 }, { "key": "w4-d5-dumbbell-row", "exercise": { "id": "dumbbell-row", "name": "Dumbbell Row", "muscle": "Back", "equipment": "Dumbbell, bench", "baseMinutes": 6 }, "role": "core", "sets": 4, "reps": 6, "minutes": 7 }, { "key": "w4-d5-romanian-deadlift", "exercise": { "id": "romanian-deadlift", "name": "Romanian Deadlift", "muscle": "Hamstrings", "equipment": "Barbell", "baseMinutes": 7 }, "role": "accessory", "sets": 4, "reps": 6, "minutes": 8 }, { "key": "w4-d5-cable-fly", "exercise": { "id": "cable-fly", "name": "Cable Fly", "muscle": "Chest", "equipment": "Cable machine", "baseMinutes": 5 }, "role": "accessory", "sets": 4, "reps": 6, "minutes": 6 }], "coreMinutes": 22, "optionalMinutes": 14, "totalMinutes": 36 }, { "week": 4, "day": 6, "number": 27, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }, { "week": 4, "day": 7, "number": 28, "rest": true, "title": "Rest day", "focus": "Recover and stretch lightly", "exercises": [], "coreMinutes": 0, "optionalMinutes": 0, "totalMinutes": 0 }] } };
+        const $ = s => document.querySelector(s); const app = $('#app');
+        let slug = null, view = 'daily', sel = 1, wk = 1, done = {}, checked = {}, showMore = false, date = new Date().toISOString().slice(0, 10);
+        const ini = n => n.split(' ').map(s => s[0]).join('').slice(0, 2);
+        function picker() {
+            const cards = Object.entries(DATA).map(([s, d]) => { const w = d.days.filter(x => !x.rest).map(x => x.totalMinutes); return `<li><a class="programCard" href="#" data-open="${s}"><span class="programCode">${d.program.name}</span><span class="programName">${d.program.fullName}</span><span class="programTag">${d.program.tagline}</span><span class="chips"><span class="chip">20 workouts</span><span class="chip">${Math.min(...w)}-${Math.max(...w)} min/day</span><span class="chip">10 exercises</span></span><span class="cta">View program →</span></a></li>` }).join('');
+            app.innerHTML = `<main class="page"><header class="pageHead"><p class="kicker">Programs</p><h1 class="h1">Pick your <span class="accent">program.</span></h1><p class="lead">Each program has 10 exercises combined into 5 training days a week for 4 weeks.</p></header><ul class="cardGrid">${cards}</ul></main>`
+        }
+        function item(e, opt) { const c = checked[e.key]; return `<li class="tItem"><button class="${c ? 'markerOn' : 'marker'}" data-chk="${e.key}">${c ? '✓' : ''}</button><div class="workoutCard"><div class="cardThumb">${ini(e.exercise.name)}<span class="badge">${e.minutes} min</span></div><div class="cardBody"><h3>${e.exercise.name}${opt ? ' <span class="optTag">optional</span>' : ''}</h3><p>${e.sets} sets × ${e.reps} reps · ${e.exercise.muscle}</p><p class="equip">${e.exercise.equipment}</p></div><span class="info2">i</span></div></li>` }
+        function program() {
+            const { program: p, days } = DATA[slug]; const d = days[sel - 1]; const w = days.filter(x => !x.rest).map(x => x.totalMinutes); const n = Object.keys(done).length;
+            const core = d.exercises.filter(e => e.role === 'core'), opt = d.exercises.filter(e => e.role !== 'core');
+            const strip = days.map(x => `<button class="dayTab ${x.number === sel ? 'dayTabOn' : ''} ${x.rest ? 'dayTabRest' : ''} ${done[x.number] ? 'dayTabDone' : ''}" data-day="${x.number}">${x.rest ? 'Rest Day' : 'Day ' + x.number}${done[x.number] ? ' ✓' : ''}</button>`).join('');
+            const daily = `<div class="stripWrap"><button class="arrow" data-scroll="-1">‹</button><div class="strip" id="strip">${strip}</div><button class="arrow" data-scroll="1">›</button></div>
+<div class="dayCard"><div class="dayHead"><p class="kicker">Week ${d.week} · Day ${d.number}</p><h2 class="h2">${d.rest ? 'Rest Day' : "Day " + d.number + "'s Workout"}</h2>${d.rest ? '' : `<p class="meta">${d.title} · ${d.exercises.length} Workouts | ${d.totalMinutes} Mins Total (${d.coreMinutes} Mins + ${d.optionalMinutes} Mins Optional)</p>`}</div>
+${d.rest ? '<div class="restBox"><p>Recovery is part of the plan. Walk, stretch or sleep well.</p></div>' : `<ol class="timeline">${core.map(e => item(e)).join('')}<li class="pillRow"><span class="pillDone">Workout Complete</span></li>${opt.length ? '<li class="pillRow"><span class="pillOpt">Optional</span></li>' : ''}${opt.map(e => item(e, 1)).join('')}</ol><div class="completeRow"><label class="dateLabel"><span class="label">Completed on</span><input type="date" value="${done[d.number] || date}" ${done[d.number] ? 'disabled' : ''} data-date></label><button class="${done[d.number] ? 'btnGhost' : 'btnPrimary'}" data-mark>${done[d.number] ? 'Unmark Day ' + d.number : 'Mark Day ' + d.number + ' As Complete'}</button></div>`}</div>`;
+            const weeks = wk === 'all' ? [1, 2, 3, 4] : [wk];
+            const list = `<div class="pills">${[1, 2, 3, 4].map(i => `<button class="${wk === i ? 'pillOn' : 'pill'}" data-wk="${i}">WEEK ${i}</button>`).join('')}<button class="${wk === 'all' ? 'pillOn' : 'pill'}" data-wk="all">VIEW ALL</button></div><p class="banner">This list view is an overview for planning purposes. Go back to <button class="linkBtn" data-view="daily">Daily View</button> to train.</p>${weeks.map(i => `${wk === 'all' ? '<h3 class="weekHead">Week ' + i + '</h3>' : ''}<div class="listGrid">${days.filter(x => x.week === i).map(x => x.rest ? `<div class="listCard listRest"><h4>Day ${x.number}</h4><p class="restTitle">Rest Day</p><p class="metaSmall">Recover and stretch lightly</p></div>` : `<button class="listCard" data-day="${x.number}" data-go><h4>Day ${x.number}${done[x.number] ? ' <span class="tick">✓</span>' : ''}</h4><p class="metaSmall">${x.exercises.length} Workouts | ${x.totalMinutes} Mins · ${x.title}</p><div class="thumbs">${x.exercises.map(e => `<span class="thumb">${ini(e.exercise.name)}</span>`).join('')}</div></button>`).join('')}</div>`).join('')}`;
+            app.innerHTML = `<main class="page"><a class="back" href="#" data-home>← All programs</a><div class="layout"><aside class="info"><div class="hero"><span class="heroCode">${p.name}</span></div><dl class="stats"><div><dt>Duration</dt><dd>20 days</dd></div><div><dt>Per day</dt><dd>${Math.min(...w)}-${Math.max(...w)} min</dd></div></dl><p class="equipLine"><span class="label">Equipment</span>${p.equipment.join(' · ')}</p><h2 class="label">Details</h2><p class="details">${showMore ? p.description : p.description.slice(0, 90) + '...'} <button class="linkBtn" data-more>${showMore ? 'Show less' : 'Read more'}</button></p><div class="progressWrap"><div class="progressTop"><span class="label">Progress</span><span>${n}/20 days</span></div><div class="bar"><div class="barFill" style="width:${n / 20 * 100}%"></div></div></div></aside>
+<section class="content"><div class="titleRow"><h1 class="h1">${p.name} <span class="accent">${p.fullName}</span></h1><div class="toggle"><button class="${view === 'daily' ? 'toggleOn' : ''}" data-view="daily">Daily</button><button class="${view === 'list' ? 'toggleOn' : ''}" data-view="list">List</button></div></div>${view === 'daily' ? daily : list}</section></div></main>`;
+            const st = $('#strip'); if (st) st.scrollLeft = window.__sl || 0
+        }
+        function render() { slug ? program() : picker() }
+        app.addEventListener('click', e => {
+            const t = e.target.closest('[data-open],[data-home],[data-day],[data-chk],[data-mark],[data-view],[data-wk],[data-more],[data-scroll]'); if (!t) return; e.preventDefault();
+            const st = $('#strip'); if (st) window.__sl = st.scrollLeft;
+            if (t.dataset.open) { slug = t.dataset.open; sel = 1; view = 'daily'; done = {}; checked = {} }
+            else if ('home' in t.dataset) slug = null;
+            else if (t.dataset.scroll) { st.scrollBy({ left: 280 * t.dataset.scroll, behavior: 'smooth' }); return }
+            else if (t.dataset.day) { sel = +t.dataset.day; if ('go' in t.dataset) view = 'daily' }
+            else if (t.dataset.chk) checked[t.dataset.chk] = !checked[t.dataset.chk];
+            else if ('mark' in t.dataset) { done[sel] ? delete done[sel] : done[sel] = date }
+            else if (t.dataset.view) view = t.dataset.view;
+            else if (t.dataset.wk) wk = t.dataset.wk === 'all' ? 'all' : +t.dataset.wk;
+            else if ('more' in t.dataset) showMore = !showMore;
+            render()
+        });
+        app.addEventListener('change', e => { if (e.target.dataset.date !== undefined) date = e.target.value });
+        render();
+    </script>
+</body>
+
+</html>

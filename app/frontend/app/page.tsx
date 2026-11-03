@@ -1,9 +1,11 @@
+
 "use client";
 
 import Link from "next/link";
 import ModelViewer from "./about/ModelViewer";
 import WorkoutMain from "../components/WorkoutMain";
 import Navbar from "../components/Navbar";
+import LandingAuthButtons from "../components/LandingAuthButtons";
 
 const features = [
   {
@@ -41,6 +43,9 @@ const features = [
 export default function HomePage() {
   return (
     <main className="site">
+      {/* SHARED HAMBURGER NAVIGATION */}
+      <Navbar actions={<LandingAuthButtons />} />
+
       {/* HERO */}
       <section className="hero">
         <div className="hero-copy">
@@ -62,7 +67,7 @@ export default function HomePage() {
           </p>
 
           <div className="hero-actions">
-            <a href="#features" className="button-primary">
+            <a href="/signup" className="button-primary">
               EXPLORE ASCENDA <span>↗</span>
             </a>
 

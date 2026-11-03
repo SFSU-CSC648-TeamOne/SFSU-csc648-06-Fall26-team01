@@ -1,0 +1,44 @@
+.launcher{position:fixed;right:24px;bottom:24px;z-index:1000;width:52px;height:52px;border-radius:50%;border:1px solid #fff3;background:#4f7cff;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 6px 20px #0008}
+.launcher:hover{background:#2f6fe0}
+.drawer{position:fixed;top:0;right:0;bottom:0;z-index:1000;width:380px;max-width:100vw;display:flex;flex-direction:column;
+  background:rgba(23,26,31,.42);-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);border-left:1px solid rgba(79,124,255,.6);box-shadow:-12px 0 40px rgba(0,0,0,.35);color:#f4f1ea}
+@media(max-width:600px){.drawer{width:100vw}}
+.drawerHead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(244,241,234,.14);font-size:12px;letter-spacing:.1em}
+.headBtns{display:flex;gap:10px;align-items:center}
+.headBtns button,.headBtns a{background:none;border:0;color:#8e98a8;font:inherit;font-size:12px;cursor:pointer;text-decoration:none}
+.headBtns button:hover,.headBtns a:hover{color:#fff}
+.panel{display:flex;flex-direction:column;flex:1;min-height:0}
+.messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msgUser,.msgBot{max-width:85%;padding:10px 13px;border-radius:12px;font-size:14px;line-height:1.45;white-space:pre-wrap}
+.msgUser{align-self:flex-end;background:rgba(79,124,255,.85);color:#fff}
+.msgBot{align-self:flex-start;background:rgba(29,33,41,.55);border:1px solid rgba(244,241,234,.14)}
+.dots{letter-spacing:.2em;color:#8e98a8}
+.hint{color:#8e98a8;font-size:13px;margin:0}
+.inputRow{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(244,241,234,.14)}
+.inputRow input{flex:1;background:#171a1f;border:1px solid rgba(244,241,234,.14);border-radius:10px;padding:11px 13px;color:#f4f1ea;font:inherit;font-size:14px}
+.inputRow input:focus{outline:2px solid #4f7cff;outline-offset:0}
+.inputRow button{width:42px;border:0;border-radius:10px;background:#4f7cff;color:#fff;font-size:18px;cursor:pointer}
+.inputRow button:disabled{opacity:.4;cursor:default}
+.history{padding:14px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px}
+.history ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.history li{display:flex;border:1px solid rgba(244,241,234,.14);border-radius:8px;background:#171a1f}
+.histOn{background:#232b44!important;border-color:#4f7cff!important}
+.histItem{flex:1;text-align:left;background:none;border:0;color:#f4f1ea;padding:9px 10px;font:inherit;font-size:13px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.histDel{background:none;border:0;color:#8e98a8;padding:0 10px;cursor:pointer;font-size:16px}
+.histDel:hover{color:#f87171}
+.histLabel{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8e98a8;margin:10px 0 4px}
+.newChat{background:#4f7cff;border:0;border-radius:8px;color:#fff;padding:10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.fullPage{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 75px);background:#171a1f;color:#f4f1ea}
+@media(max-width:700px){.fullPage{grid-template-columns:1fr;grid-template-rows:auto 1fr}.sideHist{max-height:30vh}}
+.sideHist{background:#242932;border-right:1px solid rgba(244,241,234,.14);display:flex;flex-direction:column;min-height:0}
+.fullMain{min-width:0;display:flex;flex-direction:column;min-height:0;max-width:860px;width:100%;margin:0 auto}
+.greeting{margin:auto;text-align:center}
+.hi{font-family:ui-monospace,Menlo,monospace;font-size:28px;font-weight:700;text-transform:uppercase;margin:0 0 18px}
+.pill{display:inline-block;margin:0;border:1.5px solid #4f7cff;border-radius:999px;padding:12px 40px;font-family:ui-monospace,Menlo,monospace;font-size:20px;letter-spacing:.2em;background:#1c2233}
+
+.drawer .inputRow input{background:rgba(23,26,31,.55)}
+.drawer .history li{background:rgba(23,26,31,.45)}
+.signIn{padding:22px 18px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.5}
+.signIn p{margin:0;color:#c9ced8}
+.signIn a{display:block;text-align:center;padding:11px;border-radius:10px;border:1px solid #4f7cff;color:#fff;text-decoration:none;font-weight:700}
+.signIn a:first-of-type{background:#4f7cff}

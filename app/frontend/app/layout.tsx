@@ -1,22 +1,15 @@
-import type { Metadata } from "next";
-import Navbar from "../components/Navbar";
 import "./globals.css";
+import ChatProvider from "./chat/ChatProvider";
+import ChatWidget from "./chat/ChatWidget";
 
-export const metadata: Metadata = {
-  title: "Ascenda",
-  description: "Adaptive Fitness Platform",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body>
-        <Navbar /> 
-        {children} {/* 'children' is content inside the page layout */}
+        <ChatProvider>
+          {children}
+          <ChatWidget />
+        </ChatProvider>
       </body>
     </html>
   );
