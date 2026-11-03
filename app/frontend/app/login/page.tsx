@@ -53,12 +53,12 @@ export default function LoginPage() {
         </h2>
         <p>Log in to access your fitness profile and training journey.</p>
 
-        <form className="auth-form" onSubmit={(event) => event.preventDefault()}>
+        <form className="auth-form" onSubmit={handleSubmit}>
           <label htmlFor="email">EMAIL ADDRESS</label>
-          <input id="email" type="email" placeholder="you@example.com" required />
-
+          <input id="email" name="email"type="email" placeholder="you@example.com" required />
+          
           <label htmlFor="password">PASSWORD</label>
-          <input id="password" type="password" placeholder="Enter your password" required />
+          <input id="password" name="password" type="password" placeholder="Enter your password" required />
 
           <button className="button-primary" type="submit">
             LOG IN ↗

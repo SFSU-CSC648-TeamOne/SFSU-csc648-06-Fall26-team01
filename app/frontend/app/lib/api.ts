@@ -9,14 +9,14 @@ export async function api(path: string, options: RequestInit = {}) {
         ...options,
         headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorized: `Bearer ${token}` } : {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...options.headers,
         },
     });
 
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-        const detail = data && typeof data.detail == "string" ? data.detail : null;
+        const detail = data && typeof data.detail === "string" ? data.detail : null;
         throw new Error(detail ?? `Request failed (${res.status})`);
     }
     return data;
