@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -42,9 +41,6 @@ const features = [
 export default function HomePage() {
   return (
     <main className="site">
-      {/* SHARED HAMBURGER NAVIGATION */}
-      <Navbar />
-
       {/* HERO */}
       <section className="hero">
         <div className="hero-copy">

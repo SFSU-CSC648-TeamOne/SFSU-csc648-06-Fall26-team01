@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import styles from "./Navbar.module.css";
 
+/* basically just the options on the navbar and links to them */
 const links = [
   { label: "Home", href: "/" },
   { label: "Profile", href: "/profile" },
