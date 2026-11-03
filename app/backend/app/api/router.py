@@ -3,7 +3,7 @@
 
 from fastapi import APIRouter
 
-from app.api.routes import auth, catalog, chat, health, media, profile, scans, workouts
+from app.api.routes import auth, catalog, chat, health, media, profile, scans, workouts, program_baselines
 
 api_router = APIRouter()
 for module in (health, auth, catalog, workouts, media, profile, chat, scans):

@@ -8,4 +8,4 @@ from app.models.users import Assessment, User, UserProfile, user_equipment
 from app.models.media import ExerciseModel
 from app.models.chat import ChatConversation, ChatMessage
 from app.models.scans import ExerciseScan
-
+from app.models.program_baseline import ProgramBaseline

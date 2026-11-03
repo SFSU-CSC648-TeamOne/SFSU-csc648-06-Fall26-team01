@@ -113,6 +113,11 @@ export default function ProgramView({ program, days }: Props) {
               {showMore ? "Show less" : "Read more"}
             </button>
           </p>
+          <div style={{ margin: "20px 0" }}>
+            <Link href={`/assessment/${program.slug}`} className={styles.back}>
+            Take initial assessment →
+            </Link>
+            </div>
           <div className={styles.progressWrap}>
             <div className={styles.progressTop}>
               <span className={styles.label}>Progress</span>
