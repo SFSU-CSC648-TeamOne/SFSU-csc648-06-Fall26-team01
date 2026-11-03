@@ -9,15 +9,19 @@ import cardStyles from "../exerciseCards.module.css";
 import { useAuth } from "../../../lib/auth";
 import { readLast, readProgress, writeLast, writeProgress } from "../../../lib/programProgress";
 import { type Program, type ScheduledDay, WEEKS, minutesRange } from "../programsData";
+import { useProgramPrescription } from "../useProgramPrescription";
 
 type Props = { program: Program; days: ScheduledDay[] };
 type View = "daily" | "list";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-export default function ProgramView({ program, days }: Props) {
+export default function ProgramView({ program, days: templateDays, }: Props) {
   const { user, loading: authLoading } = useAuth();
-  const uid = user?.id ?? "guest"; // progress is stored per user, so two people on one browser do not mix
+  const { days, baseline, loading: baselineLoading, error: baselineError } = 
+    useProgramPrescription(program, templateDays, user?.id ?? null, authLoading);
+  
+    const uid = user?.id ?? "guest"; // progress is stored per user, so two people on one browser do not mix
   const [view, setView] = useState<View>("daily");
   const [selected, setSelected] = useState(1);
   const [weekFilter, setWeekFilter] = useState<number | "all">(1);
@@ -84,6 +88,58 @@ export default function ProgramView({ program, days }: Props) {
 
   const listDays = days.filter((d) => weekFilter === "all" || d.week === weekFilter);
   const weeks = weekFilter === "all" ? [1, 2, 3, 4] : [weekFilter];
+  
+  if (authLoading || baselineLoading) { 
+    return (
+    <>
+    <Navbar />
+    <main className={styles.page}>
+    <p className={styles.banner}>
+      Loading your training prescription...
+      </p>
+      </main>
+    </>
+    );
+  }
+
+  if (baselineError) {
+    return (
+    <>
+    <Navbar />
+    <main className={styles.page}>
+    <p className={styles.banner} role="alert">
+      {baselineError}
+      </p>
+      </main>
+    </>
+    );
+  }
+
+  if (user && !baseline) {
+    return (
+    <>
+    <Navbar />
+    <main className={styles.page}>
+    <p className={styles.kicker}>
+      Initial assessment required
+      </p>
+    
+    <h1 className={styles.h1}>Establish your starting point.</h1>
+      <p className={styles.lead}>
+        Complete your {program.fullName} assessment
+        before beginning training.
+        </p>
+        <Link
+        href={`/assessment/${program.slug}`}
+        className={styles.btnPrimary}
+        >
+          Take initial assessment →
+          </Link>
+    </main>
+    </>
+    );
+  }
+
 
   return (
     <>
@@ -278,7 +334,11 @@ function TimelineItem({ e, checked, onToggle, slug, optional }: {
         </div>
         <div className={styles.cardBody}>
           <h3>{e.exercise.name}{optional && <span className={styles.optTag}> optional</span>}</h3>
-          <p>{e.sets} sets × {e.reps} reps · {e.exercise.muscle}</p>
+          <p>{e.reps === 0 ? "Regression required" : 
+            `${e.sets} sets x ${e.reps} ${e.exercise.id === "plank" ? "sec" : "reps"}`
+            } {" . "}
+            {e.exercise.muscle}
+          </p>
           <p className={styles.equip}>{e.exercise.equipment}</p>
         </div>
         <span className={styles.info2} aria-hidden="true">→</span>

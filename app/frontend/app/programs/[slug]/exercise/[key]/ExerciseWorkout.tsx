@@ -9,6 +9,7 @@ import { api, useAuth } from "../../../../../lib/auth";
 import { readProgress, writeLast, writeProgress } from "../../../../../lib/programProgress";
 import { buildSchedule, getProgram } from "../../../programsData";
 import s from "./exercise.module.css";
+import { useProgramPrescription } from "../../../useProgramPrescription";
 
 const ScanViewer = dynamic(() => import("../../../../../components/ScanViewer"), {
   ssr: false, loading: () => <div className={s.empty}>Loading 3D scan...</div>,
@@ -29,9 +30,11 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const uid = user?.id ?? "guest";
-
   const program = getProgram(slug)!;
-  const days = useMemo(() => buildSchedule(program), [program]);
+  const templateDays = useMemo(() => buildSchedule(program), [program]);
+  const {days, baseline, loading: baselineLoading, error: baselineError, } 
+      = useProgramPrescription(program, templateDays, user?.id ?? null, authLoading);
+
   const day = days.find((d) => d.exercises.some((e) => e.key === exKey));
   // Same order as the program page: core exercises first, then optional ones.
   const list = useMemo(() => (day ? [...day.exercises.filter((e) => e.role === "core"), ...day.exercises.filter((e) => e.role === "accessory")] : []), [day]);
@@ -84,21 +87,38 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
   // ---- rep counter ----
   const targetSets = item?.sets ?? 3;
   const targetReps = item?.reps ?? 10;
+  const isTimed = item?.exercise.id === "plank" || item?.exercise.id === "wall-sit";
+  const needsRegression = targetReps === 0;
   const [set, setSet] = useState(1);
   const [reps, setReps] = useState(0);
+  
+    // ---- reset state when moving to a new exercise ----
+  useEffect(() => {
+    setSet(1);
+    setReps(0);
+    setRunning(false);
+    setElapsed(0);
+  }, [exKey]);
+
+
   const allDone = set > targetSets;
-  const setComplete = !allDone && reps >= targetReps;
+  const setComplete = !allDone && !needsRegression && 
+    (isTimed ? elapsed >= targetReps * 1000 : reps >= targetReps);
 
   const addRep = () => {
-    if (allDone) return;
+    if (allDone || needsRegression || isTimed) return;
     setRunning(true);
-    setReps((r) => r + 1);
+    setReps((current) => current + 1);
   };
-  const nextSet = () => { setSet((x) => x + 1); setReps(0); };
+  const nextSet = () => { setSet((current) => current + 1); 
+    setReps(0); 
+    if (isTimed) { setRunning(false); setElapsed(0); 
+    } 
+  };
 
   // ---- finish ----
   const finish = useCallback(() => {
-    if (!item || !day) return;
+    if (!item || !day || needsRegression) return;
     if (!authLoading) {
       const st = readProgress(uid, slug);
       writeProgress(uid, slug, { ...st, checked: { ...st.checked, [item.key]: true } });
@@ -106,8 +126,48 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
     }
     const next = list[index + 1];
     router.push(next ? `/programs/${slug}/exercise/${next.key}` : `/programs/${slug}`);
-  }, [item, day, authLoading, uid, slug, list, index, router]);
+  }, [item, day, needsRegression, authLoading, uid, slug, list, index, router]);
 
+  if (authLoading || baselineLoading) {
+    return (
+      <>
+        <Navbar />
+        <main className={s.page}>
+          <p className={s.banner}>
+            Loading your training prescription...
+          </p>
+        </main>
+      </>
+    );
+  }
+
+  if (baselineError) {
+    return (
+      <>
+        <Navbar />
+        <main className={s.page}>
+          <p className={s.banner}>
+            Error loading baseline.
+          </p>
+        </main>
+      </>
+    );
+  }
+
+  if (user && !baseline) {
+    return (
+      <>
+        <Navbar />
+        <main className={s.page}>
+          <h1>Assessment required</h1>
+          <p>Complete your program baseline before training.</p>
+          <Link href={`/assessment/${slug}`} className={s.back}>
+          Take assessment →
+          </Link>
+        </main>
+      </>
+    );
+  }
   if (!item || !day) {
     return (
       <>
@@ -128,7 +188,14 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
       <header className={s.head}>
         <p className={s.kicker}>Week {day.week} · Day {day.number} · Exercise {index + 1} of {list.length}{item.role === "accessory" ? " · optional" : ""}</p>
         <h1 className={s.h1}>{item.exercise.name}</h1>
-        <p className={s.meta}>{item.sets} sets × {item.reps} reps · {item.exercise.muscle} · {item.exercise.equipment} · {item.minutes} min</p>
+        <p className={s.meta}> {needsRegression ? 
+          "Exercise regression required": `${item.sets} sets × ${item.reps} ${
+            isTimed ? "seconds" : "reps"
+            }`} 
+            {" · "} {item.exercise.muscle}
+            {" · "} {item.exercise.equipment}
+          </p>
+
       </header>
 
       <div className={s.layout}>
@@ -179,18 +246,53 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
               <p className={s.label}>{allDone ? "All sets done" : `Set ${set} of ${targetSets}`}</p>
               <span className={s.dots} aria-hidden="true">{Array.from({ length: targetSets }, (_, i) => <i key={i} className={i < set - 1 || allDone ? s.dotOn : i === set - 1 ? s.dotNow : ""} />)}</span>
             </div>
-            <p className={s.reps} role="status" aria-live="polite">{allDone ? targetReps : reps}<small> / {targetReps} reps</small></p>
-            <button type="button" className={s.tap} onClick={addRep} disabled={allDone || setComplete} aria-label="Count one rep">
-              {allDone ? "DONE" : setComplete ? "SET COMPLETE" : "+1 REP"}
-            </button>
+            <p className={s.reps} role="status" aria-live="polite"> {isTimed ? 
+              Math.floor(elapsed / 1000) 
+              : allDone ? targetReps : reps} 
+              <small>
+                {" / "} {targetReps} {isTimed ? "sec" : "reps"}
+                </small>
+                </p>
+
+                <button 
+                type="button"
+                className={s.tap}
+                onClick={addRep}
+                disabled={ allDone || setComplete || needsRegression || isTimed }
+                aria-label={ isTimed ? "Use timer for hold" : "Count one rep"}
+                >
+                {needsRegression 
+                  ? "REGRESSION NEEDED" : allDone
+                    ? "DONE" : setComplete
+                      ? "SET COMPLETE" : isTimed
+                        ? "USE TIMER"
+                        : "+1 REP"}
+              </button>
             <div className={s.row}>
               {setComplete && !allDone && <button type="button" className={s.btnStart} onClick={nextSet}>{set === targetSets ? "Finish sets" : "Next set"}</button>}
-              <button type="button" className={s.btnGhost} onClick={() => setReps((r) => Math.max(0, r - 1))} disabled={allDone || reps === 0}>−1</button>
-              <button type="button" className={s.btnGhost} onClick={() => { setSet(1); setReps(0); }}>Reset reps</button>
+              <button type="button" className={s.btnGhost} onClick={() => setReps((r) => Math.max(0, r - 1))} 
+                disabled={allDone || isTimed || reps === 0 ||needsRegression}>−1
+                </button>
+              <button type="button" className={s.btnGhost} onClick={() => { 
+                  setSet(1); 
+                  setReps(0);
+                  setRunning(false);
+                  setElapsed(0);
+                }}
+              >
+                Reset reps
+              </button>
+            
             </div>
           </section>
 
-          <button type="button" className={s.finish} onClick={finish}>{next ? "Mark done · next exercise →" : "Mark done · finish day ✓"}</button>
+          <button type="button" className={s.finish} onClick={finish} disabled={needsRegression}
+          >
+            {needsRegression ? "Select and easier exercise" 
+            : next ? "Mark done · next exercise →" 
+            : "Mark done · finish day ✓"}
+          </button>
+          
           <div className={s.nav}>
             {prev ? <Link href={`/programs/${slug}/exercise/${prev.key}`}>← {prev.exercise.name}</Link> : <span />}
             {next && <Link href={`/programs/${slug}/exercise/${next.key}`}>{next.exercise.name} →</Link>}
