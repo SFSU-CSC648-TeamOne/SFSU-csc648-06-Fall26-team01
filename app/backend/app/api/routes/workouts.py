@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, status
 
 from app.api.deps import CurrentUser, DbSession
 from app.schemas.common import Page
-from app.schemas.workouts import WorkoutRecordIn, WorkoutRecordOut, WorkoutRecordSummary
+from app.schemas.workouts import WorkoutRecordIn, WorkoutRecordOut, WorkoutRecordSummary, ProgramSummaryOut
 from app.services import workouts as service
 
 router = APIRouter(prefix="/workout-records", tags=["workouts"])
@@ -21,6 +21,10 @@ def workout_history(
 ):
     items, total = service.list_history(db, user, limit, offset)
     return Page(items=items, total=total, limit=limit, offset=offset)
+
+@router.get("/program-summary", response_model=ProgramSummaryOut)
+def program_summary(program: Annotated[str, Query(max_length=20)], user: CurrentUser, db: DbSession):
+    return service.program_summary(db, user, program)
 
 @router.get("/{record_id}", response_model=WorkoutRecordOut)
 def workout_record(record_id: int, user: CurrentUser, db: DbSession):

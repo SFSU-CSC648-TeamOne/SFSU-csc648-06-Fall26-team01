@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 from sqlalchemy import and_, func, select
@@ -15,7 +16,11 @@ def search_exercises(
 ) -> tuple[list[Exercise], int]:
     stmt = select(Exercise)
     if q:
-        stmt = stmt.where(Exercise.name.icontains(q, autoescape=True))
+        # ignore hyphens/extra spaces and match every typed word, so "push up" finds "Push-Up"
+        for w in [w for w in re.split(r"[\s\-]+", q.strip().lower()) if w]:
+            stmt = stmt.where(
+                func.lower(func.replace(Exercise.name, "-", " ")).contains(w, autoescape=True)
+            )
     if muscle:
         stmt = stmt.where(Exercise.muscle_links.any(
             ExerciseMuscle.muscle.has(func.lower(MuscleGroup.name) == muscle.lower())))

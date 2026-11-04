@@ -31,3 +31,10 @@ def get_record(db: Session, record_id: int, user_id: int) -> Optional[WorkoutRec
         .options(selectinload(WorkoutRecord.session),
                  selectinload(WorkoutRecord.entries).selectinload(PerformanceEntry.exercise))
         .where(WorkoutRecord.id == record_id, WorkoutRecord.user_id == user_id))
+
+def program_records(db: Session, user_id: int, slug: str) -> list:
+    return list(db.scalars(
+        select(WorkoutRecord)
+        .options(selectinload(WorkoutRecord.entries).selectinload(PerformanceEntry.exercise))
+        .where(WorkoutRecord.user_id == user_id, WorkoutRecord.program_slug == slug)
+        .order_by(WorkoutRecord.performed_at, WorkoutRecord.id)))
