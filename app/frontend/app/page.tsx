@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -46,7 +45,7 @@ export default function HomePage() {
       {/* SHARED HAMBURGER NAVIGATION */}
       <Navbar actions={<LandingAuthButtons />} />
 
-      {/* HERO */}
+      {/* HERO: First thing visitors see. Explains Ascenda and gives them somewhere to go or look at I guess */}
       <section className="hero">
         <div className="hero-copy">
           <div className="eyebrow">
@@ -77,7 +76,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* PRODUCT PREVIEW */}
+        {/* PRODUCT PREVIEW: A mock workout screen to give visitors a quick look at the app. NO LARPING*/}
         <div className="hero-product">
           <div className="product-window">
             <div className="window-top">
@@ -141,7 +140,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* INTRO */}
+       {/* INTRO: Short explanation of what Ascenda is trying to do, can be changed to liking or not*/}
       <section className="intro">
         <span className="section-number">01 — ASCENDA</span>
         <h2>
@@ -155,7 +154,7 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* CLICKABLE FEATURES */}
+       {/* FEATURE CARDS: Map over the features array and make each card open its own page, could add photos to it idk maybe*/}
       <section className="features" id="features">
         <div className="section-heading">
           <span>02 — FEATURES</span>
@@ -181,7 +180,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* EXERCISE CATALOG */}
+      {/* EXERCISE CATALOG: Shows the reusable search component so users can find exercises/workouts. */}
       <section className="catalog" id="catalog">
         <div className="catalog-copy">
           <span className="section-number">03 — WORKOUT SEARCH</span>
@@ -204,7 +203,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* INTERACTIVE EXERCISE LAB */}
+      {/* EXERCISE LAB: Combines the 3D model viewer with video demos section here */}
       <section className="exercise-lab" id="exercise-lab">
         <div className="lab-heading">
           <span className="section-number">
@@ -271,7 +270,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ADAPTIVE TRAINING */}
+      {/* ADAPTIVE TRAINING: Shows how a workout can be shortened while keeping the IMPORTANT CORE workouts*/}
       <section className="adaptive" id="adaptive">
         <div className="adaptive-copy">
           <span className="section-number">05 — ADAPTIVE TRAINING</span>
@@ -322,7 +321,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* WORKOUT HISTORY */}
+      {/* WORKOUT HISTORY: Preview of the stats users can use to track their training LOOKS GOOD TO ME!*/}
       <section className="progress" id="history">
         <div className="progress-copy">
           <span className="section-number">06 — WORKOUT HISTORY</span>
@@ -371,7 +370,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FINAL CTA */}
+       {/* FINAL CALL TO ACTION: Last nudge for visitors to create an account pls just create an acc*/}
       <section className="final">
         <div className="final-glow" />
         <span className="section-number">ASCENDA</span>
@@ -386,7 +385,7 @@ export default function HomePage() {
         </Link>
       </section>
 
-      {/* FOOTER */}
+      {/* FOOTER: Basic site branding and a link to the team page, LOOKS GOOD TO ME! */}
       <footer>
         <Link href="/" className="logo">
           <span className="logo-symbol">A</span>
