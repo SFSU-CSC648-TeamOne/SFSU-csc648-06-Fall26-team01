@@ -22,6 +22,44 @@ export type DayTemplate = {
   items: { exerciseId: string; role: Role }[];
 };
 
+// adding WGER exercise id that corresponds to the 
+// exercise in our programs
+
+// -- used localhost:8000/api/docs -> /api/exercises 
+// to find the id for each exercise in our programs
+export const CATALOG_IDS: Record<string, number> = {
+
+  // bodyweight (bw) exercises matched from WGER
+  "push-up": 930,
+  "bodyweight-squat": 431,
+  "reverse-lunge": 286,
+  "glute-bridge": 85,
+  "plant": 928,
+  "pike-push-up": 141,
+  "mountain-climbers": 283,
+  "bird-dog": 571,
+  "bench-dip": 434,
+  "burpee": 38,
+
+  // loaded / weights (ldw) exercises matched from WGER
+  "barbell-bench-press": 927,
+  "barbell-back-squat": 704,
+  "romanian-deadlift": 157,
+  "lat-pulldown": 229,
+  "dumbbell-shoulder-press": 175,
+  "dumbbell-row": 934,
+  "dumbbell-lunge": 68,
+  "dumbbell-curl": 906,
+  "triceps-pushdown": 929,
+  "cable-fly": 636,
+};
+
+/** program exercise slug -> KinemIQ 3D dummy animation (files live in public/about/) */
+export const DUMMY_MODELS: Record<string, { url: string; clip: string }> = {
+  "push-up": { url: "/about/Push_up.glb", clip: "Push_up" },
+  "bodyweight-squat": { url: "/about/Hercules_Squat.glb", clip: "Hercules_Squat" },
+};
+
 export type Program = {
   slug: "bw" | "ldw";
   name: string;

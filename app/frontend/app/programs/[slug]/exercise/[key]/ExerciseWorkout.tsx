@@ -7,16 +7,36 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Navbar from "../../../../../components/Navbar";
 import { api, useAuth } from "../../../../../lib/auth";
 import { readProgress, writeLast, writeProgress } from "../../../../../lib/programProgress";
-import { buildSchedule, getProgram } from "../../../programsData";
+import { buildSchedule, CATALOG_IDS, DUMMY_MODELS, getProgram } from "../../../programsData";
 import s from "./exercise.module.css";
 
 const ScanViewer = dynamic(() => import("../../../../../components/ScanViewer"), {
   ssr: false, loading: () => <div className={s.empty}>Loading 3D scan...</div>,
 });
 
+const DummyViewer = dynamic(() => import("../../../../../components/DummyViewer"), {
+  ssr: false, loading: () => <div className={s.empty}>Loading 3D demo...</div>,
+});
+
 type Found = { id: number; name: string };
 type Scan = { position: number; label: string; description?: string | null; model_url?: string | null };
 type Model = { video_url?: string | null };
+
+// adding a type and helper 
+type Detail = {
+  description?: string | null;
+  primary_muscles?: string[];
+  secondary_muscles?: string[];
+  equipment?: string[];
+  license_name?: string | null;
+  license_author?: string | null;
+};
+
+// hides text
+const usable = (t?: string | null) => {
+  const x = (t ?? "").trim();
+  return x.length >= 20 && !x.startsWith("Custom description created by");
+};
 
 const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, "");
 const clock = (ms: number) => {
@@ -37,6 +57,7 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
   const list = useMemo(() => (day ? [...day.exercises.filter((e) => e.role === "core"), ...day.exercises.filter((e) => e.role === "accessory")] : []), [day]);
   const index = list.findIndex((e) => e.key === exKey);
   const item = list[index];
+  const dummy = item ? DUMMY_MODELS[item.exercise.id] : undefined;
 
   // ---- media from the backend (matched by exact exercise name) ----
   const [video, setVideo] = useState<string | null>(null);
@@ -68,6 +89,19 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
     })();
     return () => { live = false; };
   }, [name, fallbackVideo]);
+
+  // WGER API info (description, muscles, equipment, license, etc etc)
+  const catalogId = item ? CATALOG_IDS[item.exercise.id] : undefined;
+  const [detail, setDetail] = useState<Detail | null>(null);
+  useEffect(() => {
+    setDetail(null);
+    if (!catalogId) return;
+    let live = true;
+    api<Detail>(`/exercises/${catalogId}`)
+      .then((d) => { if (live) setDetail(d); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [catalogId]);
 
   // ---- big timer (stopwatch) ----
   const [elapsed, setElapsed] = useState(0);
@@ -132,14 +166,35 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
       </header>
 
       <div className={s.layout}>
-        {/* LEFT: video on top, Niantic scans below */}
+        {/* LEFT: video on top, details, Niantic scans below */}
         <div className={s.media}>
           <section className={s.card} aria-label="Exercise video">
-            <div className={s.cardTop}><span>3D VIDEO</span><span>{video ? "PLAYING IN GYM SCAN" : mediaLoading ? "LOADING" : "NOT UPLOADED YET"}</span></div>
+            <div className={s.cardTop}>
+              <span>3D VIDEO</span>
+              <span>{video ? "PLAYING IN GYM SCAN" : dummy ? "3D DEMO · DRAG TO ROTATE" : mediaLoading ? "LOADING" : "NOT UPLOADED YET"}</span>
+            </div>
             {video
               ? <video className={s.video} src={video} controls playsInline loop preload="metadata" />
-              : <div className={s.videoEmpty}>{mediaLoading ? "Loading video..." : "The demonstration video for this exercise is not uploaded yet."}</div>}
+              : dummy
+                ? <DummyViewer url={dummy.url} clip={dummy.clip} />
+                : <div className={s.videoEmpty}>{mediaLoading ? "Loading video..." : "The demonstration video for this exercise is not uploaded yet."}</div>}
+            {dummy && !video && <div className={s.cap}><small>3D motion by KinemIQ</small></div>}
           </section>
+
+          {detail && (
+            <section className={s.card} aria-label="Exercise details">
+              <div className={s.cardTop}><span>HOW TO</span><span>FROM WGER</span></div>
+              <div className={s.cap}>
+                {usable(detail.description) && <small>{detail.description}</small>}
+                {!!detail.primary_muscles?.length && <small><b>Primary:</b> {detail.primary_muscles.join(", ")}</small>}
+                {!!detail.secondary_muscles?.length && <small><b>Secondary:</b> {detail.secondary_muscles.join(", ")}</small>}
+                {!!detail.equipment?.length && <small><b>Equipment:</b> {detail.equipment.join(", ")}</small>}
+                <small>
+                  Source: wger.de · {detail.license_name ?? "CC-BY-SA"} · {detail.license_author ?? "wger.de contributors"}
+                </small>
+              </div>
+            </section>
+          )}
 
           <section aria-label="Niantic 3D posture scans">
             <h2 className={s.h2}>Niantic 3D posture scans</h2>
