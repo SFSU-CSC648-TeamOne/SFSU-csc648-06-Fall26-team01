@@ -1,66 +1,49 @@
 
 import Link from "next/link";
 
+import Navbar from "../../components/Navbar";
+import { PROGRAMS } from "../programs/programsData";
+import s from "../screens.module.css";
+
 export default function AssessmentPage() {
   return (
-    <main className="site">
-      <header className="navbar">
-        <Link href="/" className="logo">
-          <span className="logo-symbol">A</span>
-          ASCENDA
-        </Link>
-        <Link href="/" className="nav-button">
-          ← BACK TO HOME
-        </Link>
-      </header>
+    <main className={s.page}>
+      <Navbar />
 
-      <section className="intro">
-        <span className="section-number">02 — FITNESS ASSESSMENT</span>
-        <h2>
-          START WHERE
-          <br />
-          <span>YOU ARE.</span>
-        </h2>
-        <p>
-          Establish your fitness experience, goals, and training needs
-          to help guide your workout planning.
+      <div className={s.wrap}>
+        <p className={s.kicker}>Program assessment</p>
+
+        <h1 className={s.h1}>
+          Establish your <span>baseline.</span>
+        </h1>
+
+        <p className={s.lead}>
+          Choose a program to measure your starting performance.
+          Your results will be used to personalize training.
         </p>
-      </section>
 
-      <section className="features">
-        <div className="section-heading">
-          <span>YOUR ASSESSMENT</span>
-          <p>BUILD YOUR TRAINING FOUNDATION</p>
+        <div className={s.list}>
+          {PROGRAMS.map((program) => (
+            <Link
+              key={program.slug}
+              href={`/assessment/${program.slug}`}
+              className={s.row}
+            >
+              <span className={s.rowIdx}>
+                {program.name}
+              </span>
+
+              <span className={s.rowTitle}>
+                <strong>{program.fullName}</strong>
+                <small>{program.tagline}</small>
+              </span>
+
+              <span className={s.tag}>ASSESS</span>
+              <span aria-hidden="true">↗</span>
+            </Link>
+          ))}
         </div>
-
-        <div className="feature-list">
-          <div className="feature">
-            <h3>01 — EXPERIENCE</h3>
-            <p>Describe your current fitness and lifting experience.</p>
-          </div>
-          <div className="feature">
-            <h3>02 — GOALS</h3>
-            <p>Identify what you want to achieve through training.</p>
-          </div>
-          <div className="feature">
-            <h3>03 — AVAILABILITY</h3>
-            <p>Consider your weekly schedule and workout duration.</p>
-          </div>
-          <div className="feature">
-            <h3>04 — RESULTS</h3>
-            <p>Use your answers as a starting point for workout planning.</p>
-          </div>
-        </div>
-      </section>
-
-      <footer>
-        <Link href="/" className="logo">
-          <span className="logo-symbol">A</span>
-          ASCENDA
-        </Link>
-        <span>YOUR FITNESS JOURNEY</span>
-        <Link href="/">HOME ↗</Link>
-      </footer>
+      </div>
     </main>
   );
 }

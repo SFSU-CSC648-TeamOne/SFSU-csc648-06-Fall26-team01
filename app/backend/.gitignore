@@ -2,3 +2,5 @@
 venv/
 __pycache__/
 *.pyc
+local_dev.db
+.DS_Store

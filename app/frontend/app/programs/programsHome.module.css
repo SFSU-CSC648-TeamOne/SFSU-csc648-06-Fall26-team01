@@ -1,0 +1,10 @@
+.resume{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin:0 0 24px;padding:22px 24px;border-radius:14px;border:1px solid #4f7cff;background:linear-gradient(135deg,rgba(79,124,255,.18),rgba(36,41,50,.9))}
+.resume>div{flex:1;min-width:240px}
+.resumeTitle{margin:6px 0 4px;font-size:26px;font-weight:800}
+.resumeTitle span{color:#9fb0ff;font-weight:600;font-size:18px;margin-left:6px}
+.resumeMeta{margin:0 0 12px;color:#8e98a8;font-size:14px}
+.resumeBtn{background:#4f7cff;color:#fff;text-decoration:none;font-weight:700;padding:13px 26px;border-radius:10px;white-space:nowrap}
+.resumeBtn:hover{background:#2f6fe0}
+.bar{display:block;height:8px;border-radius:999px;background:rgba(244,241,234,.12);overflow:hidden}
+.barFill{display:block;height:100%;background:#a7d46f;border-radius:999px;transition:width .3s}
+.pctRow{display:flex;justify-content:space-between;font:12px ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:#c9ced8;margin-top:6px}
