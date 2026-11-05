@@ -1,6 +1,6 @@
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Query, status
@@ -70,7 +70,7 @@ class TestOut(BaseModel):
 class ResultIn(BaseModel):
     exercise_id: str
     value: int = Field(ge=0, le=10000)
-    load_kg: float | None = Field(default=None, ge=0, le=1000)
+    load_kg: Optional[float] = Field(default=None, ge=0, le=1000)
 
 
 class BaselineIn(BaseModel):
@@ -91,7 +91,7 @@ def get_tests(program: Literal["bw", "ldw"] = Query(...)):
     return TESTS[program]
 
 
-@router.get("/latest", response_model=BaselineOut | None)
+@router.get("/latest", response_model=Optional[BaselineOut])
 def latest_baseline(
     program: Literal["bw", "ldw"],
     user: CurrentUser,

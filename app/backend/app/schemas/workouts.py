@@ -22,6 +22,9 @@ class WorkoutRecordIn(BaseModel):
     available_minutes: Optional[int] = Field(default=None, ge=1, le=600)
     duration_minutes: Optional[int] = Field(default=None, ge=1, le=600)
     notes: Optional[str] = Field(default=None, max_length=2000)
+    program_slug: Optional[str] = Field(default=None, max_length=20)
+    program_week: Optional[int] = Field(default=None, ge=1, le=52)
+    program_day: Optional[int] = Field(default=None, ge=1, le=100)
     entries: list[EntryIn] = Field(min_length=1, max_length=500)
 
 class EntryOut(BaseModel):
@@ -44,7 +47,32 @@ class WorkoutRecordSummary(BaseModel):
     available_minutes: Optional[int]
     duration_minutes: Optional[int]
     entry_count: int
+    program_slug: Optional[str] = None
+    program_week: Optional[int] = None
+    program_day: Optional[int] = None
 
 class WorkoutRecordOut(WorkoutRecordSummary):
     notes: Optional[str]
     entries: list[EntryOut]
+
+class Totals(BaseModel):
+    sets: int
+    reps: int
+    volume_kg: float  # sum of reps x weight (0 for bodyweight)
+    seconds: int
+
+class WeekTotals(Totals):
+    week: int
+    days_completed: int
+
+class ExerciseTotals(Totals):
+    exercise_id: int
+    name: str
+
+class ProgramSummaryOut(BaseModel):
+    program: str
+    days_completed: int
+    days_total: int
+    totals: Totals
+    weeks: list[WeekTotals]
+    exercises: list[ExerciseTotals]

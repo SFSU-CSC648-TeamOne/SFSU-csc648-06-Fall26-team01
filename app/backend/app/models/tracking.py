@@ -21,6 +21,9 @@ class WorkoutRecord(Base):
     available_minutes: Mapped[Optional[int]] = mapped_column(Integer)
     duration_minutes: Mapped[Optional[int]] = mapped_column(Integer)
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    program_slug: Mapped[Optional[str]] = mapped_column(String(20), index=True)
+    program_week: Mapped[Optional[int]] = mapped_column(Integer)
+    program_day: Mapped[Optional[int]] = mapped_column(Integer)
 
     session: Mapped[Optional[WorkoutSession]] = relationship()
     entries: Mapped[List["PerformanceEntry"]] = relationship(
