@@ -7,7 +7,13 @@ import styles from "../programs.module.css";
 import Navbar from "../../../components/Navbar";
 import cardStyles from "../exerciseCards.module.css";
 import { useAuth } from "../../../lib/auth";
-import { readLast, readProgress, writeLast, writeProgress } from "../../../lib/programProgress";
+import {
+  readLast,
+  readProgress,
+  writeLast,
+  writeProgress,
+  TOTAL_DAYS,
+} from "../../../lib/programProgress";
 import { type Program, type ScheduledDay, WEEKS, minutesRange } from "../programsData";
 import { useProgramPrescription } from "../useProgramPrescription";
 
@@ -20,7 +26,7 @@ export default function ProgramView({ program, days: templateDays, }: Props) {
   const { user, loading: authLoading } = useAuth();
   const { days, baseline, loading: baselineLoading, error: baselineError } = 
     useProgramPrescription(program, templateDays, user?.id ?? null, authLoading);
-  
+
     const uid = user?.id ?? "guest"; // progress is stored per user, so two people on one browser do not mix
   const [view, setView] = useState<View>("daily");
   const [selected, setSelected] = useState(1);
@@ -59,7 +65,12 @@ export default function ProgramView({ program, days: templateDays, }: Props) {
 
   const day = days[selected - 1];
   const [minMin, maxMin] = useMemo(() => minutesRange(days), [days]);
-  const completedCount = Object.keys(done).length;
+
+  // Count only completed workout days, excluding rest days.
+  const completedCount = Object.keys(done).filter((key) =>
+    days.some((d) => !d.rest && d.number === Number(key))
+  ).length;
+
   const core = day.exercises.filter((e) => e.role === "core");
   const optional = day.exercises.filter((e) => e.role === "accessory");
 
@@ -86,9 +97,17 @@ export default function ProgramView({ program, days: templateDays, }: Props) {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  // Move to the next calendar day after completing the current workout.
+  function goToNextDay() {
+    if (!done[day.number] || day.number >= days.length) return;
+
+    openDay(day.number + 1);
+    setDate(todayISO());
+  }
+
   const listDays = days.filter((d) => weekFilter === "all" || d.week === weekFilter);
   const weeks = weekFilter === "all" ? [1, 2, 3, 4] : [weekFilter];
-  
+
   if (authLoading || baselineLoading) { 
     return (
     <>
@@ -123,7 +142,7 @@ export default function ProgramView({ program, days: templateDays, }: Props) {
     <p className={styles.kicker}>
       Initial assessment required
       </p>
-    
+
     <h1 className={styles.h1}>Establish your starting point.</h1>
       <p className={styles.lead}>
         Complete your {program.fullName} assessment
@@ -177,10 +196,20 @@ export default function ProgramView({ program, days: templateDays, }: Props) {
           <div className={styles.progressWrap}>
             <div className={styles.progressTop}>
               <span className={styles.label}>Progress</span>
-              <span>{completedCount}/20 days</span>
+              <span>{completedCount}/{TOTAL_DAYS} days</span>
             </div>
-            <div className={styles.bar}><div className={styles.barFill} style={{ width: `${(completedCount / 20) * 100}%` }} /></div>
+            <div className={styles.bar}><div className={styles.barFill} style={{ width: `${(completedCount / TOTAL_DAYS) * 100}%` }} /></div>
           </div>
+
+          {completedCount >= TOTAL_DAYS && (
+            <Link
+              href={`/programs/${program.slug}/summary`}
+              className={styles.btnPrimary}
+              style={{ display: "inline-block", marginTop: 16 }}
+            >
+              View Program Summary →
+            </Link>
+          )}
         </aside>
 
         {/* Right content */}
@@ -248,11 +277,28 @@ export default function ProgramView({ program, days: templateDays, }: Props) {
                   <div className={styles.completeRow}>
                     <label className={styles.dateLabel}>
                       <span className={styles.label}>Completed on</span>
-                      <input type="date" value={done[day.number] ?? date} disabled={!!done[day.number]} onChange={(e) => setDate(e.target.value)} />
+                      <input
+                        type="date"
+                        value={done[day.number] ?? date}
+                        disabled={!!done[day.number]}
+                        onChange={(e) => setDate(e.target.value)}
+                      />
                     </label>
-                    <button className={done[day.number] ? styles.btnGhost : styles.btnPrimary} onClick={markComplete}>
-                      {done[day.number] ? `Unmark Day ${day.number}` : `Mark Day ${day.number} As Complete`}
+
+                    <button
+                      className={done[day.number] ? styles.btnGhost : styles.btnPrimary}
+                      onClick={markComplete}
+                    >
+                      {done[day.number]
+                        ? `Unmark Day ${day.number}`
+                        : `Mark Day ${day.number} As Complete`}
                     </button>
+
+                    {done[day.number] && day.number < days.length && (
+                      <button className={styles.btnPrimary} onClick={goToNextDay}>
+                        Next Day →
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
