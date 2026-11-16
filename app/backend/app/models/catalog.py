@@ -4,11 +4,11 @@
 from typing import List, Optional
 
 from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, String, Table,
-                        Text, UniqueConstraint, Boolean)
+                        Text, UniqueConstraint, Boolean, Float)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.enums import ExerciseRole, ExperienceLevel, sql_in
+from app.models.enums import ExerciseRole, ExperienceLevel, sql_in, MovementRelationship
 
 exercise_equipment = Table(
     "exercise_equipment",
@@ -39,6 +39,29 @@ class ExerciseMuscle(Base):
     is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     muscle: Mapped[MuscleGroup] = relationship()
+
+# new added classes 11-16-26
+class MovementGroup(Base):
+    __tablename__ = "movement_groups"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    parent_group_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("movement_groups.id", ondelete="SET NULL"), index=True)
+
+class ExerciseMovementGroup(Base):
+    __tablename__ = "exercise_movement_groups"
+    __table_args__ = (
+        CheckConstraint(f"relationship_type IN ({sql_in(MovementRelationship)})", name="ck_emg_relationship"),
+        CheckConstraint("relevance_weight >= 0 AND relevance_weight <= 1", name="ck_emg_weight"),
+    )
+
+    exercise_id: Mapped[int] = mapped_column(ForeignKey("exercises.id", ondelete="CASCADE"), primary_key=True)
+    movement_group_id: Mapped[int] = mapped_column(ForeignKey("movement_groups.id", ondelete="CASCADE"), primary_key=True)
+    relationship_type: Mapped[str] = mapped_column(String(20), default=MovementRelationship.primary.value,
+                                                   server_default=MovementRelationship.primary.value)
+    relevance_weight: Mapped[float] = mapped_column(Float, default=1.0, server_default="1.0")
+    movement_group: Mapped[MovementGroup] = relationship()
 
 class Exercise(Base):
     __tablename__ = "exercises"
