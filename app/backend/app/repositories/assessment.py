@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Exercise, ExerciseMuscle, PerformanceEntry, WorkoutRecord
+from app.models.program_baseline import ProgramBaseline
 
 # workout records and performance entries for a user, optionally filtered by program slug
 def program_entries(db: Session, user_id: int, slug: Optional[str]) -> list:
@@ -25,3 +26,9 @@ def exercises_by_ids(db: Session, ids: set) -> Dict[int, Exercise]:
                       .options(selectinload(Exercise.muscle_links).selectinload(ExerciseMuscle.muscle))
                       .where(Exercise.id.in_(ids)))
     return {e.id: e for e in rows}
+
+def latest_baseline(db: Session, user_id: int, slug: str) -> Optional[ProgramBaseline]:
+    # collects the user's recent baseline assessment for a program, or none
+    return db.scalar(select(ProgramBaseline)
+                    .where(ProgramBaseline.user_id == user_id, ProgramBaseline.program_slug == slug)
+                    .order_by(ProgramBaseline.created_at.desc(), ProgramBaseline.id.desc()).limit(1))

@@ -55,6 +55,7 @@ def get_record(db: Session, user: User, record_id: int) -> WorkoutRecordOut:
             id=e.id, exercise_id=e.exercise_id, exercise_name=e.exercise.name, set_number=e.set_number,
             reps=e.reps, weight_kg=e.weight_kg, duration_seconds=e.duration_seconds,
             distance_m=e.distance_m, status=e.status,
+            target_sets=e.target_sets, target_value=e.target_value,
             substituted_for_exercise_id=e.substituted_for_exercise_id) for e in r.entries])
 
 TOTAL_DAYS = 20   # 4 weeks x 5 training days (see programsData.ts)

@@ -1,4 +1,5 @@
 # logging the workouts from the user
+# from pydantic (ge - greater than or equal to, le - less than or equal to)
 
 from datetime import datetime
 from typing import Optional
@@ -15,6 +16,7 @@ class EntryIn(BaseModel):
     distance_m: Optional[float] = Field(default=None, ge=0)
     status: EntryStatus = EntryStatus.completed
     substituted_for_exercise_id: Optional[int] = None
+    target_sets: Optional[int] = Field(default=None, ge=0, le=100)
 
 class WorkoutRecordIn(BaseModel):
     workout_session_id: Optional[int] = None
@@ -38,6 +40,9 @@ class EntryOut(BaseModel):
     distance_m: Optional[float]
     status: str
     substituted_for_exercise_id: Optional[int]
+
+    target_sets: Optional[int]
+    target_value: Optional[int]
 
 class WorkoutRecordSummary(BaseModel):
     id: int

@@ -45,5 +45,8 @@ class PerformanceEntry(Base):
                                         server_default=EntryStatus.completed.value)
     substituted_for_exercise_id: Mapped[Optional[int]] = mapped_column(ForeignKey("exercises.id"))
 
+    target_sets: Mapped[Optional[int]] = mapped_column(Integer)
+    target_value: Mapped[Optional[int]] = mapped_column(Integer)
+
     record: Mapped[WorkoutRecord] = relationship(back_populates="entries")
     exercise: Mapped[Exercise] = relationship(foreign_keys=[exercise_id])
