@@ -4,10 +4,10 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
-from app.models.enums import EntryStatus
+from app.models.enums import (EntryStatus, LoadBasis, ObservationType)
 
 class EntryIn(BaseModel):
-    exercise_id: int
+    exercise_id: int = Field(gt=0)
     set_number: Optional[int] = Field(default=None, ge=1, le=100)
     reps: Optional[int] = Field(default=None, ge=0, le=1000)
     weight_kg: Optional[float] = Field(default=None, ge=0, le=2000)
@@ -15,6 +15,11 @@ class EntryIn(BaseModel):
     distance_m: Optional[float] = Field(default=None, ge=0)
     status: EntryStatus = EntryStatus.completed
     substituted_for_exercise_id: Optional[int] = None
+    prescription_set_id: Optional[int] = Field(default=None, gt=0)
+    observation_type: ObservationType = ObservationType.training
+    load_basis: Optional[LoadBasis] = None
+    assistance_kg: Optional[float] = Field(default=None, ge=0, le=2000)
+    is_user_modified: bool = False
 
 class WorkoutRecordIn(BaseModel):
     workout_session_id: Optional[int] = None
@@ -38,6 +43,12 @@ class EntryOut(BaseModel):
     distance_m: Optional[float]
     status: str
     substituted_for_exercise_id: Optional[int]
+    prescription_set_id: Optional[int] = None
+    observation_type: ObservationType = (ObservationType.training
+)
+    load_basis: Optional[LoadBasis] = None
+    assistance_kg: Optional[float] = None
+    is_user_modified: bool = False
 
 class WorkoutRecordSummary(BaseModel):
     id: int

@@ -100,31 +100,6 @@ export default function ProgressPage() {
             style={{ marginTop: 24 }}
             aria-labelledby="bodyweight-heading"
           >
-            <div style={{ marginBottom: 20 }}>
-              <h2 id="bodyweight-heading">
-                Bodyweight Tracking
-              </h2>
-
-              <p className={s.muted}>
-                Record your bodyweight to monitor changes
-                alongside your training performance.
-              </p>
-            </div>
-
-            <BodyweightLogger
-              onSaved={(measurement) => {
-                console.log(
-                  "Bodyweight saved:",
-                  measurement
-                );
-              }}
-            />
-          </section>
-          <section
-            className={s.card}
-            style={{ marginTop: 24 }}
-            aria-labelledby="bodyweight-heading"
-          >
             <h2 id="bodyweight-heading">
               Bodyweight Tracking
             </h2>
