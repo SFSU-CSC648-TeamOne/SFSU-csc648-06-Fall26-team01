@@ -1,17 +1,31 @@
 
-"""Authenticated, read-only adaptive training endpoints."""
+"""Authenticated adaptive training endpoints.
 
+Supports:
+- Discovering planned workout prescriptions.
+- Reviewing recommended adjustments.
+- Applying explicitly approved adjustments.
+"""
+
+from decimal import Decimal
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Path, Query
-from pydantic import BaseModel, Field
-from sqlalchemy import select, func
+from pydantic import BaseModel, Field, field_validator
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentUser, DbSession
-from app.core.errors import ConflictError, NotFoundError
+from app.core.errors import (
+    ConflictError,
+    NotFoundError,
+)
 from app.models.enums import PrescriptionStatus
 from app.models.prescription import WorkoutPrescription
+from app.services.approve_adaptation import (
+    ApprovedAdjustment,
+    apply_approved_adaptations,
+)
 from app.services.prescription_adaptation import (
     analyze_prescription_adaptations,
 )
@@ -44,11 +58,13 @@ class AdaptationDecisionOut(BaseModel):
         "review_regression",
         "reassess",
     ]
+
     confidence: Literal[
         "insufficient",
         "preliminary",
         "robust",
     ]
+
     observation_count: int = Field(ge=0)
     change_pct: float | None
     reason: str
@@ -62,6 +78,7 @@ class ProgressionProposalOut(BaseModel):
         "assistance",
         "none",
     ]
+
     previous_value: int | float | None
     proposed_value: int | float | None
     requires_approval: bool
@@ -72,6 +89,7 @@ class PrescriptionSetAdaptationOut(BaseModel):
     prescription_set_id: int = Field(gt=0)
     exercise_id: int = Field(gt=0)
     set_number: int = Field(gt=0)
+
     decision: AdaptationDecisionOut
     proposal: ProgressionProposalOut
 
@@ -79,13 +97,73 @@ class PrescriptionSetAdaptationOut(BaseModel):
 class PrescriptionAdaptationResponse(BaseModel):
     prescription_id: int = Field(gt=0)
     user_id: int = Field(gt=0)
+
     program_slug: str
     program_week: int
     program_day: int
+
     source_engine_version: str
     proposal_engine_version: str
+
     status: Literal["proposed"]
     sets: list[PrescriptionSetAdaptationOut]
+
+
+# --------------------------------------------------
+# Approval request and response models
+# --------------------------------------------------
+
+class ApprovedAdjustmentIn(BaseModel):
+    prescription_set_id: int = Field(gt=0)
+
+    adjustment_type: Literal[
+        "reps",
+        "duration",
+        "weight",
+    ]
+
+    expected_previous_value: Decimal
+    expected_proposed_value: Decimal
+
+    @field_validator(
+        "expected_previous_value",
+        "expected_proposed_value",
+    )
+    @classmethod
+    def validate_finite_number(
+        cls,
+        value: Decimal,
+    ) -> Decimal:
+        if not value.is_finite():
+            raise ValueError(
+                "Adjustment values must be finite numbers."
+            )
+
+        return value
+
+
+class ApproveAdaptationsIn(BaseModel):
+    approvals: list[ApprovedAdjustmentIn] = Field(
+        min_length=1,
+        max_length=100,
+    )
+
+
+class AppliedAdjustmentOut(BaseModel):
+    prescription_set_id: int
+    adjustment_type: Literal[
+        "reps",
+        "duration",
+        "weight",
+    ]
+    applied_value: int | float
+
+
+class ApproveAdaptationsOut(BaseModel):
+    prescription_id: int
+    status: Literal["updated"]
+    updated_set_count: int
+    updated_sets: list[AppliedAdjustmentOut]
 
 
 # --------------------------------------------------
@@ -104,11 +182,7 @@ def get_planned_prescriptions(
         Query(min_length=1, max_length=20),
     ] = None,
 ):
-    """List the user's upcoming planned prescriptions.
-
-    Optionally filter by program slug.
-    Does not include completed or skipped prescriptions.
-    """
+    """List the current user's planned workout prescriptions."""
 
     statement = (
         select(WorkoutPrescription)
@@ -150,7 +224,7 @@ def get_planned_prescriptions(
 
 
 # --------------------------------------------------
-# Prescription recommendations
+# Read-only recommendations
 # --------------------------------------------------
 
 @router.get(
@@ -162,7 +236,7 @@ def get_prescription_adaptations(
     db: DbSession,
     prescription_id: Annotated[int, Path(gt=0)],
 ):
-    """Generate read-only recommendations for one prescription."""
+    """Generate recommendations without changing prescriptions."""
 
     try:
         return analyze_prescription_adaptations(
@@ -178,3 +252,49 @@ def get_prescription_adaptations(
 
     except ValueError as exc:
         raise ConflictError(str(exc)) from exc
+
+
+# --------------------------------------------------
+# Apply approved adaptations
+# --------------------------------------------------
+
+@router.post(
+    "/prescriptions/{prescription_id}/approve",
+    response_model=ApproveAdaptationsOut,
+)
+def approve_prescription_adaptations(
+    body: ApproveAdaptationsIn,
+    user: CurrentUser,
+    db: DbSession,
+    prescription_id: Annotated[int, Path(gt=0)],
+):
+    """Apply explicitly selected, server-validated adjustments.
+
+    The client supplies the targets it reviewed.
+    The approval service recalculates recommendations
+    before modifying the planned prescription.
+
+    Completed workouts and historical performance
+    entries cannot be modified through this endpoint.
+    """
+
+    approvals = [
+        ApprovedAdjustment(
+            prescription_set_id=item.prescription_set_id,
+            adjustment_type=item.adjustment_type,
+            expected_previous_value=(
+                item.expected_previous_value
+            ),
+            expected_proposed_value=(
+                item.expected_proposed_value
+            ),
+        )
+        for item in body.approvals
+    ]
+
+    return apply_approved_adaptations(
+        db=db,
+        user_id=user.id,
+        prescription_id=prescription_id,
+        approvals=approvals,
+    )
