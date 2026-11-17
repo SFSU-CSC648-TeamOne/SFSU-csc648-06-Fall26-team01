@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
+import BodyweightLogger from "../../components/BodyweightLogger";
+import BodyweightChart, {type BodyweightPoint,} from "../../components/progress/BodyweightChart";
 import { api, useRequireAuth } from "../../lib/auth";
 import { fmtDate, volume, type Page, type RecordDetail, type RecordSummary } from "../../lib/records";
 import s from "../screens.module.css";
@@ -11,6 +13,11 @@ export default function ProgressPage() {
   useRequireAuth();
   const [records, setRecords] = useState<RecordDetail[]>([]);
   const [error, setError] = useState("");
+  const [bodyweight, setBodyweight] = useState<BodyweightPoint[]>([]);
+  const [weightLoading, setWeightLoading] = useState(true);
+  const [weightError, setWeightError] = useState("");
+  const [weightRefresh, setWeightRefresh] = useState(0);
+
 
   useEffect(() => {
     // The list has no entries, so fetch the detail of the 10 latest records to compute volume.
@@ -19,6 +26,49 @@ export default function ProgressPage() {
       .then(setRecords)
       .catch((e) => setError(e.message));
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadBodyweight() {
+      setWeightLoading(true);
+      setWeightError("");
+
+      try {
+        const data = await api<
+          Array<Omit<BodyweightPoint, "weight_kg"> & {
+            weight_kg: number | string;
+          }>
+        >("/bodyweight-measurements?limit=365");
+
+        if (!active) return;
+
+        setBodyweight(
+          data.map((item) => ({
+            ...item,
+            weight_kg: Number(item.weight_kg),
+          }))
+        );
+      } catch (err) {
+        if (!active) return;
+
+        setWeightError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load bodyweight history."
+        );
+      } finally {
+        if (active) setWeightLoading(false);
+      }
+    }
+
+    void loadBodyweight();
+
+    return () => {
+      active = false;
+    };
+  }, [weightRefresh]);
+
 
   const points = [...records].sort((a, b) => +new Date(a.performed_at) - +new Date(b.performed_at)).slice(-10)
     .map((r) => ({ label: fmtDate(r.performed_at).slice(0, 6), v: volume(r), id: r.id }));
@@ -45,6 +95,69 @@ export default function ProgressPage() {
             <p className={s.muted} style={{ marginTop: 16 }}>Add the weight you used on the Active workout screen to see volume change.</p>
           </div>
         )}
+          <section
+            className={s.card}
+            style={{ marginTop: 24 }}
+            aria-labelledby="bodyweight-heading"
+          >
+            <div style={{ marginBottom: 20 }}>
+              <h2 id="bodyweight-heading">
+                Bodyweight Tracking
+              </h2>
+
+              <p className={s.muted}>
+                Record your bodyweight to monitor changes
+                alongside your training performance.
+              </p>
+            </div>
+
+            <BodyweightLogger
+              onSaved={(measurement) => {
+                console.log(
+                  "Bodyweight saved:",
+                  measurement
+                );
+              }}
+            />
+          </section>
+          <section
+            className={s.card}
+            style={{ marginTop: 24 }}
+            aria-labelledby="bodyweight-heading"
+          >
+            <h2 id="bodyweight-heading">
+              Bodyweight Tracking
+            </h2>
+
+            <p className={s.muted}>
+              Monitor your bodyweight alongside training performance.
+            </p>
+
+            <div style={{ marginTop: 24 }}>
+              <BodyweightLogger
+                onSaved={() => {
+                  setWeightRefresh((count) => count + 1);
+                }}
+              />
+            </div>
+
+            <div style={{ marginTop: 32 }}>
+              {weightLoading ? (
+                <p className={s.muted}>
+                  Loading bodyweight history...
+                </p>
+              ) : weightError ? (
+                <p role="alert" className={s.error}>
+                  {weightError}
+                </p>
+              ) : (
+                <BodyweightChart
+                  points={bodyweight}
+                  unit="lb"
+                />
+              )}
+            </div>
+          </section>
         <div className={s.actions}><Link href="/history" className={`${s.btn} ${s.btnGhost}`}>Back to Training history</Link></div>
       </div>
     </main>

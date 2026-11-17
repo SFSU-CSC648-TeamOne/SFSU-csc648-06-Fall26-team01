@@ -33,6 +33,8 @@
 .btnPause{background:#e8a33d;border-color:#e8a33d;color:#1a1204}
 .btnGhost{background:transparent}
 .btnGhost:disabled{opacity:.4;cursor:default}
+.repInput {width: 100%; max-width: 180px; padding: 14px 16px; border: 1px solid #666; border-radius: 10px; font-size: 1.75rem; font-weight: 600; text-align: center;} 
+/* ^ Added by Ian for rep input field ^ */
 .setsRow{display:flex;justify-content:space-between;align-items:center}
 .dots{display:flex;gap:6px}
 .dots i{width:12px;height:12px;border-radius:50%;border:2px solid var(--line)}

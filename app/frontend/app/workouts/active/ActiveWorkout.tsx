@@ -15,15 +15,15 @@ type SetResult = {
   weight_kg: number | null;
   status: "completed" | "skipped";
 };
+type Result = {
+  status: "done" | "skipped";
+  weight: string;
+};
 
 type ExerciseResult = {
   exercise_id: number;
   sets: SetResult[];
 };
-
-const [results, setResults] =
-  useState<Record<number, ExerciseResult>>({});
-
 
 const clock = (sec: number) => `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
 
@@ -62,17 +62,15 @@ export default function ActiveWorkout() {
   async function finish() {
     if (!w) return;
     setSaving(true); setError("");
-    
-  const entries = Object.values(results)
-    .flatMap(exercise =>
-      exercise.sets.map(set => ({
-        exercise_id: exercise.exercise_id,
-        set_number: set.set_number,
-        reps: set.reps,
-        weight_kg: set.weight_kg,
-        status: set.status,
-      }))
-    );
+
+    const entries = Object.entries(results).map(([exerciseId, result]) => ({
+      exercise_id: Number(exerciseId),
+      set_number: 1,
+      reps: null,
+      weight_kg: result.weight.trim() ? Number(result.weight) : null,
+      status: result.status === "done" ? "completed" : "skipped",
+    }));
+
     try {
       await api("/workout-records", {
         method: "POST",

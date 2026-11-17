@@ -188,13 +188,6 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
   const allDone = set > targetSets;
   const setComplete = !allDone && !needsRegression &&
     (isTimed ? elapsed >= targetReps * 1000 : reps >= targetReps);
-
-  const addRep = () => {
-    if (allDone || needsRegression || isTimed) return;
-    setRunning(true);
-    setReps((current) => current + 1);
-  };
-
   
 const nextSet = () => {
   if (allDone) return;
@@ -486,49 +479,100 @@ const skipSet = () => {
                 </small>
               </p>
 
+              {!isTimed && (
+                <div>
+                  <label htmlFor="actual-reps">
+                    Actual repetitions completed
+                  </label>
+
+                  <input
+                    id="actual-reps"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={1000}
+                    step={1}
+                    value={reps}
+                    disabled={allDone}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      if (value === "") {
+                        setReps(0);
+                        return;
+                      }
+
+                      const number = Number(value);
+
+                      if (
+                        Number.isInteger(number) &&
+                        number >= 0 &&
+                        number <= 1000
+                      ) {
+                        setReps(number);
+                      }
+                    }}
+                    className={s.repInput}
+                  />
+
+                  <small>Target: {targetReps} reps</small>
+                </div>
+              )}
+
               <button
                 type="button"
-                className={s.tap}
-                onClick={addRep}
-                disabled={allDone || isTimed}
-                aria-label={isTimed ? "Use timer for hold" : "Count one rep"}
+                className={s.btnStart}
+                onClick={() => {
+                  if (needsRegression || allDone) return;
+                  if (isTimed) {
+                    setRunning((r) => !r);
+                    return;
+                  }
+                  if (reps < targetReps) {
+                    setReps((current) => Math.min(current + 1, targetReps));
+                  }
+                }}
+                disabled={needsRegression || allDone || (isTimed ? elapsed >= targetReps * 1000 : reps >= targetReps)}
               >
                 {needsRegression
-                  ? "REGRESSION NEEDED" : allDone
-                    ? "DONE" : setComplete
-                      ? "SET COMPLETE" : isTimed
+                  ? "REGRESSION NEEDED"
+                  : allDone
+                    ? "DONE"
+                    : setComplete
+                      ? "SET COMPLETE"
+                      : isTimed
                         ? "USE TIMER"
                         : "+1 REP"}
               </button>
 
-              <div className={s.row}>
-                {setComplete && !allDone && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={nextSet}
-                      disabled={allDone || (isTimed ? elapsed < 1000 : reps === 0)}
-                    >
-                      Save set
-                    </button>
-                    <button type="button" onClick={skipSet} disabled={allDone}>
-                      Skip set
-                    </button>
-                  </>
-                )}
-                <button type="button" className={s.btnGhost} onClick={() => setReps((r) => Math.max(0, r - 1))}
-                  disabled={allDone || isTimed || reps === 0 || needsRegression}>−1
-                </button>
-                <button type="button" className={s.btnGhost} onClick={() => {
+              {!allDone && (
+                <div className={s.row}>
+                  <button
+                    type="button"
+                    onClick={nextSet}
+                    disabled={isTimed ? elapsed < 1000 : reps === 0}
+                  >
+                    Save set
+                  </button>
+                  <button type="button" onClick={skipSet}>
+                    Skip set
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="button"
+                className={s.btnGhost}
+                onClick={() => {
                   setSet(1);
                   setReps(0);
                   setRunning(false);
                   setElapsed(0);
                   setCompletedSets([]);
-                }}>
-                  Reset reps
-                </button>
-              </div>
+                }}
+              >
+                Reset reps
+              </button>
             </section>
 
             {saveError && (

@@ -1,10 +1,10 @@
 # logs the workout (workout_records) and the entries (sets, reps, weights)
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
 
-from sqlalchemy import (BigInteger, Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, JSON,
+from sqlalchemy import (BigInteger, Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, JSON,
                         Numeric, String, Text, false, func)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -65,12 +65,15 @@ class PerformanceEntry(Base):
 
 class BodyweightMeasurement(Base):
     __tablename__ = "bodyweight_measurements"
+    __table_args__ = (CheckConstraint("weight_kg > 0", name="ck_bodyweight_positive"),)
 
     id: Mapped[int] = mapped_column(BigIntPK, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    weight_kg: Mapped[Decimal] = mapped_column(Numeric(6, 2))
-    measured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    weight_kg: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=False)
+    measurement_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False)
+    measured_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 class ProgressCheckpoint(Base):
     __tablename__ = "progress_checkpoints"
