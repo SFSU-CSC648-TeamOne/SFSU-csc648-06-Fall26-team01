@@ -9,7 +9,21 @@ import s from "../../screens.module.css";
 
 type Exercise = { id: number; name: string; role: string; sets: number | null; reps: number | null };
 type Detail = { id: number; name: string; exercises: Exercise[] };
-type Result = { status: "done" | "skipped"; weight: string };
+type SetResult = {
+  set_number: number;
+  reps: number | null;
+  weight_kg: number | null;
+  status: "completed" | "skipped";
+};
+
+type ExerciseResult = {
+  exercise_id: number;
+  sets: SetResult[];
+};
+
+const [results, setResults] =
+  useState<Record<number, ExerciseResult>>({});
+
 
 const clock = (sec: number) => `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
 
@@ -48,15 +62,17 @@ export default function ActiveWorkout() {
   async function finish() {
     if (!w) return;
     setSaving(true); setError("");
-    const entries = w.exercises.map((e) => {
-      const r = results[e.id];
-      return {
-        exercise_id: e.id,
-        reps: r?.status === "done" ? Math.min(1000, (e.sets ?? 1) * (e.reps ?? 1)) : 0,
-        weight_kg: r?.weight ? Math.min(2000, Math.max(0, Number(r.weight))) : null,
-        status: r?.status === "done" ? "completed" : "skipped",   // backend EntryStatus values
-      };
-    });
+    
+  const entries = Object.values(results)
+    .flatMap(exercise =>
+      exercise.sets.map(set => ({
+        exercise_id: exercise.exercise_id,
+        set_number: set.set_number,
+        reps: set.reps,
+        weight_kg: set.weight_kg,
+        status: set.status,
+      }))
+    );
     try {
       await api("/workout-records", {
         method: "POST",

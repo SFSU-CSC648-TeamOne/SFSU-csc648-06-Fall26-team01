@@ -71,9 +71,15 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
   const [catalogExerciseId, setCatalogExerciseId] = useState<number | null>(null);
 
   // Keep track of completed sets instead of losing reps when moving to the next set.
-  const [completedSets, setCompletedSets] = useState<
-    { set_number: number; reps: number }[]
-  >([]);
+  type RecordedSet = {
+    set_number: number;
+    reps: number | null;
+    duration_seconds: number | null;
+    status: "completed" | "skipped";
+  };
+
+  const [completedSets, setCompletedSets] = 
+  useState<RecordedSet[]>([]);
 
   // Track saving so users can't accidentally submit twice.
   const [saving, setSaving] = useState(false);
@@ -164,7 +170,7 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
   const targetSets = item?.sets ?? 3;
   const targetReps = item?.reps ?? 10;
   const isTimed = item?.exercise.id === "plank" || item?.exercise.id === "wall-sit";
-  const needsRegression = targetReps === 0;
+  const needsRegression = targetReps <= 0;
   const [set, setSet] = useState(1);
   const [reps, setReps] = useState(0);
 
@@ -189,25 +195,51 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
     setReps((current) => current + 1);
   };
 
-  const nextSet = () => {
-    if (!setComplete || allDone) return;
+  
+const nextSet = () => {
+  if (allDone) return;
 
-    setCompletedSets((current) => [
-      ...current,
-      {
-        set_number: set,
-        reps: isTimed ? Math.floor(elapsed / 1000) : reps,
-      },
-    ]);
+  const actualSeconds = Math.floor(elapsed / 1000);
 
-    setSet((current) => current + 1);
-    setReps(0);
+  const hasPerformance = isTimed
+    ? actualSeconds > 0
+    : reps > 0;
 
-    if (isTimed) {
-      setRunning(false);
-      setElapsed(0);
-    }
+  if (!hasPerformance) return;
+
+  const result: RecordedSet = {
+    set_number: set,
+    reps: isTimed ? null : reps,
+    duration_seconds: isTimed ? actualSeconds : null,
+    status: "completed",
   };
+
+  setCompletedSets(current => [...current, result]);
+  setSet(current => current + 1);
+  setReps(0);
+  setElapsed(0);
+  setRunning(false);
+};
+
+
+const skipSet = () => {
+  if (allDone) return;
+
+  setCompletedSets(current => [
+    ...current,
+    {
+      set_number: set,
+      reps: null,
+      duration_seconds: null,
+      status: "skipped",
+    },
+  ]);
+
+  setSet(current => current + 1);
+  setReps(0);
+  setElapsed(0);
+  setRunning(false);
+};
 
   // ---- finish ----
   const finish = useCallback(async () => {
@@ -227,7 +259,9 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
     if (setComplete && !allDone) {
       setsToSave.push({
         set_number: set,
-        reps: isTimed ? Math.floor(elapsed / 1000) : reps,
+        reps: isTimed ? null : reps,
+        duration_seconds: isTimed ? Math.floor(elapsed / 1000) : null,
+        status: "completed",
       });
     }
 
@@ -248,6 +282,8 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
             exercise_id: catalogExerciseId,
             set_number: completedSet.set_number,
             reps: completedSet.reps,
+            duration_seconds: completedSet.duration_seconds,
+            status: completedSet.status,
           })),
         }),
       });
@@ -365,7 +401,7 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
           <p className={s.kicker}>Week {day.week} · Day {day.number} · Exercise {index + 1} of {list.length}{item.role === "accessory" ? " · optional" : ""}</p>
           <h1 className={s.h1}>{item.exercise.name}</h1>
           <p className={s.meta}> {needsRegression ?
-            "Exercise regression required" : `${item.sets} sets × ${item.reps} ${
+            "This prescription needs review." : `${item.sets} sets × ${item.reps} ${
               isTimed ? "seconds" : "reps"
             }`}
             {" · "} {item.exercise.muscle}
@@ -454,7 +490,7 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
                 type="button"
                 className={s.tap}
                 onClick={addRep}
-                disabled={allDone || setComplete || needsRegression || isTimed}
+                disabled={allDone || isTimed}
                 aria-label={isTimed ? "Use timer for hold" : "Count one rep"}
               >
                 {needsRegression
@@ -466,7 +502,20 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
               </button>
 
               <div className={s.row}>
-                {setComplete && !allDone && <button type="button" className={s.btnStart} onClick={nextSet}>{set === targetSets ? "Finish sets" : "Next set"}</button>}
+                {setComplete && !allDone && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={nextSet}
+                      disabled={allDone || (isTimed ? elapsed < 1000 : reps === 0)}
+                    >
+                      Save set
+                    </button>
+                    <button type="button" onClick={skipSet} disabled={allDone}>
+                      Skip set
+                    </button>
+                  </>
+                )}
                 <button type="button" className={s.btnGhost} onClick={() => setReps((r) => Math.max(0, r - 1))}
                   disabled={allDone || isTimed || reps === 0 || needsRegression}>−1
                 </button>
@@ -497,7 +546,7 @@ export default function ExerciseWorkout({ slug, exKey }: { slug: string; exKey: 
               {saving
                 ? "Saving..."
                 : needsRegression
-                  ? "Select an easier exercise"
+                  ? "Prescription needs review"
                   : next
                     ? "Mark done · next exercise →"
                     : "Mark done · finish day ✓"}
