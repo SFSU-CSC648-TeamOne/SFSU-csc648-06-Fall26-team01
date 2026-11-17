@@ -120,7 +120,7 @@ jobs:
         working-directory: app/backend
         run: |
           alembic upgrade head
-          python scripts/verify_prereq_db.py
+          PYTHONPATH=. python scripts/verify_prereq_db.py
 
   frontend:
     needs: backend
