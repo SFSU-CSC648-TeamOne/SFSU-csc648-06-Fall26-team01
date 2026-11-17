@@ -4,9 +4,9 @@
 from fastapi import APIRouter
 
 from app.api.routes import (auth, catalog, chat, health, bodyweight, media, profile, 
-                            scans, workouts, program_baselines, assessment)
+                            progress, scans, workouts, program_baselines, assessment)
 
 api_router = APIRouter()
-for module in (health, bodyweight, auth, catalog, workouts, media, profile, 
-               chat, scans, program_baselines, assessment):
+for module in (auth, catalog, chat, health, bodyweight, media, profile, 
+                progress, scans, workouts, program_baselines, assessment):
     api_router.include_router(module.router)

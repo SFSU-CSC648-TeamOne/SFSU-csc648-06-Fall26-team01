@@ -1,32 +1,100 @@
+
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
 import Navbar from "../../components/Navbar";
 import BodyweightLogger from "../../components/BodyweightLogger";
-import BodyweightChart, {type BodyweightPoint,} from "../../components/progress/BodyweightChart";
+import BodyweightChart, {
+  type BodyweightPoint,
+} from "../../components/progress/BodyweightChart";
+import ExerciseProgressChart from "../../components/progress/ExerciseProgressChart";
+import MovementGroupChart, {type MovementGroupProgress,} from "../../components/progress/MovementGroupChart";
+
 import { api, useRequireAuth } from "../../lib/auth";
-import { fmtDate, volume, type Page, type RecordDetail, type RecordSummary } from "../../lib/records";
+import {
+  fmtDate,
+  volume,
+  type Page,
+  type RecordDetail,
+  type RecordSummary,
+} from "../../lib/records";
+
 import s from "../screens.module.css";
+
+type ExerciseOption = {
+  id: number;
+  name: string;
+};
 
 export default function ProgressPage() {
   useRequireAuth();
+
   const [records, setRecords] = useState<RecordDetail[]>([]);
+  const [recordsLoading, setRecordsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [bodyweight, setBodyweight] = useState<BodyweightPoint[]>([]);
+
+  const [selectedExerciseId, setSelectedExerciseId] =
+    useState<number | null>(null);
+
+  const [bodyweight, setBodyweight] =
+    useState<BodyweightPoint[]>([]);
   const [weightLoading, setWeightLoading] = useState(true);
   const [weightError, setWeightError] = useState("");
   const [weightRefresh, setWeightRefresh] = useState(0);
+  const [movementGroups, setMovementGroups] =
+    useState<MovementGroupProgress[]>([]);
 
+  const [groupsLoading, setGroupsLoading] = useState(true);
+  const [groupsError, setGroupsError] = useState("");
 
+  // Load recent workout history for the volume chart
+  // and exercise selector.
   useEffect(() => {
-    // The list has no entries, so fetch the detail of the 10 latest records to compute volume.
-    api<Page<RecordSummary>>("/workout-records?limit=10")
-      .then((p) => Promise.all(p.items.map((r) => api<RecordDetail>(`/workout-records/${r.id}`))))
-      .then(setRecords)
-      .catch((e) => setError(e.message));
+    let active = true;
+
+    async function loadRecords() {
+      setRecordsLoading(true);
+      setError("");
+
+      try {
+        const page = await api<Page<RecordSummary>>(
+          "/workout-records?limit=100"
+        );
+
+        const details = await Promise.all(
+          page.items.map((record) =>
+            api<RecordDetail>(
+              `/workout-records/${record.id}`
+            )
+          )
+        );
+
+        if (!active) return;
+
+        setRecords(details);
+      } catch (err) {
+        if (!active) return;
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load workout history."
+        );
+      } finally {
+        if (active) setRecordsLoading(false);
+      }
+    }
+
+    void loadRecords();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
+  // Load bodyweight independently from workout history.
   useEffect(() => {
     let active = true;
 
@@ -36,9 +104,11 @@ export default function ProgressPage() {
 
       try {
         const data = await api<
-          Array<Omit<BodyweightPoint, "weight_kg"> & {
-            weight_kg: number | string;
-          }>
+          Array<
+            Omit<BodyweightPoint, "weight_kg"> & {
+              weight_kg: number | string;
+            }
+          >
         >("/bodyweight-measurements?limit=365");
 
         if (!active) return;
@@ -70,70 +140,357 @@ export default function ProgressPage() {
   }, [weightRefresh]);
 
 
-  const points = [...records].sort((a, b) => +new Date(a.performed_at) - +new Date(b.performed_at)).slice(-10)
-    .map((r) => ({ label: fmtDate(r.performed_at).slice(0, 6), v: volume(r), id: r.id }));
-  const max = Math.max(1, ...points.map((p) => p.v));
-  const first = points[0]?.v ?? 0, last = points[points.length - 1]?.v ?? 0;
-  const change = first > 0 ? Math.round(((last - first) / first) * 100) : null;
+useEffect(() => {
+  let active = true;
+
+  async function loadMovementGroups() {
+    setGroupsLoading(true);
+    setGroupsError("");
+
+    try {
+      const data = await api<MovementGroupProgress[]>(
+        "/progress/movement-groups"
+      );
+
+      if (!active) return;
+
+      setMovementGroups(data);
+    } catch (err) {
+      if (!active) return;
+
+      setGroupsError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load movement-group progress."
+      );
+    } finally {
+      if (active) {
+        setGroupsLoading(false);
+      }
+    }
+  }
+
+  void loadMovementGroups();
+
+  return () => {
+    active = false;
+  };
+}, []);
+
+
+  // Build exercise options using actual workout entries.
+  // Include exercises with skipped entries too, since
+  // the progress API can explain insufficient history.
+  const exerciseMap = new Map<number, ExerciseOption>();
+
+  for (const record of records) {
+    for (const entry of record.entries) {
+      if (!exerciseMap.has(entry.exercise_id)) {
+        exerciseMap.set(entry.exercise_id, {
+          id: entry.exercise_id,
+          name: entry.exercise_name,
+        });
+      }
+    }
+  }
+
+  const exercises = [...exerciseMap.values()].sort(
+    (a, b) => a.name.localeCompare(b.name)
+  );
+
+  // Default to the first available exercise.
+  // Also recover if a previously selected exercise
+  // is no longer present in the loaded history.
+  const selectedExercise =
+    exercises.find(
+      (exercise) => exercise.id === selectedExerciseId
+    ) ?? exercises[0] ?? null;
+
+  // Preserve the existing volume chart:
+  // only the 10 latest workouts are displayed.
+  const points = [...records]
+    .sort(
+      (a, b) =>
+        new Date(a.performed_at).getTime() -
+        new Date(b.performed_at).getTime()
+    )
+    .slice(-10)
+    .map((record) => ({
+      label: fmtDate(record.performed_at).slice(0, 6),
+      value: volume(record),
+      id: record.id,
+    }));
+
+  const maxVolume = Math.max(
+    1,
+    ...points.map((point) => point.value)
+  );
+
+  const firstVolume = points[0]?.value ?? 0;
+  const lastVolume = points[points.length - 1]?.value ?? 0;
+
+  const volumeChange =
+    firstVolume > 0
+      ? Math.round(
+          ((lastVolume - firstVolume) / firstVolume) * 100
+        )
+      : null;
 
   return (
     <main className={s.page}>
       <Navbar />
+
       <div className={s.wrap}>
-        <p className={s.kicker}>Training volume (reps × kg) per workout</p>
-        <h1 className={s.h1}>Progress<span>trend.</span></h1>
-        {error && <p className={s.error}>{error}</p>}
-        {points.length === 0 ? (
-          <p className={s.muted}>Finish a workout to see your trend. <Link href="/programs" style={{ color: "#9fb0ff" }}>Go to Programs</Link>.</p>
+        <p className={s.kicker}>
+          Training volume (reps × kg) per workout
+        </p>
+
+        <h1 className={s.h1}>
+          Progress<span>trend.</span>
+        </h1>
+
+        {error && (
+          <p role="alert" className={s.error}>
+            {error}
+          </p>
+        )}
+
+        {recordsLoading ? (
+          <p className={s.muted}>
+            Loading workout history...
+          </p>
+        ) : points.length === 0 ? (
+          <p className={s.muted}>
+            Finish a workout to see your trend.{" "}
+            <Link
+              href="/programs"
+              style={{ color: "#9fb0ff" }}
+            >
+              Go to Programs
+            </Link>
+            .
+          </p>
         ) : (
           <div className={s.card}>
-            {change !== null && points.length > 1 && <p className={s.mono} style={{ color: change >= 0 ? "var(--lime)" : "var(--red)" }}>{change >= 0 ? "+" : ""}{change}% SINCE {points[0].label}</p>}
-            <div className={s.bars} role="img" aria-label="Bar chart of training volume per workout">
-              {points.map((p) => <div key={p.id} className={s.bar} style={{ height: `${(p.v / max) * 100}%` }}><span>{Math.round(p.v)}</span></div>)}
+            {volumeChange !== null &&
+              points.length > 1 && (
+                <p
+                  className={s.mono}
+                  style={{
+                    color:
+                      volumeChange >= 0
+                        ? "var(--lime)"
+                        : "var(--red)",
+                  }}
+                >
+                  {volumeChange >= 0 ? "+" : ""}
+                  {volumeChange}% SINCE {points[0].label}
+                </p>
+              )}
+
+            <div
+              className={s.bars}
+              role="img"
+              aria-label="Training volume per workout"
+            >
+              {points.map((point) => (
+                <div
+                  key={point.id}
+                  className={s.bar}
+                  style={{
+                    height: `${
+                      (point.value / maxVolume) * 100
+                    }%`,
+                  }}
+                >
+                  <span>
+                    {Math.round(point.value)}
+                  </span>
+                </div>
+              ))}
             </div>
-            <div className={s.barLabels}>{points.map((p) => <span key={p.id}>{p.label}</span>)}</div>
-            <p className={s.muted} style={{ marginTop: 16 }}>Add the weight you used on the Active workout screen to see volume change.</p>
+
+            <div className={s.barLabels}>
+              {points.map((point) => (
+                <span key={point.id}>
+                  {point.label}
+                </span>
+              ))}
+            </div>
+
+            <p
+              className={s.muted}
+              style={{ marginTop: 16 }}
+            >
+              Training volume measures recorded
+              repetitions multiplied by external
+              weight. Bodyweight-only work may
+              contribute zero to this metric.
+            </p>
           </div>
         )}
-          <section
-            className={s.card}
-            style={{ marginTop: 24 }}
-            aria-labelledby="bodyweight-heading"
-          >
-            <h2 id="bodyweight-heading">
-              Bodyweight Tracking
-            </h2>
 
+        {/* Exercise performance analysis */}
+        <section
+          className={s.card}
+          style={{ marginTop: 24 }}
+          aria-labelledby="exercise-progress-heading"
+        >
+          <h2 id="exercise-progress-heading">
+            Exercise Progress
+          </h2>
+
+          <p className={s.muted}>
+            Compare your completed performance
+            against prescribed targets and
+            review trends across comparable workouts.
+          </p>
+
+          {recordsLoading ? (
             <p className={s.muted}>
-              Monitor your bodyweight alongside training performance.
+              Loading exercises...
             </p>
+          ) : exercises.length === 0 ? (
+            <p className={s.muted}>
+              No recorded exercises available yet.
+            </p>
+          ) : selectedExercise ? (
+            <>
+              <div style={{ marginTop: 20 }}>
+                <label
+                  htmlFor="exercise-progress-selector"
+                  style={{ display: "block" }}
+                >
+                  Select exercise
+                </label>
 
-            <div style={{ marginTop: 24 }}>
-              <BodyweightLogger
-                onSaved={() => {
-                  setWeightRefresh((count) => count + 1);
-                }}
-              />
-            </div>
+                <select
+                  id="exercise-progress-selector"
+                  value={selectedExercise.id}
+                  onChange={(event) =>
+                    setSelectedExerciseId(
+                      Number(event.target.value)
+                    )
+                  }
+                  style={{
+                    display: "block",
+                    marginTop: 8,
+                    padding: 10,
+                    width: "100%",
+                    maxWidth: 420,
+                  }}
+                >
+                  {exercises.map((exercise) => (
+                    <option
+                      key={exercise.id}
+                      value={exercise.id}
+                    >
+                      {exercise.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div style={{ marginTop: 32 }}>
-              {weightLoading ? (
-                <p className={s.muted}>
-                  Loading bodyweight history...
-                </p>
-              ) : weightError ? (
-                <p role="alert" className={s.error}>
-                  {weightError}
-                </p>
-              ) : (
-                <BodyweightChart
-                  points={bodyweight}
-                  unit="lb"
+              <div style={{ marginTop: 28 }}>
+                <ExerciseProgressChart
+                  exerciseId={selectedExercise.id}
+                  exerciseName={selectedExercise.name}
                 />
-              )}
-            </div>
-          </section>
-        <div className={s.actions}><Link href="/history" className={`${s.btn} ${s.btnGhost}`}>Back to Training history</Link></div>
+              </div>
+            </>
+          ) : null}
+
+          <p
+            className={s.muted}
+            style={{ marginTop: 16 }}
+          >
+            Exercise selection is based on your
+            100 most recent workout records.
+            Available trend history is calculated
+            separately by the backend.
+          </p>
+        </section>
+        {/* Movement Group Progress */}
+        <section
+          className={s.card}
+          style={{ marginTop: 24 }}
+          aria-labelledby="movement-group-heading"
+        >
+          <h2 id="movement-group-heading">
+            Movement Pattern Analysis
+          </h2>
+
+          <p className={s.muted}>
+            Track performance trends across related exercises.
+            Movement-group results summarize comparable
+            training observations.
+          </p>
+
+          <div style={{ marginTop: 24 }}>
+            {groupsLoading ? (
+              <p role="status" className={s.muted}>
+                Loading movement-group progress...
+              </p>
+            ) : groupsError ? (
+              <p role="alert" className={s.error}>
+                {groupsError}
+              </p>
+            ) : (
+              <MovementGroupChart groups={movementGroups} />
+            )}
+          </div>
+        </section>
+        {/* Bodyweight tracking */}
+        <section
+          className={s.card}
+          style={{ marginTop: 24 }}
+          aria-labelledby="bodyweight-heading"
+        >
+          <h2 id="bodyweight-heading">
+            Bodyweight Tracking
+          </h2>
+
+          <p className={s.muted}>
+            Monitor your bodyweight alongside
+            training performance.
+          </p>
+
+          <div style={{ marginTop: 24 }}>
+            <BodyweightLogger
+              onSaved={() =>
+                setWeightRefresh(
+                  (count) => count + 1
+                )
+              }
+            />
+          </div>
+
+          <div style={{ marginTop: 32 }}>
+            {weightLoading ? (
+              <p className={s.muted}>
+                Loading bodyweight history...
+              </p>
+            ) : weightError ? (
+              <p role="alert" className={s.error}>
+                {weightError}
+              </p>
+            ) : (
+              <BodyweightChart
+                points={bodyweight}
+                unit="lb"
+              />
+            )}
+          </div>
+        </section>
+
+        <div className={s.actions}>
+          <Link
+            href="/history"
+            className={`${s.btn} ${s.btnGhost}`}
+          >
+            Back to Training history
+          </Link>
+        </div>
       </div>
     </main>
   );
