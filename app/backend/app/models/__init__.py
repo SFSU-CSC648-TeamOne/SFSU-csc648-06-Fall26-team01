@@ -13,3 +13,4 @@ from app.models.chat import ChatConversation, ChatMessage
 from app.models.scans import ExerciseScan
 from app.models.program_baseline import ProgramBaseline
 from app.models.program_phase import (ProgramPhase, ProgramPhaseType,)
+from app.models.adaptation_approval import (AdaptationApproval, AdaptationAdjustmentType,)
