@@ -232,27 +232,57 @@ def _add(bucket: dict, e) -> None:
     bucket["volume_kg"] += (e.reps or 0) * (e.weight_kg or 0)
     bucket["seconds"] += e.duration_seconds or 0
 
-def program_summary(db: Session, user: User, slug: str) -> ProgramSummaryOut:
-    # doing an exercise again creates a newer record, so keep only the latest per (week, day, exercise)
-    latest: dict = {}
-    for r in repo.program_records(db, user.id, slug):
-        for ex_id in {e.exercise_id for e in r.entries}:
-            latest[(r.program_week or 0, r.program_day or 0, ex_id)] = r
 
-    totals, weeks, week_days, exercises, days = _blank(), {}, {}, {}, set()
-    for (week, day, ex_id), r in latest.items():
-        days.add((week, day))
+def program_summary(db: Session, user: User, slug: str,) -> ProgramSummaryOut:
+    """
+    Summarize the latest recorded attempt for each exercise
+    within each program week and day.
+
+    Only completed sets contribute to totals.
+    A day counts as completed only if it has completed work.
+    """
+
+    latest = {}
+    # Repository returns records in chronological order.
+    # Later attempts replace earlier attempts of the same
+    # exercise within the same program day.
+    for record in repo.program_records(db, user.id, slug):
+        for exercise_id in {entry.exercise_id for entry in record.entries}:
+            key = (record.program_week or 0, record.program_day or 0, exercise_id,)
+            latest[key] = record
+
+    totals = _blank()
+    weeks = {}
+    week_days = {}
+    exercises = {}
+    completed_days = set()
+
+    for (week, day, exercise_id), record in latest.items():
+        completed_entries = [entry for entry in record.entries
+            if (entry.exercise_id == exercise_id and entry.status == EntryStatus.completed.value)]
+        # Skipped-only attempts contribute no training volume
+        # and do not establish a completed training day.
+        if not completed_entries: continue
+
+        completed_days.add((week, day))
         week_days.setdefault(week, set()).add(day)
-        wk = weeks.setdefault(week, _blank())
-        for e in r.entries:
-            if e.exercise_id != ex_id or e.status != EntryStatus.completed.value:
-                continue
-            ex = exercises.setdefault(ex_id, {"name": e.exercise.name, **_blank()})
-            for bucket in (totals, wk, ex):
-                _add(bucket, e)
+        week_totals = weeks.setdefault(week, _blank())
+        exercise_totals = exercises.setdefault(exercise_id,
+            {"name": completed_entries[0].exercise.name, **_blank(),},
+        )
+
+        for entry in completed_entries:
+            for bucket in (totals, week_totals, exercise_totals,):
+                _add(bucket, entry)
 
     return ProgramSummaryOut(
-        program=slug, days_completed=len(days), days_total=TOTAL_DAYS,
+        program=slug,
+        days_completed=len(completed_days),
+        days_total=TOTAL_DAYS,
         totals=Totals(**totals),
-        weeks=[WeekTotals(week=w, days_completed=len(week_days[w]), **v) for w, v in sorted(weeks.items())],
-        exercises=[ExerciseTotals(exercise_id=i, **v) for i, v in sorted(exercises.items())])
+        weeks=[WeekTotals(week=week, days_completed=len(week_days[week]), **values,)
+            for week, values in sorted(weeks.items())],
+        exercises=[ExerciseTotals(exercise_id=exercise_id, **values,)
+            for exercise_id, values in sorted(exercises.items())
+        ],
+    )
