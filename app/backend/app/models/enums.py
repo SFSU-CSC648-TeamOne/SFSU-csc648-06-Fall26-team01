@@ -21,5 +21,30 @@ class EntryStatus(str, Enum):
     skipped = "skipped"
     substituted = "substituted"
 
+# added for new engine support
+class PrescriptionStatus(str, Enum):
+    planned = "planned"
+    completed = "completed"
+    skipped = "skipped"
+
+class ObservationType(str, Enum):
+    training = "training"
+    benchmark = "benchmark"
+
+class LoadBasis(str, Enum):
+    none = "none"
+    bodyweight = "bodyweight"
+    added = "added"
+    external = "external"
+    assisted = "assisted"
+
+class CheckpointType(str, Enum):
+    weekly = "weekly"
+    program_end = "program_end"
+
+class MovementRelationship(str, Enum):
+    primary = "primary"
+    secondary = "secondary"
+    
 def sql_in(enum_cls: type[Enum]) -> str:
     return ", ".join(f"'{e.value}'" for e in enum_cls)

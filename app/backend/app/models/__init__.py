@@ -2,8 +2,11 @@
 # and if table is missing, it won't create it
 
 from app.models.catalog import (Equipment, Exercise, ExerciseMuscle, MuscleGroup, 
-                                SessionExercise, TrainingProgram, WorkoutSession, exercise_equipment)
-from app.models.tracking import PerformanceEntry, WorkoutRecord
+                                SessionExercise, TrainingProgram, WorkoutSession, exercise_equipment,
+                                MovementGroup, ExerciseMovementGroup)
+from app.models.tracking import (PerformanceEntry, WorkoutRecord, BodyweightMeasurement,
+                                 ProgressCheckpoint)
+from app.models.prescription import WorkoutPrescription, PrescriptionSet
 from app.models.users import Assessment, User, UserProfile, user_equipment
 from app.models.media import ExerciseModel
 from app.models.chat import ChatConversation, ChatMessage
