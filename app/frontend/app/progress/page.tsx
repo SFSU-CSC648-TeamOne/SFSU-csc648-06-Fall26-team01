@@ -1,8 +1,10 @@
 
+
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
 
 import Navbar from "../../components/Navbar";
 import BodyweightLogger from "../../components/BodyweightLogger";
@@ -14,6 +16,14 @@ import MovementGroupChart, {type MovementGroupProgress,} from "../../components/
 import AdaptationRecommendations from "../../components/AdaptationRecommendations";
 
 import { api, useRequireAuth } from "../../lib/auth";
+import {
+  fmtDate,
+  volume,
+  type Page,
+  type RecordDetail,
+  type RecordSummary,
+} from "../../lib/records";
+
 import {
   fmtDate,
   volume,
@@ -54,6 +64,7 @@ export default function ProgressPage() {
 
   const [records, setRecords] = useState<RecordDetail[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(true);
+  const [recordsLoading, setRecordsLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [selectedExerciseId, setSelectedExerciseId] =
@@ -72,7 +83,63 @@ export default function ProgressPage() {
 
   // Load recent workout history for the volume chart
   // and exercise selector.
+  const [selectedExerciseId, setSelectedExerciseId] =
+    useState<number | null>(null);
+
+  const [bodyweight, setBodyweight] =
+    useState<BodyweightPoint[]>([]);
+  const [weightLoading, setWeightLoading] = useState(true);
+  const [weightError, setWeightError] = useState("");
+  const [weightRefresh, setWeightRefresh] = useState(0);
+  const [movementGroups, setMovementGroups] =
+    useState<MovementGroupProgress[]>([]);
+
+  const [groupsLoading, setGroupsLoading] = useState(true);
+  const [groupsError, setGroupsError] = useState("");
+
+  // Load recent workout history for the volume chart
+  // and exercise selector.
   useEffect(() => {
+    let active = true;
+
+    async function loadRecords() {
+      setRecordsLoading(true);
+      setError("");
+
+      try {
+        const page = await api<Page<RecordSummary>>(
+          "/workout-records?limit=100"
+        );
+
+        const details = await Promise.all(
+          page.items.map((record) =>
+            api<RecordDetail>(
+              `/workout-records/${record.id}`
+            )
+          )
+        );
+
+        if (!active) return;
+
+        setRecords(details);
+      } catch (err) {
+        if (!active) return;
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load workout history."
+        );
+      } finally {
+        if (active) setRecordsLoading(false);
+      }
+    }
+
+    void loadRecords();
+
+    return () => {
+      active = false;
+    };
     let active = true;
 
     async function loadRecords() {
@@ -323,7 +390,37 @@ if (!user) {
     <main className={s.page}>
       <Navbar />
 
+
       <div className={s.wrap}>
+        <p className={s.kicker}>
+          Training volume (reps × kg) per workout
+        </p>
+
+        <h1 className={s.h1}>
+          Progress<span>trend.</span>
+        </h1>
+
+        {error && (
+          <p role="alert" className={s.error}>
+            {error}
+          </p>
+        )}
+
+        {recordsLoading ? (
+          <p className={s.muted}>
+            Loading workout history...
+          </p>
+        ) : points.length === 0 ? (
+          <p className={s.muted}>
+            Finish a workout to see your trend.{" "}
+            <Link
+              href="/programs"
+              style={{ color: "#9fb0ff" }}
+            >
+              Go to Programs
+            </Link>
+            .
+          </p>
         <p className={s.kicker}>
           Training volume (reps × kg) per workout
         </p>
@@ -399,7 +496,61 @@ if (!user) {
                   {point.label}
                 </span>
               ))}
+            {volumeChange !== null &&
+              points.length > 1 && (
+                <p
+                  className={s.mono}
+                  style={{
+                    color:
+                      volumeChange >= 0
+                        ? "var(--lime)"
+                        : "var(--red)",
+                  }}
+                >
+                  {volumeChange >= 0 ? "+" : ""}
+                  {volumeChange}% SINCE {points[0].label}
+                </p>
+              )}
+
+            <div
+              className={s.bars}
+              role="img"
+              aria-label="Training volume per workout"
+            >
+              {points.map((point) => (
+                <div
+                  key={point.id}
+                  className={s.bar}
+                  style={{
+                    height: `${
+                      (point.value / maxVolume) * 100
+                    }%`,
+                  }}
+                >
+                  <span>
+                    {Math.round(point.value)}
+                  </span>
+                </div>
+              ))}
             </div>
+
+            <div className={s.barLabels}>
+              {points.map((point) => (
+                <span key={point.id}>
+                  {point.label}
+                </span>
+              ))}
+            </div>
+
+            <p
+              className={s.muted}
+              style={{ marginTop: 16 }}
+            >
+              Training volume measures recorded
+              repetitions multiplied by external
+              weight. Bodyweight-only work may
+              contribute zero to this metric.
+            </p>
 
             <p
               className={s.muted}
