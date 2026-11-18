@@ -1,10 +1,8 @@
 
-
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
 
 import Navbar from "../../components/Navbar";
 import BodyweightLogger from "../../components/BodyweightLogger";
@@ -12,7 +10,9 @@ import BodyweightChart, {
   type BodyweightPoint,
 } from "../../components/progress/BodyweightChart";
 import ExerciseProgressChart from "../../components/progress/ExerciseProgressChart";
-import MovementGroupChart, {type MovementGroupProgress,} from "../../components/progress/MovementGroupChart";
+import MovementGroupChart, {
+  type MovementGroupProgress,
+} from "../../components/progress/MovementGroupChart";
 import AdaptationRecommendations from "../../components/AdaptationRecommendations";
 
 import { api, useRequireAuth } from "../../lib/auth";
@@ -24,82 +24,65 @@ import {
   type RecordSummary,
 } from "../../lib/records";
 
-import {
-  fmtDate,
-  volume,
-  type Page,
-  type RecordDetail,
-  type RecordSummary,
-} from "../../lib/records";
-
 import s from "../screens.module.css";
+
 
 type ExerciseOption = {
   id: number;
   name: string;
 };
 
-type PlannedPrescription = {id: number;
+type PlannedPrescription = {
+  id: number;
   program_slug: string;
   program_week: number;
   program_day: number;
   set_count: number;
   engine_version: string;
-}
+};
+
 
 export default function ProgressPage() {
-  const { user } = useRequireAuth();
+  const { user, loading: authLoading } = useRequireAuth();
 
-  const [plannedPrescriptions, setPlannedPrescriptions] =
-  useState<PlannedPrescription[]>([]);
-
-  const [selectedProgram, setSelectedProgram] = useState("");
-  const [selectedPrescriptionId, setSelectedPrescriptionId] =
-    useState<number | null>(null);
-
-  const [adaptationsLoading, setAdaptationsLoading] =
-    useState(true);
-
-  const [adaptationsError, setAdaptationsError] = useState("");
-
+  // Workout history
   const [records, setRecords] = useState<RecordDetail[]>([]);
-  const [recordsLoading, setRecordsLoading] = useState(true);
   const [recordsLoading, setRecordsLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [selectedExerciseId, setSelectedExerciseId] =
     useState<number | null>(null);
 
+  // Bodyweight
   const [bodyweight, setBodyweight] =
     useState<BodyweightPoint[]>([]);
   const [weightLoading, setWeightLoading] = useState(true);
   const [weightError, setWeightError] = useState("");
   const [weightRefresh, setWeightRefresh] = useState(0);
+
+  // Movement groups
   const [movementGroups, setMovementGroups] =
     useState<MovementGroupProgress[]>([]);
-
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [groupsError, setGroupsError] = useState("");
 
-  // Load recent workout history for the volume chart
-  // and exercise selector.
-  const [selectedExerciseId, setSelectedExerciseId] =
+  // Adaptive recommendations
+  const [plannedPrescriptions, setPlannedPrescriptions] =
+    useState<PlannedPrescription[]>([]);
+  const [selectedProgram, setSelectedProgram] = useState("");
+  const [selectedPrescriptionId, setSelectedPrescriptionId] =
     useState<number | null>(null);
+  const [adaptationsLoading, setAdaptationsLoading] =
+    useState(true);
+  const [adaptationsError, setAdaptationsError] = useState("");
 
-  const [bodyweight, setBodyweight] =
-    useState<BodyweightPoint[]>([]);
-  const [weightLoading, setWeightLoading] = useState(true);
-  const [weightError, setWeightError] = useState("");
-  const [weightRefresh, setWeightRefresh] = useState(0);
-  const [movementGroups, setMovementGroups] =
-    useState<MovementGroupProgress[]>([]);
+  // --------------------------------------------------
+  // Load workout history
+  // --------------------------------------------------
 
-  const [groupsLoading, setGroupsLoading] = useState(true);
-  const [groupsError, setGroupsError] = useState("");
-
-  // Load recent workout history for the volume chart
-  // and exercise selector.
   useEffect(() => {
+    if (authLoading || !user) return;
+
     let active = true;
 
     async function loadRecords() {
@@ -140,50 +123,15 @@ export default function ProgressPage() {
     return () => {
       active = false;
     };
-    let active = true;
+  }, [authLoading, user?.id]);
 
-    async function loadRecords() {
-      setRecordsLoading(true);
-      setError("");
+  // --------------------------------------------------
+  // Load bodyweight history
+  // --------------------------------------------------
 
-      try {
-        const page = await api<Page<RecordSummary>>(
-          "/workout-records?limit=100"
-        );
-
-        const details = await Promise.all(
-          page.items.map((record) =>
-            api<RecordDetail>(
-              `/workout-records/${record.id}`
-            )
-          )
-        );
-
-        if (!active) return;
-
-        setRecords(details);
-      } catch (err) {
-        if (!active) return;
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load workout history."
-        );
-      } finally {
-        if (active) setRecordsLoading(false);
-      }
-    }
-
-    void loadRecords();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Load bodyweight independently from workout history.
   useEffect(() => {
+    if (authLoading || !user) return;
+
     let active = true;
 
     async function loadBodyweight() {
@@ -225,94 +173,94 @@ export default function ProgressPage() {
     return () => {
       active = false;
     };
-  }, [weightRefresh]);
+  }, [authLoading, user?.id, weightRefresh]);
 
+  // --------------------------------------------------
+  // Load movement-group progress
+  // --------------------------------------------------
 
-useEffect(() => {
-  let active = true;
+  useEffect(() => {
+    if (authLoading || !user) return;
 
-  async function loadMovementGroups() {
-    setGroupsLoading(true);
-    setGroupsError("");
+    let active = true;
 
-    try {
-      const data = await api<MovementGroupProgress[]>(
-        "/progress/movement-groups"
-      );
+    async function loadMovementGroups() {
+      setGroupsLoading(true);
+      setGroupsError("");
 
-      if (!active) return;
+      try {
+        const data = await api<MovementGroupProgress[]>(
+          "/progress/movement-groups"
+        );
 
-      setMovementGroups(data);
-    } catch (err) {
-      if (!active) return;
+        if (!active) return;
 
-      setGroupsError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load movement-group progress."
-      );
-    } finally {
-      if (active) {
-        setGroupsLoading(false);
+        setMovementGroups(data);
+      } catch (err) {
+        if (!active) return;
+
+        setGroupsError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load movement-group progress."
+        );
+      } finally {
+        if (active) setGroupsLoading(false);
       }
     }
-  }
 
-  void loadMovementGroups();
+    void loadMovementGroups();
 
-  return () => {
-    active = false;
-  };
-}, []);
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user?.id]);
 
-if (!user) {
-  setPlannedPrescriptions([]);
-  setSelectedProgram("");
-  setSelectedPrescriptionId(null);
-  setAdaptationsError("");
-  setAdaptationsLoading(false);
-  return;
-}
+  // --------------------------------------------------
+  // Load planned workout prescriptions
+  // --------------------------------------------------
 
-  let active = true;
+  useEffect(() => {
+    if (authLoading || !user) return;
 
-  async function loadPlannedPrescriptions() {
-    setAdaptationsLoading(true);
-    setAdaptationsError("");
+    let active = true;
 
-    try {
-      const data = await api<PlannedPrescription[]>(
-        "/adaptations/planned-prescriptions"
-      );
+    async function loadPlannedPrescriptions() {
+      setAdaptationsLoading(true);
+      setAdaptationsError("");
 
-      if (!active) return;
+      try {
+        const data = await api<PlannedPrescription[]>(
+          "/adaptations/planned-prescriptions"
+        );
 
-      setPlannedPrescriptions(data);
-    } catch (err) {
-      if (!active) return;
+        if (!active) return;
 
-      setAdaptationsError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load planned workouts."
-      );
-    } finally {
-      if (active) setAdaptationsLoading(false);
+        setPlannedPrescriptions(data);
+      } catch (err) {
+        if (!active) return;
+
+        setAdaptationsError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load planned workouts."
+        );
+      } finally {
+        if (active) setAdaptationsLoading(false);
+      }
     }
-  }
 
-  void loadPlannedPrescriptions();
+    void loadPlannedPrescriptions();
 
-  return () => {
-    active = false;
-  };
-}, [user?.id]);
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user?.id]);
 
+  // --------------------------------------------------
+  // Derived exercise data
+  // --------------------------------------------------
 
-
-  // Build exercise options using actual workout entries.
-  // Include exercises with skipped entries too, since
-  // the progress API can explain insufficient history.
   const exerciseMap = new Map<number, ExerciseOption>();
 
   for (const record of records) {
@@ -330,16 +278,22 @@ if (!user) {
     (a, b) => a.name.localeCompare(b.name)
   );
 
-  // Default to the first available exercise.
-  // Also recover if a previously selected exercise
-  // is no longer present in the loaded history.
   const selectedExercise =
     exercises.find(
       (exercise) => exercise.id === selectedExerciseId
     ) ?? exercises[0] ?? null;
 
-  // Preserve the existing volume chart:
-  // only the 10 latest workouts are displayed.
+  const exerciseNames = Object.fromEntries(
+    exercises.map((exercise) => [
+      exercise.id,
+      exercise.name,
+    ])
+  );
+
+  // --------------------------------------------------
+  // Training volume chart
+  // --------------------------------------------------
+
   const points = [...records]
     .sort(
       (a, b) =>
@@ -367,6 +321,11 @@ if (!user) {
           ((lastVolume - firstVolume) / firstVolume) * 100
         )
       : null;
+
+  // --------------------------------------------------
+  // Adaptive prescription selection
+  // --------------------------------------------------
+
   const availablePrograms = [
     ...new Set(
       plannedPrescriptions.map(
@@ -386,10 +345,26 @@ if (!user) {
         prescription.id === selectedPrescriptionId
     ) ?? programPrescriptions[0] ?? null;
 
+  // --------------------------------------------------
+  // Render
+  // --------------------------------------------------
+
+  if (authLoading || !user) {
+    return (
+      <main className={s.page}>
+        <Navbar />
+        <div className={s.wrap}>
+          <p role="status" className={s.muted}>
+            Loading your training progress...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className={s.page}>
       <Navbar />
-
 
       <div className={s.wrap}>
         <p className={s.kicker}>
@@ -406,34 +381,9 @@ if (!user) {
           </p>
         )}
 
-        {recordsLoading ? (
-          <p className={s.muted}>
-            Loading workout history...
-          </p>
-        ) : points.length === 0 ? (
-          <p className={s.muted}>
-            Finish a workout to see your trend.{" "}
-            <Link
-              href="/programs"
-              style={{ color: "#9fb0ff" }}
-            >
-              Go to Programs
-            </Link>
-            .
-          </p>
-        <p className={s.kicker}>
-          Training volume (reps × kg) per workout
-        </p>
-
-        <h1 className={s.h1}>
-          Progress<span>trend.</span>
-        </h1>
-
-        {error && (
-          <p role="alert" className={s.error}>
-            {error}
-          </p>
-        )}
+        {/* ---------------------------------------
+            Training Volume
+        --------------------------------------- */}
 
         {recordsLoading ? (
           <p className={s.muted}>
@@ -496,61 +446,7 @@ if (!user) {
                   {point.label}
                 </span>
               ))}
-            {volumeChange !== null &&
-              points.length > 1 && (
-                <p
-                  className={s.mono}
-                  style={{
-                    color:
-                      volumeChange >= 0
-                        ? "var(--lime)"
-                        : "var(--red)",
-                  }}
-                >
-                  {volumeChange >= 0 ? "+" : ""}
-                  {volumeChange}% SINCE {points[0].label}
-                </p>
-              )}
-
-            <div
-              className={s.bars}
-              role="img"
-              aria-label="Training volume per workout"
-            >
-              {points.map((point) => (
-                <div
-                  key={point.id}
-                  className={s.bar}
-                  style={{
-                    height: `${
-                      (point.value / maxVolume) * 100
-                    }%`,
-                  }}
-                >
-                  <span>
-                    {Math.round(point.value)}
-                  </span>
-                </div>
-              ))}
             </div>
-
-            <div className={s.barLabels}>
-              {points.map((point) => (
-                <span key={point.id}>
-                  {point.label}
-                </span>
-              ))}
-            </div>
-
-            <p
-              className={s.muted}
-              style={{ marginTop: 16 }}
-            >
-              Training volume measures recorded
-              repetitions multiplied by external
-              weight. Bodyweight-only work may
-              contribute zero to this metric.
-            </p>
 
             <p
               className={s.muted}
@@ -564,7 +460,10 @@ if (!user) {
           </div>
         )}
 
-        {/* Exercise performance analysis */}
+        {/* ---------------------------------------
+            Exercise Progress
+        --------------------------------------- */}
+
         <section
           className={s.card}
           style={{ marginTop: 24 }}
@@ -575,9 +474,9 @@ if (!user) {
           </h2>
 
           <p className={s.muted}>
-            Compare your completed performance
-            against prescribed targets and
-            review trends across comparable workouts.
+            Compare your completed performance against
+            prescribed targets and review trends across
+            comparable workouts.
           </p>
 
           {recordsLoading ? (
@@ -600,6 +499,7 @@ if (!user) {
 
                 <select
                   id="exercise-progress-selector"
+                  className={s.select}
                   value={selectedExercise.id}
                   onChange={(event) =>
                     setSelectedExerciseId(
@@ -609,7 +509,6 @@ if (!user) {
                   style={{
                     display: "block",
                     marginTop: 8,
-                    padding: 10,
                     width: "100%",
                     maxWidth: 420,
                   }}
@@ -640,11 +539,15 @@ if (!user) {
           >
             Exercise selection is based on your
             100 most recent workout records.
-            Available trend history is calculated
-            separately by the backend.
+            Trend history is calculated separately
+            by the backend.
           </p>
         </section>
-        {/* Movement Group Progress */}
+
+        {/* ---------------------------------------
+            Movement Pattern Analysis
+        --------------------------------------- */}
+
         <section
           className={s.card}
           style={{ marginTop: 24 }}
@@ -655,9 +558,9 @@ if (!user) {
           </h2>
 
           <p className={s.muted}>
-            Track performance trends across related exercises.
-            Movement-group results summarize comparable
-            training observations.
+            Track performance trends across related
+            exercises. Movement-group results summarize
+            comparable training observations.
           </p>
 
           <div style={{ marginTop: 24 }}>
@@ -670,11 +573,17 @@ if (!user) {
                 {groupsError}
               </p>
             ) : (
-              <MovementGroupChart groups={movementGroups} />
+              <MovementGroupChart
+                groups={movementGroups}
+              />
             )}
           </div>
         </section>
-        {/* Adaptive Training Recommendations */}
+
+        {/* ---------------------------------------
+            Adaptive Training Recommendations
+        --------------------------------------- */}
+
         <section
           className={s.card}
           style={{ marginTop: 24 }}
@@ -685,7 +594,7 @@ if (!user) {
           </h2>
 
           <p className={s.muted}>
-            Review recommended adjustments to your upcoming
+            Review recommended adjustments to upcoming
             workouts based on your recorded performance.
           </p>
 
@@ -698,7 +607,10 @@ if (!user) {
               {adaptationsError}
             </p>
           ) : plannedPrescriptions.length === 0 ? (
-            <p className={s.muted} style={{ marginTop: 20 }}>
+            <p
+              className={s.muted}
+              style={{ marginTop: 20 }}
+            >
               No planned workout prescriptions are available.
             </p>
           ) : (
@@ -734,7 +646,10 @@ if (!user) {
                     </option>
 
                     {availablePrograms.map((program) => (
-                      <option key={program} value={program}>
+                      <option
+                        key={program}
+                        value={program}
+                      >
                         {program.toUpperCase()}
                       </option>
                     ))}
@@ -754,11 +669,11 @@ if (!user) {
                     className={s.select}
                     value={selectedPrescription?.id ?? ""}
                     disabled={!selectedProgram}
-                    onChange={(event) => {
+                    onChange={(event) =>
                       setSelectedPrescriptionId(
                         Number(event.target.value)
-                      );
-                    }}
+                      )
+                    }
                   >
                     {!selectedProgram && (
                       <option value="">
@@ -766,18 +681,20 @@ if (!user) {
                       </option>
                     )}
 
-                    {programPrescriptions.map((prescription) => (
-                      <option
-                        key={prescription.id}
-                        value={prescription.id}
-                      >
-                        Week {prescription.program_week}
-                        {" · "}
-                        Day {prescription.program_day}
-                        {" · "}
-                        {prescription.set_count} sets
-                      </option>
-                    ))}
+                    {programPrescriptions.map(
+                      (prescription) => (
+                        <option
+                          key={prescription.id}
+                          value={prescription.id}
+                        >
+                          Week {prescription.program_week}
+                          {" · "}
+                          Day {prescription.program_day}
+                          {" · "}
+                          {prescription.set_count} sets
+                        </option>
+                      )
+                    )}
                   </select>
                 </div>
               </div>
@@ -786,12 +703,7 @@ if (!user) {
                 <AdaptationRecommendations
                   key={selectedPrescription.id}
                   prescriptionId={selectedPrescription.id}
-                  exerciseNames={Object.fromEntries(
-                    exercises.map((exercise) => [
-                      exercise.id,
-                      exercise.name,
-                    ])
-                  )}
+                  exerciseNames={exerciseNames}
                 />
               ) : (
                 <p className={s.muted}>
@@ -802,7 +714,11 @@ if (!user) {
             </>
           )}
         </section>
-        {/* Bodyweight tracking */}
+
+        {/* ---------------------------------------
+            Bodyweight Tracking
+        --------------------------------------- */}
+
         <section
           className={s.card}
           style={{ marginTop: 24 }}
@@ -820,9 +736,7 @@ if (!user) {
           <div style={{ marginTop: 24 }}>
             <BodyweightLogger
               onSaved={() =>
-                setWeightRefresh(
-                  (count) => count + 1
-                )
+                setWeightRefresh((count) => count + 1)
               }
             />
           </div>
@@ -850,7 +764,7 @@ if (!user) {
             href="/history"
             className={`${s.btn} ${s.btnGhost}`}
           >
-            Back to Training history
+            Back to Training History
           </Link>
         </div>
       </div>

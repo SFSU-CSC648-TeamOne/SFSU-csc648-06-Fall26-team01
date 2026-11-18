@@ -1,13 +1,14 @@
 
-"""Apply user-approved adaptive training adjustments.
+"""Apply and audit user-approved adaptive adjustments.
 
-Security and consistency:
-- Only the prescription owner can approve adjustments.
-- Only planned workouts can be modified.
-- Recommendations are recalculated on the server.
-- Stale or altered proposals are rejected.
-- Workouts with recorded performance are protected.
-- All approved set changes succeed or fail together.
+Rules:
+- Only the prescription owner may approve changes.
+- Only planned prescriptions may be modified.
+- Historical workout performance is protected.
+- Recommendations are recalculated server-side.
+- Stale and altered proposals are rejected.
+- Each approved change creates an audit record.
+- All updates and audit records commit atomically.
 
 Scope: one workout prescription per approval request.
 """
@@ -23,6 +24,9 @@ from app.core.errors import (
     NotFoundError,
     ValidationFailed,
 )
+from app.models.adaptation_approval import (
+    AdaptationApproval,
+)
 from app.models.enums import PrescriptionStatus
 from app.models.prescription import (
     PrescriptionSet,
@@ -37,6 +41,13 @@ from app.services.prescription_adaptation import (
 )
 
 
+SUPPORTED_ADJUSTMENTS = {
+    "reps",
+    "duration",
+    "weight",
+}
+
+
 @dataclass(frozen=True)
 class ApprovedAdjustment:
     prescription_set_id: int
@@ -45,8 +56,8 @@ class ApprovedAdjustment:
     expected_proposed_value: Decimal
 
 
-def _number(value) -> Decimal:
-    """Normalize numerical values for exact comparison."""
+def _number(value: object) -> Decimal:
+    """Normalize numeric inputs without binary float arithmetic."""
     try:
         result = Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError) as exc:
@@ -66,6 +77,8 @@ def _current_value(
     prescribed_set: PrescriptionSet,
     adjustment_type: str,
 ):
+    """Read the applicable stored prescription target."""
+
     if adjustment_type == "reps":
         return prescribed_set.target_reps
 
@@ -75,48 +88,75 @@ def _current_value(
     if adjustment_type == "weight":
         return prescribed_set.target_weight_kg
 
-    # Assistance targets are not yet stored by
-    # the current PrescriptionSet model.
     raise ValidationFailed(
-        "This adjustment type cannot currently be applied."
+        "Unsupported adjustment type."
     )
 
 
-def _apply_value(
-    prescribed_set: PrescriptionSet,
+def _validate_target(
     adjustment_type: str,
     value: Decimal,
-):
-    if adjustment_type == "reps":
-        if value != value.to_integral_value() or value <= 0:
-            raise ValidationFailed(
-                "Repetition targets must be positive integers."
-            )
-        prescribed_set.target_reps = int(value)
+) -> None:
+    """Validate a proposed target before persistence."""
 
-    elif adjustment_type == "duration":
-        if value != value.to_integral_value() or value <= 0:
+    if adjustment_type not in SUPPORTED_ADJUSTMENTS:
+        raise ValidationFailed(
+            "Unsupported adjustment type."
+        )
+
+    if not value.is_finite() or value <= 0:
+        raise ValidationFailed(
+            "Prescription targets must be positive."
+        )
+
+    if adjustment_type in {"reps", "duration"}:
+        if (
+            value != value.to_integral_value()
+            or value > Decimal("2147483647")
+        ):
             raise ValidationFailed(
-                "Duration targets must be positive integers."
+                "Repetition and duration targets must "
+                "be valid positive integers."
             )
-        prescribed_set.target_duration_seconds = int(value)
 
     elif adjustment_type == "weight":
         if (
-            value <= 0
-            or value > Decimal("9999.99")
+            value > Decimal("9999.99")
             or value.as_tuple().exponent < -2
         ):
             raise ValidationFailed(
                 "Weight targets must be positive values "
                 "with no more than two decimal places."
             )
+
+
+def _apply_value(
+    prescribed_set: PrescriptionSet,
+    adjustment_type: str,
+    value: Decimal,
+) -> None:
+    """Assign a validated target to a prescription set."""
+
+    _validate_target(adjustment_type, value)
+
+    if adjustment_type == "reps":
+        prescribed_set.target_reps = int(value)
+
+    elif adjustment_type == "duration":
+        prescribed_set.target_duration_seconds = int(value)
+
+    elif adjustment_type == "weight":
         prescribed_set.target_weight_kg = value
 
-    else:
-        raise ValidationFailed(
-            "Unsupported adjustment type."
-        )
+
+def _serialize_value(
+    adjustment_type: str,
+    value: Decimal,
+) -> int | float:
+    if adjustment_type in {"reps", "duration"}:
+        return int(value)
+
+    return float(value)
 
 
 def apply_approved_adaptations(
@@ -125,249 +165,320 @@ def apply_approved_adaptations(
     prescription_id: int,
     approvals: list[ApprovedAdjustment],
 ) -> dict:
-    """Apply selected, freshly validated progression proposals.
+    """Validate, apply, and audit selected adjustments.
 
-    Call only after an explicit user approval action.
+    Uses the caller's SQLAlchemy session and commits
+    one transaction for all selected adjustments.
 
-    Raises application errors for invalid ownership,
-    stale proposals, and unsafe prescription changes.
+    Any failure rolls back the entire transaction.
     """
 
-    if not approvals:
-        raise ValidationFailed(
-            "Select at least one adjustment to approve."
-        )
+    try:
+        # ----------------------------------------------
+        # Validate request structure
+        # ----------------------------------------------
 
-    requested_ids = [
-        item.prescription_set_id
-        for item in approvals
-    ]
-
-    if (
-        any(item_id <= 0 for item_id in requested_ids)
-        or len(requested_ids) != len(set(requested_ids))
-    ):
-        raise ValidationFailed(
-            "Adjustment set IDs must be positive and unique."
-        )
-
-    # Lock the prescription while validating and updating.
-    # PostgreSQL holds this row lock until commit/rollback.
-    prescription = db.scalar(
-        select(WorkoutPrescription)
-        .where(
-            WorkoutPrescription.id == prescription_id,
-            WorkoutPrescription.user_id == user_id,
-        )
-        .with_for_update()
-    )
-
-    if prescription is None:
-        raise NotFoundError(
-            "Workout prescription not found."
-        )
-
-    if prescription.status != PrescriptionStatus.planned.value:
-        raise ConflictError(
-            "Only planned prescriptions can be modified."
-        )
-
-    # Protect the entire workout if performance has already
-    # been recorded for this program/week/day.
-    existing_workout = db.scalar(
-        select(WorkoutRecord.id)
-        .where(
-            WorkoutRecord.user_id == user_id,
-            WorkoutRecord.program_slug
-            == prescription.program_slug,
-            WorkoutRecord.program_week
-            == prescription.program_week,
-            WorkoutRecord.program_day
-            == prescription.program_day,
-        )
-        .limit(1)
-    )
-
-    if existing_workout is not None:
-        raise ConflictError(
-            "This workout already has recorded history "
-            "and cannot be adapted."
-        )
-
-    # Lock selected set rows as well.
-    selected_sets = db.scalars(
-        select(PrescriptionSet)
-        .where(
-            PrescriptionSet.workout_prescription_id
-            == prescription.id,
-            PrescriptionSet.id.in_(requested_ids),
-        )
-        .with_for_update()
-    ).all()
-
-    sets_by_id = {
-        item.id: item
-        for item in selected_sets
-    }
-
-    if len(sets_by_id) != len(requested_ids):
-        raise ValidationFailed(
-            "One or more selected sets do not belong "
-            "to this prescription."
-        )
-
-    # Never rewrite a prescription set already referenced
-    # by a historical performance entry.
-    historical_entry = db.scalar(
-        select(PerformanceEntry.id)
-        .where(
-            PerformanceEntry.prescription_set_id.in_(
-                requested_ids
-            )
-        )
-        .limit(1)
-    )
-
-    if historical_entry is not None:
-        raise ConflictError(
-            "A selected set has recorded performance "
-            "and cannot be changed."
-        )
-
-    # Recalculate all recommendations using current
-    # historical performance and prescription targets.
-    analysis = analyze_prescription_adaptations(
-        db=db,
-        user_id=user_id,
-        prescription_id=prescription_id,
-    )
-
-    available = {
-        item["prescription_set_id"]: item
-        for item in analysis["sets"]
-    }
-
-    validated_changes = []
-
-    for approval in approvals:
-        item = available.get(
-            approval.prescription_set_id
-        )
-
-        if item is None:
-            raise ConflictError(
-                "The selected recommendation is no longer available."
+        if not approvals:
+            raise ValidationFailed(
+                "Select at least one adjustment to approve."
             )
 
-        proposal = item["proposal"]
-        prescribed_set = sets_by_id[
-            approval.prescription_set_id
+        requested_ids = [
+            item.prescription_set_id
+            for item in approvals
         ]
 
         if (
-            item["decision"]["action"] != "progress"
-            or not proposal["requires_approval"]
-            or proposal["adjustment_type"]
-            != approval.adjustment_type
+            any(
+                not isinstance(item_id, int)
+                or item_id <= 0
+                for item_id in requested_ids
+            )
+            or len(requested_ids) != len(set(requested_ids))
         ):
-            raise ConflictError(
-                "The recommendation is no longer eligible "
-                "for approval."
-            )
-
-        if approval.adjustment_type not in {
-            "reps",
-            "duration",
-            "weight",
-        }:
             raise ValidationFailed(
-                "This adjustment type is not supported "
-                "by the current prescription schema."
+                "Adjustment set IDs must be positive and unique."
             )
 
-        previous = proposal["previous_value"]
-        proposed = proposal["proposed_value"]
+        for approval in approvals:
+            if approval.adjustment_type not in SUPPORTED_ADJUSTMENTS:
+                raise ValidationFailed(
+                    "Unsupported adjustment type."
+                )
 
-        if previous is None or proposed is None:
-            raise ConflictError(
-                "Recommendation values are incomplete."
+            _validate_target(
+                approval.adjustment_type,
+                _number(approval.expected_previous_value),
             )
 
-        current = _current_value(
-            prescribed_set,
-            approval.adjustment_type,
+            _validate_target(
+                approval.adjustment_type,
+                _number(approval.expected_proposed_value),
+            )
+
+        # ----------------------------------------------
+        # Lock and validate source prescription
+        # ----------------------------------------------
+
+        prescription = db.scalar(
+            select(WorkoutPrescription)
+            .where(
+                WorkoutPrescription.id == prescription_id,
+                WorkoutPrescription.user_id == user_id,
+            )
+            .with_for_update()
         )
 
-        if current is None:
-            raise ConflictError(
-                "The current prescription target is missing."
+        if prescription is None:
+            raise NotFoundError(
+                "Workout prescription not found."
             )
 
-        # Compare both the submitted proposal and the
-        # original target against freshly calculated data.
         if (
-            _number(previous)
-            != approval.expected_previous_value
-            or _number(proposed)
-            != approval.expected_proposed_value
-            or _number(current)
-            != approval.expected_previous_value
+            prescription.status
+            != PrescriptionStatus.planned.value
         ):
             raise ConflictError(
-                "The recommendation has changed. "
-                "Refresh the progress page and review it again."
+                "Only planned prescriptions can be modified."
             )
 
-        # Validate all changes before modifying any rows.
-        validated_changes.append((
-            prescribed_set,
-            approval.adjustment_type,
-            _number(proposed),
-        ))
+        # Prevent changes to workouts with history.
+        existing_workout = db.scalar(
+            select(WorkoutRecord.id)
+            .where(
+                WorkoutRecord.user_id == user_id,
+                WorkoutRecord.program_slug
+                == prescription.program_slug,
+                WorkoutRecord.program_week
+                == prescription.program_week,
+                WorkoutRecord.program_day
+                == prescription.program_day,
+            )
+            .limit(1)
+        )
 
-    # Validate target compatibility before persistence.
-    for prescribed_set, adjustment_type, value in validated_changes:
-        if adjustment_type in {"reps", "duration"}:
-            if value <= 0 or value != value.to_integral_value():
-                raise ValidationFailed(
-                    "Repetition and duration targets must "
-                    "be positive integers."
+        if existing_workout is not None:
+            raise ConflictError(
+                "This workout already has recorded history "
+                "and cannot be adapted."
+            )
+
+        # ----------------------------------------------
+        # Lock and validate selected sets
+        # ----------------------------------------------
+
+        selected_sets = db.scalars(
+            select(PrescriptionSet)
+            .where(
+                PrescriptionSet.workout_prescription_id
+                == prescription.id,
+                PrescriptionSet.id.in_(requested_ids),
+            )
+            .order_by(PrescriptionSet.id)
+            .with_for_update()
+        ).all()
+
+        sets_by_id = {
+            item.id: item
+            for item in selected_sets
+        }
+
+        if len(sets_by_id) != len(requested_ids):
+            raise ValidationFailed(
+                "One or more selected sets do not belong "
+                "to this prescription."
+            )
+
+        historical_entry = db.scalar(
+            select(PerformanceEntry.id)
+            .where(
+                PerformanceEntry.prescription_set_id.in_(
+                    requested_ids
                 )
-        elif adjustment_type == "weight":
+            )
+            .limit(1)
+        )
+
+        if historical_entry is not None:
+            raise ConflictError(
+                "A selected set has recorded performance "
+                "and cannot be changed."
+            )
+
+        # ----------------------------------------------
+        # Recalculate recommendations
+        # ----------------------------------------------
+
+        analysis = analyze_prescription_adaptations(
+            db=db,
+            user_id=user_id,
+            prescription_id=prescription_id,
+        )
+
+        engine_version = analysis[
+            "proposal_engine_version"
+        ]
+
+        available = {
+            item["prescription_set_id"]: item
+            for item in analysis["sets"]
+        }
+
+        validated_changes = []
+
+        for approval in approvals:
+            item = available.get(
+                approval.prescription_set_id
+            )
+
+            if item is None:
+                raise ConflictError(
+                    "The selected recommendation "
+                    "is no longer available."
+                )
+
+            proposal = item["proposal"]
+
+            prescribed_set = sets_by_id[
+                approval.prescription_set_id
+            ]
+
             if (
-                value <= 0
-                or value > Decimal("9999.99")
-                or value.as_tuple().exponent < -2
+                item["decision"]["action"] != "progress"
+                or not proposal["requires_approval"]
+                or proposal["adjustment_type"]
+                != approval.adjustment_type
             ):
-                raise ValidationFailed(
-                    "Invalid proposed weight target."
+                raise ConflictError(
+                    "The recommendation is no longer "
+                    "eligible for approval."
                 )
 
-    # All validation has succeeded.
-    for prescribed_set, adjustment_type, value in validated_changes:
-        _apply_value(
+            previous_raw = proposal["previous_value"]
+            proposed_raw = proposal["proposed_value"]
+
+            if (
+                previous_raw is None
+                or proposed_raw is None
+            ):
+                raise ConflictError(
+                    "Recommendation values are incomplete."
+                )
+
+            previous = _number(previous_raw)
+            proposed = _number(proposed_raw)
+
+            expected_previous = _number(
+                approval.expected_previous_value
+            )
+            expected_proposed = _number(
+                approval.expected_proposed_value
+            )
+
+            current_raw = _current_value(
+                prescribed_set,
+                approval.adjustment_type,
+            )
+
+            if current_raw is None:
+                raise ConflictError(
+                    "The current prescription target "
+                    "is missing."
+                )
+
+            current = _number(current_raw)
+
+            if (
+                previous != expected_previous
+                or proposed != expected_proposed
+                or current != expected_previous
+            ):
+                raise ConflictError(
+                    "The recommendation has changed. "
+                    "Refresh the progress page "
+                    "and review it again."
+                )
+
+            _validate_target(
+                approval.adjustment_type,
+                proposed,
+            )
+
+            if proposed == current:
+                raise ConflictError(
+                    "The adjustment has already been applied."
+                )
+
+            validated_changes.append(
+                (
+                    prescribed_set,
+                    approval.adjustment_type,
+                    current,
+                    proposed,
+                )
+            )
+
+        # ----------------------------------------------
+        # Apply changes and create audit records
+        # ----------------------------------------------
+
+        updated_sets = []
+
+        for (
             prescribed_set,
             adjustment_type,
-            value,
-        )
+            previous,
+            proposed,
+        ) in validated_changes:
 
-    # One transaction persists all selected changes.
-    db.commit()
+            _apply_value(
+                prescribed_set,
+                adjustment_type,
+                proposed,
+            )
 
-    return {
-        "prescription_id": prescription.id,
-        "status": "updated",
-        "updated_set_count": len(validated_changes),
-        "updated_sets": [
-            {
-                "prescription_set_id": item.id,
+            audit = AdaptationApproval(
+                user_id=user_id,
+                workout_prescription_id=prescription.id,
+                prescription_set_id=prescribed_set.id,
+                adjustment_type=adjustment_type,
+                previous_value=previous,
+                approved_value=proposed,
+                proposal_engine_version=engine_version,
+            )
+
+            db.add(audit)
+
+            updated_sets.append({
+                "prescription_set_id": prescribed_set.id,
                 "adjustment_type": adjustment_type,
-                "applied_value": (
-                    int(value)
-                    if adjustment_type in {"reps", "duration"}
-                    else float(value)
+                "applied_value": _serialize_value(
+                    adjustment_type,
+                    proposed,
                 ),
-            }
-            for item, adjustment_type, value in validated_changes
-        ],
-    }
+            })
+
+        # ----------------------------------------------
+        # Atomic persistence
+        # ----------------------------------------------
+
+        # Flush sends both the target updates and audit
+        # inserts to PostgreSQL within this transaction.
+        # It does not commit them.
+        db.flush()
+
+        # Exactly one commit for the complete operation.
+        db.commit()
+
+        return {
+            "prescription_id": prescription_id,
+            "status": "updated",
+            "updated_set_count": len(updated_sets),
+            "updated_sets": updated_sets,
+        }
+
+    except Exception:
+        # Discard ALL target updates and audit inserts
+        # if validation, flushing, or committing fails.
+        db.rollback()
+        raise

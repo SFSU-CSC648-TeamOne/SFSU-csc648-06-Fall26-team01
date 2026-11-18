@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api } from "../../lib/auth";
+import { api } from "../lib/auth";
 
 type AdaptationAction =
   | "insufficient_data"

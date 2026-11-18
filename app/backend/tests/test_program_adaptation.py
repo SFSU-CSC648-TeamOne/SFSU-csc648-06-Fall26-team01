@@ -28,6 +28,7 @@ from app.models import (
     PerformanceEntry,
     PrescriptionSet,
     ProgramBaseline,
+    ProgramPhase,
     User,
     WorkoutPrescription,
     WorkoutRecord,
@@ -101,6 +102,7 @@ def data(db):
     }
 
 
+
 def make_prescription(
     db,
     data,
@@ -117,14 +119,22 @@ def make_prescription(
     status="planned",
     load_basis="bodyweight",
     optional=False,
+    phase_type="training",
 ):
-    """Create a prescription with one set."""
+    """Create a prescription with optional phase metadata.
+
+    phase_type=None deliberately leaves it unclassified.
+    """
 
     if baseline_id is None:
         baseline_id = data["baseline_id"]
 
     prescription = WorkoutPrescription(
-        user_id=user_id or data["owner_id"],
+        user_id=(
+            user_id
+            if user_id is not None
+            else data["owner_id"]
+        ),
         program_slug=program,
         program_week=week,
         program_day=day,
@@ -136,7 +146,9 @@ def make_prescription(
     prescription.sets.append(
         PrescriptionSet(
             exercise_id=(
-                exercise_id or data["exercise_id"]
+                exercise_id
+                if exercise_id is not None
+                else data["exercise_id"]
             ),
             set_number=1,
             target_reps=reps,
@@ -152,9 +164,21 @@ def make_prescription(
     )
 
     db.add(prescription)
+    db.flush()
+
+    if phase_type is not None:
+        db.add(
+            ProgramPhase(
+                workout_prescription_id=prescription.id,
+                phase_type=phase_type,
+                reason="Test phase classification",
+            )
+        )
+
     db.commit()
 
     return prescription.id, prescription.sets[0].id
+
 
 
 def preview(
@@ -295,6 +319,225 @@ def test_preview_never_modifies_database(db, data):
         future_set_id,
     ).target_reps == 18
 
+
+# --------------------------------------------------
+# Program-phase safeguards
+# --------------------------------------------------
+
+def test_training_phase_is_eligible(db, data):
+    source_id, source_set_id = make_source(db, data)
+
+    _, future_set_id = make_prescription(
+        db,
+        data,
+        week=4,
+        reps=18,
+        phase_type="training",
+    )
+
+    result = preview(
+        db, data, source_id, source_set_id
+    )
+
+    assert len(result["candidates"]) == 1
+
+    candidate = result["candidates"][0]
+
+    assert candidate["prescription_set_id"] == future_set_id
+    assert candidate["phase_type"] == "training"
+    assert candidate["current_value"] == 18
+    assert candidate["proposed_value"] == 19
+    assert candidate["status"] == "review_required"
+
+
+def test_deload_phase_is_excluded(db, data):
+    source_id, source_set_id = make_source(db, data)
+
+    future_id, _ = make_prescription(
+        db,
+        data,
+        week=4,
+        reps=12,
+        phase_type="deload",
+    )
+
+    result = preview(
+        db, data, source_id, source_set_id
+    )
+
+    assert result["candidates"] == []
+
+    assert result["excluded"] == [{
+        "prescription_id": future_id,
+        "program_week": 4,
+        "program_day": 1,
+        "reason": "deload_protected",
+    }]
+
+
+def test_assessment_phase_is_excluded(db, data):
+    source_id, source_set_id = make_source(db, data)
+
+    future_id, _ = make_prescription(
+        db,
+        data,
+        week=4,
+        phase_type="assessment",
+    )
+
+    result = preview(
+        db, data, source_id, source_set_id
+    )
+
+    assert result["candidates"] == []
+
+    assert result["excluded"] == [{
+        "prescription_id": future_id,
+        "program_week": 4,
+        "program_day": 1,
+        "reason": "assessment_protected",
+    }]
+
+
+def test_unclassified_phase_is_excluded(db, data):
+    source_id, source_set_id = make_source(db, data)
+
+    future_id, _ = make_prescription(
+        db,
+        data,
+        week=4,
+        phase_type=None,
+    )
+
+    result = preview(
+        db, data, source_id, source_set_id
+    )
+
+    assert result["candidates"] == []
+
+    assert result["excluded"] == [{
+        "prescription_id": future_id,
+        "program_week": 4,
+        "program_day": 1,
+        "reason": "phase_unclassified",
+    }]
+
+
+@pytest.mark.parametrize(
+    "phase_type",
+    ["deload", "assessment", None],
+)
+def test_non_training_source_is_rejected(
+    db, data, phase_type
+):
+    source_id, source_set_id = make_prescription(
+        db,
+        data,
+        week=3,
+        reps=16,
+        phase_type=phase_type,
+    )
+
+    make_prescription(
+        db,
+        data,
+        week=4,
+        reps=18,
+        phase_type="training",
+    )
+
+    with pytest.raises(ConflictError):
+        preview(
+            db, data, source_id, source_set_id
+        )
+
+
+def test_mixed_program_only_proposes_training(db, data):
+    source_id, source_set_id = make_source(db, data)
+
+    training_id, _ = make_prescription(
+        db,
+        data,
+        week=4,
+        phase_type="training",
+    )
+
+    make_prescription(
+        db,
+        data,
+        week=5,
+        phase_type="deload",
+    )
+
+    make_prescription(
+        db,
+        data,
+        week=6,
+        phase_type="assessment",
+    )
+
+    make_prescription(
+        db,
+        data,
+        week=7,
+        phase_type=None,
+    )
+
+    result = preview(
+        db, data, source_id, source_set_id
+    )
+
+    assert len(result["candidates"]) == 1
+
+    assert result["candidates"][0][
+        "prescription_id"
+    ] == training_id
+
+    assert {
+        item["reason"]
+        for item in result["excluded"]
+    } == {
+        "deload_protected",
+        "assessment_protected",
+        "phase_unclassified",
+    }
+
+
+def test_protected_phases_are_not_modified(db, data):
+    source_id, source_set_id = make_source(db, data)
+
+    _, deload_set_id = make_prescription(
+        db,
+        data,
+        week=4,
+        reps=10,
+        phase_type="deload",
+    )
+
+    _, assessment_set_id = make_prescription(
+        db,
+        data,
+        week=5,
+        reps=20,
+        phase_type="assessment",
+    )
+
+    result = preview(
+        db, data, source_id, source_set_id
+    )
+
+    assert result["database_modified"] is False
+    assert result["candidates"] == []
+
+    db.expire_all()
+
+    assert db.get(
+        PrescriptionSet, deload_set_id
+    ).target_reps == 10
+
+    assert db.get(
+        PrescriptionSet, assessment_set_id
+    ).target_reps == 20
 
 # --------------------------------------------------
 # Program and user isolation
