@@ -31,6 +31,7 @@ from app.models import (
     WorkoutRecord,
 )
 from app.services import approve_adaptation as service
+from app.services.prescription_adaptation import ENGINE_VERSION
 
 
 API = "/api/adaptations/prescriptions"
@@ -152,6 +153,7 @@ def mock_recommendation(
             "prescription_id": prescription_id,
             "user_id": user_id,
             "status": "proposed",
+            "proposal_engine_version":ENGINE_VERSION,
             "sets": [
                 {
                     "prescription_set_id": set_id,

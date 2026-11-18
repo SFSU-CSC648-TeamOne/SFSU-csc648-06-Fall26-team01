@@ -32,6 +32,7 @@ from app.models import (
 )
 from app.services import approve_adaptation as service
 from app.services.approve_adaptation import ApprovedAdjustment
+from app.services.prescription_adaptation import ENGINE_VERSION
 
 
 @pytest.fixture
@@ -141,6 +142,7 @@ def mock_recommendations(
             "prescription_id": prescription_id,
             "user_id": user_id,
             "status": "proposed",
+            "proposal_engine_version":ENGINE_VERSION,
             "sets": [
                 {
                     "prescription_set_id": item["set_id"],
