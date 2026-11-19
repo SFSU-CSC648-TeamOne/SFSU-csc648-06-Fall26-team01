@@ -38,6 +38,7 @@ from app.models.tracking import (
     PerformanceEntry,
     WorkoutRecord,
 )
+from app.models.adaptation_approval import AdaptationApproval
 
 
 AdjustmentType = Literal["reps", "duration", "weight"]
@@ -127,14 +128,16 @@ def preview_program_propagation(
     previous_value: Decimal,
     approved_value: Decimal,
 ) -> dict:
-    """Preview a progression across future training workouts.
+    """Preview approved progression across future training workouts.
 
-    The source must contain the approved target and be
-    explicitly classified as normal training.
+    The source must:
+    - Belong to the requesting user.
+    - Remain planned and classified as training.
+    - Contain the approved target.
+    - Have a matching persisted approval audit record.
 
-    Important: matching the approved value does not prove
-    an approval event occurred. An approval audit record
-    will be required before enabling automatic propagation.
+    Future candidates are read-only suggestions and require
+    separate, explicit program-wide approval.
     """
 
     if adjustment_type not in TARGET_FIELDS:
@@ -226,6 +229,38 @@ def preview_program_propagation(
         raise ConflictError(
             "Source target no longer matches "
             "the approved adjustment."
+        )
+
+    # --------------------------------------------------
+    # Verify the persisted user approval
+    # --------------------------------------------------
+
+    source_approval = db.scalar(
+        select(AdaptationApproval)
+        .where(
+            AdaptationApproval.user_id == user_id,
+            AdaptationApproval.workout_prescription_id
+            == source.id,
+            AdaptationApproval.prescription_set_id
+            == source_set.id,
+            AdaptationApproval.adjustment_type
+            == adjustment_type,
+            AdaptationApproval.previous_value
+            == previous,
+            AdaptationApproval.approved_value
+            == approved,
+        )
+        .order_by(
+            AdaptationApproval.id.desc()
+        )
+        .limit(1)
+    )
+
+    if source_approval is None:
+        raise ConflictError(
+            "No matching approved adaptation was found. "
+            "Approve the individual workout adjustment "
+            "before requesting program-wide propagation."
         )
 
     delta = approved - previous
@@ -475,6 +510,7 @@ def preview_program_propagation(
 
     return {
         "user_id": user_id,
+        "source_approval_id": source_approval.id,
         "program_slug": source.program_slug,
         "source_baseline_id": source.source_baseline_id,
         "source_prescription_id": source.id,
