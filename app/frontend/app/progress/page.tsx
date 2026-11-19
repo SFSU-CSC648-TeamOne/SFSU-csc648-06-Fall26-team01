@@ -10,7 +10,10 @@ import BodyweightChart, {
   type BodyweightPoint,
 } from "../../components/progress/BodyweightChart";
 import ExerciseProgressChart from "../../components/progress/ExerciseProgressChart";
-import MovementGroupChart, {type MovementGroupProgress,} from "../../components/progress/MovementGroupChart";
+import MovementGroupChart, {
+  type MovementGroupProgress,
+} from "../../components/progress/MovementGroupChart";
+import AdaptationRecommendations from "../../components/AdaptationRecommendations";
 
 import { api, useRequireAuth } from "../../lib/auth";
 import {
@@ -23,14 +26,26 @@ import {
 
 import s from "../screens.module.css";
 
+
 type ExerciseOption = {
   id: number;
   name: string;
 };
 
-export default function ProgressPage() {
-  useRequireAuth();
+type PlannedPrescription = {
+  id: number;
+  program_slug: string;
+  program_week: number;
+  program_day: number;
+  set_count: number;
+  engine_version: string;
+};
 
+
+export default function ProgressPage() {
+  const { user, loading: authLoading } = useRequireAuth();
+
+  // Workout history
   const [records, setRecords] = useState<RecordDetail[]>([]);
   const [recordsLoading, setRecordsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,20 +53,36 @@ export default function ProgressPage() {
   const [selectedExerciseId, setSelectedExerciseId] =
     useState<number | null>(null);
 
+  // Bodyweight
   const [bodyweight, setBodyweight] =
     useState<BodyweightPoint[]>([]);
   const [weightLoading, setWeightLoading] = useState(true);
   const [weightError, setWeightError] = useState("");
   const [weightRefresh, setWeightRefresh] = useState(0);
+
+  // Movement groups
   const [movementGroups, setMovementGroups] =
     useState<MovementGroupProgress[]>([]);
-
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [groupsError, setGroupsError] = useState("");
 
-  // Load recent workout history for the volume chart
-  // and exercise selector.
+  // Adaptive recommendations
+  const [plannedPrescriptions, setPlannedPrescriptions] =
+    useState<PlannedPrescription[]>([]);
+  const [selectedProgram, setSelectedProgram] = useState("");
+  const [selectedPrescriptionId, setSelectedPrescriptionId] =
+    useState<number | null>(null);
+  const [adaptationsLoading, setAdaptationsLoading] =
+    useState(true);
+  const [adaptationsError, setAdaptationsError] = useState("");
+
+  // --------------------------------------------------
+  // Load workout history
+  // --------------------------------------------------
+
   useEffect(() => {
+    if (authLoading || !user) return;
+
     let active = true;
 
     async function loadRecords() {
@@ -92,10 +123,15 @@ export default function ProgressPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [authLoading, user?.id]);
 
-  // Load bodyweight independently from workout history.
+  // --------------------------------------------------
+  // Load bodyweight history
+  // --------------------------------------------------
+
   useEffect(() => {
+    if (authLoading || !user) return;
+
     let active = true;
 
     async function loadBodyweight() {
@@ -137,50 +173,94 @@ export default function ProgressPage() {
     return () => {
       active = false;
     };
-  }, [weightRefresh]);
+  }, [authLoading, user?.id, weightRefresh]);
 
+  // --------------------------------------------------
+  // Load movement-group progress
+  // --------------------------------------------------
 
-useEffect(() => {
-  let active = true;
+  useEffect(() => {
+    if (authLoading || !user) return;
 
-  async function loadMovementGroups() {
-    setGroupsLoading(true);
-    setGroupsError("");
+    let active = true;
 
-    try {
-      const data = await api<MovementGroupProgress[]>(
-        "/progress/movement-groups"
-      );
+    async function loadMovementGroups() {
+      setGroupsLoading(true);
+      setGroupsError("");
 
-      if (!active) return;
+      try {
+        const data = await api<MovementGroupProgress[]>(
+          "/progress/movement-groups"
+        );
 
-      setMovementGroups(data);
-    } catch (err) {
-      if (!active) return;
+        if (!active) return;
 
-      setGroupsError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load movement-group progress."
-      );
-    } finally {
-      if (active) {
-        setGroupsLoading(false);
+        setMovementGroups(data);
+      } catch (err) {
+        if (!active) return;
+
+        setGroupsError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load movement-group progress."
+        );
+      } finally {
+        if (active) setGroupsLoading(false);
       }
     }
-  }
 
-  void loadMovementGroups();
+    void loadMovementGroups();
 
-  return () => {
-    active = false;
-  };
-}, []);
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user?.id]);
 
+  // --------------------------------------------------
+  // Load planned workout prescriptions
+  // --------------------------------------------------
 
-  // Build exercise options using actual workout entries.
-  // Include exercises with skipped entries too, since
-  // the progress API can explain insufficient history.
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    let active = true;
+
+    async function loadPlannedPrescriptions() {
+      setAdaptationsLoading(true);
+      setAdaptationsError("");
+
+      try {
+        const data = await api<PlannedPrescription[]>(
+          "/adaptations/planned-prescriptions"
+        );
+
+        if (!active) return;
+
+        setPlannedPrescriptions(data);
+      } catch (err) {
+        if (!active) return;
+
+        setAdaptationsError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load planned workouts."
+        );
+      } finally {
+        if (active) setAdaptationsLoading(false);
+      }
+    }
+
+    void loadPlannedPrescriptions();
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user?.id]);
+
+  // --------------------------------------------------
+  // Derived exercise data
+  // --------------------------------------------------
+
   const exerciseMap = new Map<number, ExerciseOption>();
 
   for (const record of records) {
@@ -198,16 +278,22 @@ useEffect(() => {
     (a, b) => a.name.localeCompare(b.name)
   );
 
-  // Default to the first available exercise.
-  // Also recover if a previously selected exercise
-  // is no longer present in the loaded history.
   const selectedExercise =
     exercises.find(
       (exercise) => exercise.id === selectedExerciseId
     ) ?? exercises[0] ?? null;
 
-  // Preserve the existing volume chart:
-  // only the 10 latest workouts are displayed.
+  const exerciseNames = Object.fromEntries(
+    exercises.map((exercise) => [
+      exercise.id,
+      exercise.name,
+    ])
+  );
+
+  // --------------------------------------------------
+  // Training volume chart
+  // --------------------------------------------------
+
   const points = [...records]
     .sort(
       (a, b) =>
@@ -236,6 +322,46 @@ useEffect(() => {
         )
       : null;
 
+  // --------------------------------------------------
+  // Adaptive prescription selection
+  // --------------------------------------------------
+
+  const availablePrograms = [
+    ...new Set(
+      plannedPrescriptions.map(
+        (prescription) => prescription.program_slug
+      )
+    ),
+  ].sort();
+
+  const programPrescriptions = plannedPrescriptions.filter(
+    (prescription) =>
+      prescription.program_slug === selectedProgram
+  );
+
+  const selectedPrescription =
+    programPrescriptions.find(
+      (prescription) =>
+        prescription.id === selectedPrescriptionId
+    ) ?? programPrescriptions[0] ?? null;
+
+  // --------------------------------------------------
+  // Render
+  // --------------------------------------------------
+
+  if (authLoading || !user) {
+    return (
+      <main className={s.page}>
+        <Navbar />
+        <div className={s.wrap}>
+          <p role="status" className={s.muted}>
+            Loading your training progress...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className={s.page}>
       <Navbar />
@@ -254,6 +380,10 @@ useEffect(() => {
             {error}
           </p>
         )}
+
+        {/* ---------------------------------------
+            Training Volume
+        --------------------------------------- */}
 
         {recordsLoading ? (
           <p className={s.muted}>
@@ -330,7 +460,10 @@ useEffect(() => {
           </div>
         )}
 
-        {/* Exercise performance analysis */}
+        {/* ---------------------------------------
+            Exercise Progress
+        --------------------------------------- */}
+
         <section
           className={s.card}
           style={{ marginTop: 24 }}
@@ -341,9 +474,9 @@ useEffect(() => {
           </h2>
 
           <p className={s.muted}>
-            Compare your completed performance
-            against prescribed targets and
-            review trends across comparable workouts.
+            Compare your completed performance against
+            prescribed targets and review trends across
+            comparable workouts.
           </p>
 
           {recordsLoading ? (
@@ -366,6 +499,7 @@ useEffect(() => {
 
                 <select
                   id="exercise-progress-selector"
+                  className={s.select}
                   value={selectedExercise.id}
                   onChange={(event) =>
                     setSelectedExerciseId(
@@ -375,7 +509,6 @@ useEffect(() => {
                   style={{
                     display: "block",
                     marginTop: 8,
-                    padding: 10,
                     width: "100%",
                     maxWidth: 420,
                   }}
@@ -406,11 +539,15 @@ useEffect(() => {
           >
             Exercise selection is based on your
             100 most recent workout records.
-            Available trend history is calculated
-            separately by the backend.
+            Trend history is calculated separately
+            by the backend.
           </p>
         </section>
-        {/* Movement Group Progress */}
+
+        {/* ---------------------------------------
+            Movement Pattern Analysis
+        --------------------------------------- */}
+
         <section
           className={s.card}
           style={{ marginTop: 24 }}
@@ -421,9 +558,9 @@ useEffect(() => {
           </h2>
 
           <p className={s.muted}>
-            Track performance trends across related exercises.
-            Movement-group results summarize comparable
-            training observations.
+            Track performance trends across related
+            exercises. Movement-group results summarize
+            comparable training observations.
           </p>
 
           <div style={{ marginTop: 24 }}>
@@ -436,11 +573,152 @@ useEffect(() => {
                 {groupsError}
               </p>
             ) : (
-              <MovementGroupChart groups={movementGroups} />
+              <MovementGroupChart
+                groups={movementGroups}
+              />
             )}
           </div>
         </section>
-        {/* Bodyweight tracking */}
+
+        {/* ---------------------------------------
+            Adaptive Training Recommendations
+        --------------------------------------- */}
+
+        <section
+          className={s.card}
+          style={{ marginTop: 24 }}
+          aria-labelledby="adaptive-heading"
+        >
+          <h2 id="adaptive-heading">
+            Adaptive Training Recommendations
+          </h2>
+
+          <p className={s.muted}>
+            Review recommended adjustments to upcoming
+            workouts based on your recorded performance.
+          </p>
+
+          {adaptationsLoading ? (
+            <p role="status" className={s.muted}>
+              Loading planned workouts...
+            </p>
+          ) : adaptationsError ? (
+            <p role="alert" className={s.error}>
+              {adaptationsError}
+            </p>
+          ) : plannedPrescriptions.length === 0 ? (
+            <p
+              className={s.muted}
+              style={{ marginTop: 20 }}
+            >
+              No planned workout prescriptions are available.
+            </p>
+          ) : (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 20,
+                  marginTop: 24,
+                  marginBottom: 24,
+                }}
+              >
+                <div
+                  className={s.field}
+                  style={{ flex: "1 1 200px" }}
+                >
+                  <label htmlFor="adaptive-program">
+                    Training Program
+                  </label>
+
+                  <select
+                    id="adaptive-program"
+                    className={s.select}
+                    value={selectedProgram}
+                    onChange={(event) => {
+                      setSelectedProgram(event.target.value);
+                      setSelectedPrescriptionId(null);
+                    }}
+                  >
+                    <option value="">
+                      Select program
+                    </option>
+
+                    {availablePrograms.map((program) => (
+                      <option
+                        key={program}
+                        value={program}
+                      >
+                        {program.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div
+                  className={s.field}
+                  style={{ flex: "1 1 200px" }}
+                >
+                  <label htmlFor="adaptive-workout">
+                    Upcoming Workout
+                  </label>
+
+                  <select
+                    id="adaptive-workout"
+                    className={s.select}
+                    value={selectedPrescription?.id ?? ""}
+                    disabled={!selectedProgram}
+                    onChange={(event) =>
+                      setSelectedPrescriptionId(
+                        Number(event.target.value)
+                      )
+                    }
+                  >
+                    {!selectedProgram && (
+                      <option value="">
+                        Select program first
+                      </option>
+                    )}
+
+                    {programPrescriptions.map(
+                      (prescription) => (
+                        <option
+                          key={prescription.id}
+                          value={prescription.id}
+                        >
+                          Week {prescription.program_week}
+                          {" · "}
+                          Day {prescription.program_day}
+                          {" · "}
+                          {prescription.set_count} sets
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              {selectedPrescription ? (
+                <AdaptationRecommendations
+                  key={selectedPrescription.id}
+                  prescriptionId={selectedPrescription.id}
+                  exerciseNames={exerciseNames}
+                />
+              ) : (
+                <p className={s.muted}>
+                  Select your training program to review
+                  upcoming workout recommendations.
+                </p>
+              )}
+            </>
+          )}
+        </section>
+
+        {/* ---------------------------------------
+            Bodyweight Tracking
+        --------------------------------------- */}
+
         <section
           className={s.card}
           style={{ marginTop: 24 }}
@@ -458,9 +736,7 @@ useEffect(() => {
           <div style={{ marginTop: 24 }}>
             <BodyweightLogger
               onSaved={() =>
-                setWeightRefresh(
-                  (count) => count + 1
-                )
+                setWeightRefresh((count) => count + 1)
               }
             />
           </div>
@@ -488,7 +764,7 @@ useEffect(() => {
             href="/history"
             className={`${s.btn} ${s.btnGhost}`}
           >
-            Back to Training history
+            Back to Training History
           </Link>
         </div>
       </div>
