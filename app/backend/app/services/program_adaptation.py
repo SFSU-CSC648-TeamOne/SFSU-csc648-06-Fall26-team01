@@ -39,6 +39,7 @@ from app.models.tracking import (
     WorkoutRecord,
 )
 from app.models.adaptation_approval import AdaptationApproval
+from app.models.program_instance import ProgramInstance
 
 
 AdjustmentType = Literal["reps", "duration", "weight"]
@@ -127,6 +128,8 @@ def preview_program_propagation(
     adjustment_type: AdjustmentType,
     previous_value: Decimal,
     approved_value: Decimal,
+    *,
+    program_instance_id: int | None = None
 ) -> dict:
     """Preview approved progression across future training workouts.
 
@@ -158,6 +161,30 @@ def preview_program_propagation(
         )
 
     # --------------------------------------------------
+    # Validate the requested program enrollment
+    # --------------------------------------------------
+
+    instance = None
+
+    if program_instance_id is not None:
+        instance = db.scalar(
+            select(ProgramInstance).where(
+                ProgramInstance.id == program_instance_id,
+                ProgramInstance.user_id == user_id,
+            )
+        )
+
+        if instance is None:
+            raise NotFoundError(
+                "Program enrollment not found."
+            )
+
+        if instance.status != "active":
+            raise ConflictError(
+                "Program enrollment must be active."
+            )
+
+    # --------------------------------------------------
     # Validate the source prescription
     # --------------------------------------------------
 
@@ -176,6 +203,26 @@ def preview_program_propagation(
         raise NotFoundError(
             "Source workout prescription not found."
         )
+
+    if instance is not None:
+        if (
+            source.program_instance_id != instance.id
+            or source.program_slug != instance.program_slug
+            or source.user_id != instance.user_id
+        ):
+            raise NotFoundError(
+                "Source prescription does not belong "
+                "to this program enrollment."
+            )
+
+        if (
+            source.source_baseline_id
+            != instance.source_baseline_id
+        ):
+            raise ConflictError(
+                "Source prescription baseline does not "
+                "match its program enrollment."
+            )
 
     if source.status != PrescriptionStatus.planned.value:
         raise ConflictError(
@@ -269,7 +316,7 @@ def preview_program_propagation(
     # Discover later planned prescriptions
     # --------------------------------------------------
 
-    prescriptions = db.scalars(
+    prescription_query = (
         select(WorkoutPrescription)
         .options(
             selectinload(WorkoutPrescription.sets)
@@ -283,7 +330,16 @@ def preview_program_propagation(
             WorkoutPrescription.status
             == PrescriptionStatus.planned.value,
         )
-        .order_by(
+    )
+
+    if instance is not None:
+        prescription_query = prescription_query.where(
+            WorkoutPrescription.program_instance_id
+            == instance.id
+        )
+
+    prescriptions = db.scalars(
+        prescription_query.order_by(
             WorkoutPrescription.program_week,
             WorkoutPrescription.program_day,
             WorkoutPrescription.id,
@@ -510,6 +566,7 @@ def preview_program_propagation(
 
     return {
         "user_id": user_id,
+        "program_instance_id": (instance.id if instance is not None else None),
         "source_approval_id": source_approval.id,
         "program_slug": source.program_slug,
         "source_baseline_id": source.source_baseline_id,
