@@ -12,6 +12,7 @@ from uuid import uuid4
 
 import pytest
 from sqlalchemy import create_engine
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -33,6 +34,8 @@ from app.models import (
     WorkoutPrescription,
     WorkoutRecord,
 )
+from app.models.adaptation_approval import AdaptationApproval
+from app.services.prescription_adaptation import ENGINE_VERSION
 from app.services.program_adaptation import (
     preview_program_propagation,
 )
@@ -179,7 +182,52 @@ def make_prescription(
 
     return prescription.id, prescription.sets[0].id
 
+def record_approval(
+    db,
+    data,
+    source_id,
+    source_set_id,
+    *,
+    adjustment_type="reps",
+    previous=15,
+    approved=16,
+    user_id=None,
+    prescription_id=None,
+    prescription_set_id=None,
+):
+    """Persist approval evidence for a prepared source.
 
+    This is fixture setup, not an execution of the approval
+    service. The service's transaction behavior is tested
+    separately in test_approve_adaptation.py.
+    """
+
+    audit = AdaptationApproval(
+        user_id=(
+            data["owner_id"]
+            if user_id is None
+            else user_id
+        ),
+        workout_prescription_id=(
+            source_id
+            if prescription_id is None
+            else prescription_id
+        ),
+        prescription_set_id=(
+            source_set_id
+            if prescription_set_id is None
+            else prescription_set_id
+        ),
+        adjustment_type=adjustment_type,
+        previous_value=Decimal(str(previous)),
+        approved_value=Decimal(str(approved)),
+        proposal_engine_version=ENGINE_VERSION,
+    )
+
+    db.add(audit)
+    db.commit()
+
+    return audit.id
 
 def preview(
     db,
@@ -201,17 +249,27 @@ def preview(
         approved_value=Decimal(str(approved)),
     )
 
-
 def make_source(db, data):
-    """Create the already-approved source prescription."""
+    """Create a source prescription with persisted approval."""
 
-    return make_prescription(
+    source_id, source_set_id = make_prescription(
         db,
         data,
         week=3,
         reps=16,
     )
 
+    record_approval(
+        db,
+        data,
+        source_id,
+        source_set_id,
+        adjustment_type="reps",
+        previous=15,
+        approved=16,
+    )
+
+    return source_id, source_set_id
 
 # --------------------------------------------------
 # Basic progression previews
@@ -891,6 +949,16 @@ def test_duration_progression(db, data):
         duration=65,
     )
 
+    record_approval(
+        db,
+        data,
+        source_id,
+        source_set_id,
+        adjustment_type="duration",
+        previous=60,
+        approved=65,
+    )
+
     _, future_set_id = make_prescription(
         db,
         data,
@@ -927,7 +995,15 @@ def test_weight_progression(db, data):
         weight="62.50",
         load_basis="external",
     )
-
+    record_approval(
+        db,
+        data,
+        source_id,
+        source_set_id,
+        adjustment_type="weight",
+        previous="60.00",
+        approved="62.50",
+    )
     _, future_set_id = make_prescription(
         db,
         data,
@@ -953,3 +1029,241 @@ def test_weight_progression(db, data):
     assert candidate["current_value"] == 70.0
     assert candidate["proposed_value"] == 72.5
     assert result["database_modified"] is False
+
+# --------------------------------------------------
+# Persisted approval verification
+# --------------------------------------------------
+
+def test_missing_approval_record_rejected(db, data):
+    """A matching source target alone is insufficient."""
+
+    source_id, source_set_id = make_prescription(
+        db,
+        data,
+        week=3,
+        reps=16,
+    )
+
+    make_prescription(
+        db,
+        data,
+        week=4,
+        reps=18,
+    )
+
+    with pytest.raises(
+        ConflictError,
+        match="No matching approved adaptation",
+    ):
+        preview(db, data, source_id, source_set_id)
+
+
+def test_valid_approval_id_returned(db, data):
+    """Preview links back to its authorizing audit record."""
+
+    source_id, source_set_id = make_source(db, data)
+
+    audit = db.scalar(
+        select(AdaptationApproval)
+        .where(
+            AdaptationApproval.prescription_set_id
+            == source_set_id
+        )
+    )
+
+    result = preview(
+        db,
+        data,
+        source_id,
+        source_set_id,
+    )
+
+    assert result["source_approval_id"] == audit.id
+    assert result["database_modified"] is False
+
+
+def test_mismatched_approval_values_rejected(db, data):
+    """An audit for a different progression cannot authorize this."""
+
+    source_id, source_set_id = make_prescription(
+        db,
+        data,
+        week=3,
+        reps=16,
+    )
+
+    # Current source is 16, but this audit records
+    # a different previous value.
+    record_approval(
+        db,
+        data,
+        source_id,
+        source_set_id,
+        previous=14,
+        approved=16,
+    )
+
+    with pytest.raises(ConflictError):
+        preview(
+            db,
+            data,
+            source_id,
+            source_set_id,
+            previous=15,
+            approved=16,
+        )
+
+
+def test_other_user_approval_rejected(db, data):
+    """A different user's audit cannot authorize this source."""
+
+    source_id, source_set_id = make_prescription(
+        db,
+        data,
+        week=3,
+        reps=16,
+    )
+
+    record_approval(
+        db,
+        data,
+        source_id,
+        source_set_id,
+        user_id=data["other_id"],
+    )
+
+    with pytest.raises(ConflictError):
+        preview(db, data, source_id, source_set_id)
+
+
+def test_different_source_set_approval_rejected(db, data):
+    """Audit evidence must reference the exact source set."""
+
+    source_id, source_set_id = make_prescription(
+        db,
+        data,
+        week=3,
+        reps=16,
+    )
+
+    second = PrescriptionSet(
+        workout_prescription_id=source_id,
+        exercise_id=data["exercise_id"],
+        set_number=2,
+        target_reps=16,
+        load_basis="bodyweight",
+    )
+
+    db.add(second)
+    db.commit()
+
+    record_approval(
+        db,
+        data,
+        source_id,
+        source_set_id,
+        prescription_set_id=second.id,
+    )
+
+    with pytest.raises(ConflictError):
+        preview(db, data, source_id, source_set_id)
+
+
+def test_different_adjustment_type_approval_rejected(
+    db, data
+):
+    """An approved duration change cannot authorize reps."""
+
+    source_id, source_set_id = make_prescription(
+        db,
+        data,
+        week=3,
+        reps=16,
+        duration=65,
+    )
+
+    record_approval(
+        db,
+        data,
+        source_id,
+        source_set_id,
+        adjustment_type="duration",
+        previous=60,
+        approved=65,
+    )
+
+    with pytest.raises(ConflictError):
+        preview(
+            db,
+            data,
+            source_id,
+            source_set_id,
+            adjustment_type="reps",
+            previous=15,
+            approved=16,
+        )
+
+
+def test_changed_source_target_rejected(db, data):
+    """Even a real audit is insufficient if the target changed."""
+
+    source_id, source_set_id = make_source(db, data)
+
+    stored_set = db.get(PrescriptionSet, source_set_id)
+    stored_set.target_reps = 17
+    db.commit()
+
+    with pytest.raises(
+        ConflictError,
+        match="Source target no longer matches",
+    ):
+        preview(
+            db,
+            data,
+            source_id,
+            source_set_id,
+            previous=15,
+            approved=16,
+        )
+
+
+def test_valid_approval_preview_remains_read_only(
+    db, data
+):
+    """Approval evidence does not itself modify future sets."""
+
+    source_id, source_set_id = make_source(db, data)
+
+    _, future_set_id = make_prescription(
+        db,
+        data,
+        week=4,
+        reps=18,
+    )
+
+    before_audits = db.scalars(
+        select(AdaptationApproval)
+    ).all()
+
+    result = preview(
+        db,
+        data,
+        source_id,
+        source_set_id,
+    )
+
+    db.expire_all()
+
+    after_audits = db.scalars(
+        select(AdaptationApproval)
+    ).all()
+
+    assert result["database_modified"] is False
+    assert result["candidates"][0]["proposed_value"] == 19
+
+    assert db.get(
+        PrescriptionSet,
+        future_set_id,
+    ).target_reps == 18
+
+    assert len(before_audits) == len(after_audits)
