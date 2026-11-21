@@ -11,7 +11,7 @@ Proposal generation is mocked to test approval safeguards.
 from decimal import Decimal
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -30,6 +30,7 @@ from app.models import (
     WorkoutPrescription,
     WorkoutRecord,
 )
+from app.models.adaptation_approval import AdaptationApproval
 from app.services import approve_adaptation as service
 from app.services.approve_adaptation import ApprovedAdjustment
 from app.services.prescription_adaptation import ENGINE_VERSION
@@ -829,3 +830,278 @@ def test_approval_preserves_workout_metadata(
     assert stored.program_day == 1
     assert stored.status == "planned"
     assert stored.engine_version == "baseline-v1"
+
+# --------------------------------------------------
+# Approval audit persistence
+# --------------------------------------------------
+
+def test_approval_creates_audit_record(
+    db, data, monkeypatch
+):
+    """Successful approval records the original and new targets."""
+
+    prescription = create_prescription(
+        db, data["owner"], data["exercise"]
+    )
+    prescription_id = prescription.id
+    set_id = prescription.sets[0].id
+    user_id = data["owner"].id
+
+    mock_recommendations(
+        monkeypatch,
+        [standard_proposal(set_id)],
+    )
+
+    apply(
+        db,
+        user_id,
+        prescription_id,
+        [approval(set_id)],
+    )
+
+    db.expire_all()
+
+    records = db.scalars(
+        select(AdaptationApproval)
+        .where(
+            AdaptationApproval.prescription_set_id == set_id
+        )
+    ).all()
+
+    assert len(records) == 1
+
+    audit = records[0]
+
+    assert audit.user_id == user_id
+    assert audit.workout_prescription_id == prescription_id
+    assert audit.prescription_set_id == set_id
+    assert audit.adjustment_type == "reps"
+    assert audit.previous_value == Decimal("15.00")
+    assert audit.approved_value == Decimal("16.00")
+    assert audit.proposal_engine_version == ENGINE_VERSION
+    assert audit.approved_at is not None
+
+    assert db.get(
+        PrescriptionSet, set_id
+    ).target_reps == 16
+
+
+def test_multiple_approvals_create_distinct_audit_records(
+    db, data, monkeypatch
+):
+    """Each approved adjustment produces its own audit entry."""
+
+    prescription = create_prescription(
+        db, data["owner"], data["exercise"]
+    )
+    prescription_id = prescription.id
+    first_id = prescription.sets[0].id
+
+    second = PrescriptionSet(
+        workout_prescription_id=prescription_id,
+        exercise_id=data["exercise"].id,
+        set_number=2,
+        target_reps=12,
+        load_basis="bodyweight",
+    )
+    db.add(second)
+    db.commit()
+
+    second_id = second.id
+
+    mock_recommendations(monkeypatch, [
+        standard_proposal(first_id),
+        {
+            "set_id": second_id,
+            "previous": 12,
+            "proposed": 13,
+        },
+    ])
+
+    apply(
+        db,
+        data["owner"].id,
+        prescription_id,
+        [
+            approval(first_id),
+            approval(
+                second_id,
+                previous=12,
+                proposed=13,
+            ),
+        ],
+    )
+
+    db.expire_all()
+
+    records = db.scalars(
+        select(AdaptationApproval)
+        .where(
+            AdaptationApproval.workout_prescription_id
+            == prescription_id
+        )
+    ).all()
+
+    assert len(records) == 2
+
+    audits = {
+        record.prescription_set_id: record
+        for record in records
+    }
+
+    assert set(audits) == {first_id, second_id}
+
+    assert audits[first_id].previous_value == Decimal("15.00")
+    assert audits[first_id].approved_value == Decimal("16.00")
+
+    assert audits[second_id].previous_value == Decimal("12.00")
+    assert audits[second_id].approved_value == Decimal("13.00")
+
+    assert db.get(
+        PrescriptionSet, first_id
+    ).target_reps == 16
+
+    assert db.get(
+        PrescriptionSet, second_id
+    ).target_reps == 13
+
+
+# --------------------------------------------------
+# Transaction rollback
+# --------------------------------------------------
+
+def test_audit_insert_failure_rolls_back_all_changes(
+    db, data, monkeypatch
+):
+    """Audit persistence failure must undo prescription changes."""
+
+    prescription = create_prescription(
+        db, data["owner"], data["exercise"]
+    )
+    prescription_id = prescription.id
+    first_id = prescription.sets[0].id
+
+    second = PrescriptionSet(
+        workout_prescription_id=prescription_id,
+        exercise_id=data["exercise"].id,
+        set_number=2,
+        target_reps=12,
+        load_basis="bodyweight",
+    )
+
+    db.add(second)
+    db.commit()
+
+    second_id = second.id
+
+    mock_recommendations(monkeypatch, [
+        standard_proposal(first_id),
+        {
+            "set_id": second_id,
+            "previous": 12,
+            "proposed": 13,
+        },
+    ])
+
+    def reject_audit_insert(mapper, connection, target):
+        raise RuntimeError("Simulated audit insert failure")
+
+    event.listen(
+        AdaptationApproval,
+        "before_insert",
+        reject_audit_insert,
+    )
+
+    try:
+        with pytest.raises(
+            RuntimeError,
+            match="Simulated audit insert failure",
+        ):
+            apply(
+                db,
+                data["owner"].id,
+                prescription_id,
+                [
+                    approval(first_id),
+                    approval(
+                        second_id,
+                        previous=12,
+                        proposed=13,
+                    ),
+                ],
+            )
+    finally:
+        event.remove(
+            AdaptationApproval,
+            "before_insert",
+            reject_audit_insert,
+        )
+
+    db.expire_all()
+
+    # Neither target update may survive.
+    assert db.get(
+        PrescriptionSet, first_id
+    ).target_reps == 15
+
+    assert db.get(
+        PrescriptionSet, second_id
+    ).target_reps == 12
+
+    # Neither approval record may survive.
+    records = db.scalars(
+        select(AdaptationApproval)
+        .where(
+            AdaptationApproval.workout_prescription_id
+            == prescription_id
+        )
+    ).all()
+
+    assert records == []
+
+
+def test_rejected_approval_creates_no_audit_record(
+    db, data, monkeypatch
+):
+    """A stale recommendation must not create approval history."""
+
+    prescription = create_prescription(
+        db, data["owner"], data["exercise"]
+    )
+    prescription_id = prescription.id
+    set_id = prescription.sets[0].id
+
+    mock_recommendations(
+        monkeypatch,
+        [standard_proposal(set_id)],
+    )
+
+    with pytest.raises(ConflictError):
+        apply(
+            db,
+            data["owner"].id,
+            prescription_id,
+            [
+                approval(
+                    set_id,
+                    previous=14,
+                    proposed=16,
+                ),
+            ],
+        )
+
+    db.expire_all()
+
+    assert db.get(
+        PrescriptionSet, set_id
+    ).target_reps == 15
+
+    records = db.scalars(
+        select(AdaptationApproval)
+        .where(
+            AdaptationApproval.workout_prescription_id
+            == prescription_id
+        )
+    ).all()
+
+    assert records == []
