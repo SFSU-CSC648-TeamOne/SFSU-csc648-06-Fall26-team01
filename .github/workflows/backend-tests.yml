@@ -1,0 +1,276 @@
+name: Backend Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "app/backend/**"
+      - ".github/workflows/backend-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "app/backend/**"
+      - ".github/workflows/backend-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sqlite-tests:
+    name: SQLite tests / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.12"
+          - "3.14"
+    defaults:
+      run:
+        working-directory: app/backend
+    env:
+      DATABASE_URL: "sqlite+pysqlite:///:memory:"
+      JWT_SECRET: github-actions-backend-test-secret
+      GEMINI_API_KEY: ""
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: app/backend/requirements.txt
+
+      - name: Install backend and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt httpx pytest pytest-cov
+
+      - name: Run SQLite and mocked-service tests with coverage
+        run: |
+          set -o pipefail
+          mkdir -p reports
+          python -m pytest -q tests \
+            --ignore=tests/test_apply_program_adaptations.py \
+            --ignore=tests/test_apply_program_adaptations_concurrency.py \
+            --ignore=tests/test_program_adaptation_approval_models.py \
+            --ignore=tests/test_program_enrollment_postgres.py \
+            --ignore=tests/test_workout_adaptation_concurrency.py \
+            --junitxml=reports/sqlite-junit.xml \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=xml:reports/sqlite-coverage.xml \
+            --cov-fail-under=50 2>&1 | tee reports/sqlite-tests.log
+
+      - name: Display SQLite test summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          report = "reports/sqlite-junit.xml"
+          coverage_report = "reports/sqlite-coverage.xml"
+          summary = os.environ["GITHUB_STEP_SUMMARY"]
+
+          with open(summary, "a", encoding="utf-8") as output:
+              output.write("## SQLite test results\n\n")
+              if os.path.exists(coverage_report):
+                  coverage = ET.parse(coverage_report).getroot()
+                  line_rate = float(coverage.attrib.get("line-rate", 0))
+                  output.write(f"**Coverage:** {line_rate:.2%}\n\n")
+              if not os.path.exists(report):
+                  output.write("Test report was not generated.\n")
+              else:
+                  root = ET.parse(report).getroot()
+                  suites = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
+                  totals = {
+                      key: sum(int(suite.attrib.get(key, 0)) for suite in suites)
+                      for key in ("tests", "failures", "errors", "skipped")
+                  }
+                  output.write(
+                      f"| Tests | Passed | Failed | Errors | Skipped |\n"
+                      f"|---:|---:|---:|---:|---:|\n"
+                      f"| {totals['tests']} | "
+                      f"{totals['tests'] - totals['failures'] - totals['errors'] - totals['skipped']} | "
+                      f"{totals['failures']} | {totals['errors']} | {totals['skipped']} |\n"
+                  )
+
+                  output.write("\n### Individual test results\n\n")
+                  output.write("| Test case | Status |\n|---|---|\n")
+                  failed = []
+                  for suite in suites:
+                      for case in suite.findall(".//testcase"):
+                          failure = case.find("failure")
+                          error = case.find("error")
+                          skipped = case.find("skipped")
+                          problem = failure if failure is not None else error
+                          name = f"{case.attrib.get('classname', '')}::{case.attrib.get('name', '')}"
+                          status = "SKIPPED" if skipped is not None else "FAILED" if problem is not None else "PASSED"
+                          output.write(f"| `{name}` | {status} |\n")
+                          if problem is not None:
+                              failed.append((name, (problem.attrib.get("message") or "").strip()))
+                  if failed:
+                      output.write("\n### Failures\n\n")
+                      for name, message in failed:
+                          output.write(f"- `{name}`")
+                          if message:
+                              output.write(f": {message}")
+                          output.write("\n")
+          PY
+
+      - name: Upload SQLite test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-sqlite-python-${{ matrix.python-version }}
+          path: |
+            app/backend/reports/sqlite-junit.xml
+            app/backend/reports/sqlite-coverage.xml
+            app/backend/reports/sqlite-tests.log
+          if-no-files-found: warn
+          retention-days: 14
+
+  postgresql-integration:
+    name: PostgreSQL integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: devuser
+          POSTGRES_PASSWORD: github-actions-test-password
+          POSTGRES_DB: ascenda_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U devuser -d ascenda_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: app/backend
+    env:
+      DATABASE_URL: "postgresql+psycopg://devuser:github-actions-test-password@127.0.0.1:5433/ascenda_test"
+      ASCENDA_TEST_DATABASE_URL: "postgresql+psycopg://devuser:github-actions-test-password@127.0.0.1:5433/ascenda_test"
+      JWT_SECRET: github-actions-backend-test-secret
+      GEMINI_API_KEY: ""
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: app/backend/requirements.txt
+
+      - name: Install backend and PostgreSQL test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt httpx pytest pytest-cov "psycopg[binary]"
+
+      - name: Create isolated test schema
+        run: |
+          python -c "import app.models; from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(engine); engine.dispose()"
+          python -m alembic stamp head
+
+      - name: Run PostgreSQL integration tests
+        run: |
+          set -o pipefail
+          mkdir -p reports
+          python -m pytest -q \
+            tests/test_program_enrollment_postgres.py \
+            tests/test_program_adaptation_approval_models.py \
+            tests/test_apply_program_adaptations.py \
+            tests/test_apply_program_adaptations_concurrency.py \
+            tests/test_workout_adaptation_concurrency.py \
+            --junitxml=reports/postgresql-junit.xml \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=xml:reports/postgresql-coverage.xml \
+            2>&1 | tee reports/postgresql-tests.log
+
+      - name: Display PostgreSQL test summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          report = "reports/postgresql-junit.xml"
+          coverage_report = "reports/postgresql-coverage.xml"
+          summary = os.environ["GITHUB_STEP_SUMMARY"]
+
+          with open(summary, "a", encoding="utf-8") as output:
+              output.write("## PostgreSQL test results\n\n")
+              if os.path.exists(coverage_report):
+                  coverage = ET.parse(coverage_report).getroot()
+                  line_rate = float(coverage.attrib.get("line-rate", 0))
+                  output.write(f"**Coverage:** {line_rate:.2%}\n\n")
+              if not os.path.exists(report):
+                  output.write("Test report was not generated.\n")
+              else:
+                  root = ET.parse(report).getroot()
+                  suites = [root] if root.tag == "testsuite" else list(root.findall("testsuite"))
+                  totals = {
+                      key: sum(int(suite.attrib.get(key, 0)) for suite in suites)
+                      for key in ("tests", "failures", "errors", "skipped")
+                  }
+                  output.write(
+                      f"| Tests | Passed | Failed | Errors | Skipped |\n"
+                      f"|---:|---:|---:|---:|---:|\n"
+                      f"| {totals['tests']} | "
+                      f"{totals['tests'] - totals['failures'] - totals['errors'] - totals['skipped']} | "
+                      f"{totals['failures']} | {totals['errors']} | {totals['skipped']} |\n"
+                  )
+
+                  output.write("\n### Individual test results\n\n")
+                  output.write("| Test case | Status |\n|---|---|\n")
+                  failed = []
+                  for suite in suites:
+                      for case in suite.findall(".//testcase"):
+                          failure = case.find("failure")
+                          error = case.find("error")
+                          skipped = case.find("skipped")
+                          problem = failure if failure is not None else error
+                          name = f"{case.attrib.get('classname', '')}::{case.attrib.get('name', '')}"
+                          status = "SKIPPED" if skipped is not None else "FAILED" if problem is not None else "PASSED"
+                          output.write(f"| `{name}` | {status} |\n")
+                          if problem is not None:
+                              failed.append((name, (problem.attrib.get("message") or "").strip()))
+                  if failed:
+                      output.write("\n### Failures\n\n")
+                      for name, message in failed:
+                          output.write(f"- `{name}`")
+                          if message:
+                              output.write(f": {message}")
+                          output.write("\n")
+          PY
+
+      - name: Upload PostgreSQL test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-postgresql-integration
+          path: |
+            app/backend/reports/postgresql-junit.xml
+            app/backend/reports/postgresql-coverage.xml
+            app/backend/reports/postgresql-tests.log
+          if-no-files-found: warn
+          retention-days: 14
