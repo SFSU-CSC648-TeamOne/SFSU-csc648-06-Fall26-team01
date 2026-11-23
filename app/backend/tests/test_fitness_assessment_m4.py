@@ -2,8 +2,8 @@
     
   
 """P1-03 fitness baseline tests for Ascenda.
-
-Run from app/backend: python -m unittest discover -s tests -p 'test_fitness_assessment_m4.py' -v
+Run from app/backend: .venv\Scripts\Activate.ps1
+Then Run: python -m unittest discover -s tests -p 'test_fitness_assessment_m4.py' -v
 This uses a disposable, in-memory SQLite database. Never uses Supabase.
 """
 import os
