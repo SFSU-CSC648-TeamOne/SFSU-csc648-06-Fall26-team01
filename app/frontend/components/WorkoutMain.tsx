@@ -145,7 +145,10 @@ export default function WorkoutMain() {
 
         <label className={styles.catalogFilter}>
           <span className={styles.srOnly}>Muscle group</span>
-          <select value={muscle} onChange={(event) => setMuscle(event.target.value)}>
+          <select
+            value={muscle}
+            onChange={(event) => setMuscle(event.target.value)}
+          >
             <option value="">MUSCLE GROUP</option>
             {muscles.map((item) => (
               <option key={item.id} value={item.name}>
@@ -209,10 +212,14 @@ export default function WorkoutMain() {
                 </span>
                 <span className="exercise-title">
                   <strong>{workout.name}</strong>
-                  <small>{workout.muscle_groups.join(" · ") || "FULL BODY"}</small>
+                  <small>
+                    {workout.muscle_groups.join(" · ") || "FULL BODY"}
+                  </small>
                 </span>
                 <span>{workout.difficulty.toUpperCase()}</span>
-                <span>{String(workout.total_minutes).padStart(2, "0")} MIN</span>
+                <span>
+                  {String(workout.total_minutes).padStart(2, "0")} MIN
+                </span>
                 <b className="core">
                   {isExpanded ? "HIDE" : `${workout.exercise_count} EX`}
                 </b>

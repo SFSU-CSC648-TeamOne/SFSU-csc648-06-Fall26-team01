@@ -9,9 +9,9 @@ when `GEMINI_API_KEY` is configured.
    import ChatWidget from "./chat/ChatWidget";
    ...
    <ChatProvider>
-     {/* your header / sidebar / children */}
-     {children}
-     <ChatWidget />
+   {/* your header / sidebar / children */}
+   {children}
+   <ChatWidget />
    </ChatProvider>
 
 2. `ChatWidget.tsx` hides the floating widget on `/chat`, where the full-page

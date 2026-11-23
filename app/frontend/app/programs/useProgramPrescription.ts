@@ -1,23 +1,18 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 
 import { api } from "../../lib/auth";
 import type { Program, ScheduledDay } from "./programsData";
-import {
-  personalizeSchedule,
-  type ProgramBaseline,
-} from "./prescription";
+import { personalizeSchedule, type ProgramBaseline } from "./prescription";
 
 export function useProgramPrescription(
   program: Program,
   templateDays: ScheduledDay[],
   userId: number | null,
-  authLoading: boolean
+  authLoading: boolean,
 ) {
-  const [baseline, setBaseline] =
-    useState<ProgramBaseline | null>(null);
+  const [baseline, setBaseline] = useState<ProgramBaseline | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,7 +33,7 @@ export function useProgramPrescription(
     setBaseline(null);
 
     api<ProgramBaseline | null>(
-      `/program-baselines/latest?program=${program.slug}`
+      `/program-baselines/latest?program=${program.slug}`,
     )
       .then((record) => {
         if (active) setBaseline(record);
@@ -48,7 +43,7 @@ export function useProgramPrescription(
           setError(
             err instanceof Error
               ? err.message
-              : "Could not load the assessment."
+              : "Could not load the assessment.",
           );
         }
       })
@@ -63,7 +58,7 @@ export function useProgramPrescription(
 
   const days = useMemo(
     () => personalizeSchedule(program, templateDays, baseline),
-    [program, templateDays, baseline]
+    [program, templateDays, baseline],
   );
 
   return { days, baseline, loading, error };

@@ -6,13 +6,23 @@ export function generateStaticParams() {
   return PROGRAMS.map((p) => ({ slug: p.slug }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
   const program = getProgram(slug);
-  return { title: program ? `${program.fullName} | Ascenda` : "Program | Ascenda" };
+  return {
+    title: program ? `${program.fullName} | Ascenda` : "Program | Ascenda",
+  };
 }
 
-export default async function ProgramPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ProgramPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
   const program = getProgram(slug);
   if (!program) notFound();

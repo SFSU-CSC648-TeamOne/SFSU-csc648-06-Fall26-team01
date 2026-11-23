@@ -21,6 +21,13 @@ type Exercise = {
   sets: number | null;
   reps: number | null;
 };
+<<<<<<< HEAD
+type Detail = { id: number; name: string; exercises: Exercise[] };
+type Result = { status: "done" | "skipped"; weight: string };
+
+const clock = (sec: number) =>
+  `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+=======
 
 type Detail = {
   id: number;
@@ -36,6 +43,7 @@ function clock(seconds: number) {
     remaining
   ).padStart(2, "0")}`;
 }
+>>>>>>> origin/main
 
 export default function ActiveWorkout() {
   useRequireAuth();
@@ -65,6 +73,28 @@ export default function ActiveWorkout() {
   const started = useRef(new Date());
 
   useEffect(() => {
+<<<<<<< HEAD
+    if (!sessionId) {
+      setError("No workout selected. Pick one from Programs.");
+      return;
+    }
+    api<Detail>(`/workout-sessions/${sessionId}`)
+      .then(setW)
+      .catch((e) => setError(e.message));
+  }, [sessionId]);
+
+  useEffect(() => {
+    const t = setInterval(() => setSeconds((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const cur = w?.exercises[i];
+  const next = w?.exercises[i + 1];
+  const doneCount = useMemo(
+    () => Object.values(results).filter((r) => r.status === "done").length,
+    [results],
+  );
+=======
     let active = true;
 
     setWorkout(null);
@@ -119,6 +149,7 @@ export default function ActiveWorkout() {
 
     return () => clearInterval(timer);
   }, []);
+>>>>>>> origin/main
 
   const current = workout?.exercises[exerciseIndex];
   const savedSets = results[exerciseIndex] ?? [];
@@ -148,6 +179,39 @@ export default function ActiveWorkout() {
     setError("");
   }
 
+<<<<<<< HEAD
+  /** Finishing logs the workout and saves it to Training history. There is no separate log screen. */
+  async function finish() {
+    if (!w) return;
+    setSaving(true);
+    setError("");
+    const entries = w.exercises.map((e) => {
+      const r = results[e.id];
+      return {
+        exercise_id: e.id,
+        reps:
+          r?.status === "done"
+            ? Math.min(1000, (e.sets ?? 1) * (e.reps ?? 1))
+            : 0,
+        weight_kg: r?.weight
+          ? Math.min(2000, Math.max(0, Number(r.weight)))
+          : null,
+        status: r?.status === "done" ? "completed" : "skipped", // backend EntryStatus values
+      };
+    });
+    try {
+      await api("/workout-records", {
+        method: "POST",
+        body: JSON.stringify({
+          workout_session_id: w.id,
+          performed_at: started.current.toISOString(),
+          duration_minutes: Math.min(
+            600,
+            Math.max(1, Math.round(seconds / 60)),
+          ),
+          entries,
+        }),
+=======
   function saveSet(status: "completed" | "skipped") {
     if (!current || exerciseComplete || saving) return;
 
@@ -271,6 +335,7 @@ export default function ActiveWorkout() {
       await api("/workout-records", {
         method: "POST",
         body: JSON.stringify(payload),
+>>>>>>> origin/main
       });
 
       router.push("/history");
@@ -289,17 +354,82 @@ export default function ActiveWorkout() {
       <Navbar />
 
       <div className={s.wrap}>
+<<<<<<< HEAD
+        <p className={s.kicker}>
+          {w
+            ? `${w.name} · exercise ${Math.min(i + 1, w.exercises.length)} of ${w.exercises.length}`
+            : "Active workout"}
+        </p>
+=======
         <p className={s.kicker}>Active workout</p>
 
         {loading && (
           <p className={s.muted}>Loading workout...</p>
         )}
 
+>>>>>>> origin/main
         {error && (
           <p className={s.error} role="alert">
             {error}
           </p>
         )}
+<<<<<<< HEAD
+        {cur && (
+          <>
+            <h1 className={s.h1}>{cur.name}</h1>
+            <p className={s.muted}>
+              {cur.sets && cur.reps
+                ? `${cur.sets} sets × ${cur.reps} reps`
+                : "Follow the exercise"}{" "}
+              · {cur.role.toUpperCase()}
+            </p>
+            <p className={s.timer} aria-label="Elapsed time">
+              {clock(seconds)}
+            </p>
+            <div className={s.field} style={{ maxWidth: 220 }}>
+              <label htmlFor="kg">Weight used (kg, optional)</label>
+              <input
+                id="kg"
+                className={s.input}
+                inputMode="decimal"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+              />
+            </div>
+            <div className={s.actions}>
+              <Link
+                href={`/exercises/${cur.id}`}
+                target="_blank"
+                className={`${s.btn} ${s.btnGhost}`}
+              >
+                Watch demo ↗
+              </Link>
+              <button className={s.btn} onClick={() => mark("done")}>
+                Done
+              </button>
+              <button
+                className={`${s.btn} ${s.btnGhost}`}
+                onClick={() => mark("skipped")}
+              >
+                Skip
+              </button>
+            </div>
+            <p className={s.muted} style={{ marginTop: 22 }}>
+              {next ? `Next: ${next.name}` : "Last exercise"} · {doneCount} done
+            </p>
+          </>
+        )}
+        {w && (
+          <div className={s.actions} style={{ marginTop: 40 }}>
+            <button
+              className={`${s.btn} ${s.btnGreen}`}
+              onClick={finish}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Finish and save"}
+            </button>
+          </div>
+=======
 
         {workout && (
           <>
@@ -511,6 +641,7 @@ export default function ActiveWorkout() {
               </button>
             </div>
           </>
+>>>>>>> origin/main
         )}
       </div>
     </main>

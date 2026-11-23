@@ -1,4 +1,3 @@
-
 import type { Program, ScheduledDay } from "./programsData";
 
 export type BaselineResult = {
@@ -27,7 +26,7 @@ const MOVEMENT_GROUPS: Record<string, Record<string, string[]>> = {
       "glute-bridge",
       "burpee",
     ],
-    "plank": ["plank"],
+    plank: ["plank"],
   },
   ldw: {
     "barbell-bench-press": [
@@ -36,10 +35,7 @@ const MOVEMENT_GROUPS: Record<string, Record<string, string[]>> = {
       "cable-fly",
       "triceps-pushdown",
     ],
-    "barbell-back-squat": [
-      "barbell-back-squat",
-      "dumbbell-lunge",
-    ],
+    "barbell-back-squat": ["barbell-back-squat", "dumbbell-lunge"],
     "romanian-deadlift": [
       "romanian-deadlift",
       "lat-pulldown",
@@ -56,22 +52,20 @@ function findAnchor(program: Program, exerciseId: string) {
   const groups = MOVEMENT_GROUPS[program.slug] ?? {};
 
   return Object.keys(groups).find((anchor) =>
-    groups[anchor].includes(exerciseId)
+    groups[anchor].includes(exerciseId),
   );
 }
 
 export function personalizeSchedule(
   program: Program,
   days: ScheduledDay[],
-  baseline: ProgramBaseline | null
+  baseline: ProgramBaseline | null,
 ): ScheduledDay[] {
   if (!baseline || baseline.program_slug !== program.slug) {
     return days;
   }
 
-  const measurements = new Map(
-    baseline.results.map((r) => [r.exercise_id, r])
-  );
+  const measurements = new Map(baseline.results.map((r) => [r.exercise_id, r]));
 
   const firstWeek = program.weekSchemes[0];
   const maxReps = program.slug === "bw" ? 20 : 15;
@@ -90,9 +84,7 @@ export function personalizeSchedule(
         // Plank is recorded in seconds, not repetitions.
         if (item.exercise.id === "plank") {
           const targetSeconds =
-            test.value === 0
-              ? 0
-              : clamp(Math.floor(test.value * 0.5), 5, 120);
+            test.value === 0 ? 0 : clamp(Math.floor(test.value * 0.5), 5, 120);
 
           return {
             ...item,
@@ -119,11 +111,7 @@ export function personalizeSchedule(
             reps:
               startingReps === 0
                 ? 0
-                : clamp(
-                    Math.round(startingReps * weekRatio),
-                    1,
-                    maxReps
-                  ),
+                : clamp(Math.round(startingReps * weekRatio), 1, maxReps),
           };
         }
 
@@ -138,11 +126,7 @@ export function personalizeSchedule(
         return {
           ...item,
           sets,
-          reps: clamp(
-            Math.round(item.reps * ratio),
-            1,
-            maxReps
-          ),
+          reps: clamp(Math.round(item.reps * ratio), 1, maxReps),
         };
       }),
     };

@@ -13,7 +13,11 @@ export default function ProfilePage() {
       <ProfileForm
         user={user}
         kicker="Profile"
-        title={<>{displayName(user) || "Your"} <span>profile.</span></>}
+        title={
+          <>
+            {displayName(user) || "Your"} <span>profile.</span>
+          </>
+        }
         lead="Update your goal, level, schedule and equipment. Changes apply to your next workouts."
         submitLabel="Save changes"
       />

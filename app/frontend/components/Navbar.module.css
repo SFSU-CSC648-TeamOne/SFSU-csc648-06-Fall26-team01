@@ -78,7 +78,9 @@
   cursor: pointer;
 }
 
-.menuButton:hover { background: rgba(255, 255, 255, 0.06); }
+.menuButton:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
 
 .bar {
   display: block;
@@ -97,7 +99,9 @@
   backdrop-filter: blur(3px);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 220ms ease, visibility 220ms;
+  transition:
+    opacity 220ms ease,
+    visibility 220ms;
 }
 
 .overlayOn {
@@ -120,7 +124,9 @@
   box-shadow: 18px 0 50px rgba(0, 0, 0, 0.45);
   transform: translateX(-100%);
   visibility: hidden;
-  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), visibility 260ms;
+  transition:
+    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 260ms;
 }
 
 .drawerOn {
@@ -129,7 +135,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .drawer, .overlay { transition: none; }
+  .drawer,
+  .overlay {
+    transition: none;
+  }
 }
 
 .drawerTop {
@@ -150,7 +159,9 @@
   cursor: pointer;
 }
 
-.closeBtn:hover { background: rgba(255, 255, 255, 0.08); }
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
 
 .drawerNav {
   flex: 1;
@@ -166,7 +177,9 @@
   letter-spacing: 0.16em;
 }
 
-.menuLabelGap { margin-top: 2rem; }
+.menuLabelGap {
+  margin-top: 2rem;
+}
 
 .menuLink {
   display: grid;
@@ -212,11 +225,23 @@
   font-size: 0.85rem;
 }
 
-.menuFooter a { color: #9fb0ff; text-decoration: none; }
+.menuFooter a {
+  color: #9fb0ff;
+  text-decoration: none;
+}
 
 @media (max-width: 480px) {
-  .navbar { padding: 0.8rem 1rem; }
-  .login { display: none; }
-  .signup { min-height: 2.4rem; padding: 0.55rem 0.7rem; }
-  .left .logo { font-size: 0.85rem; }
+  .navbar {
+    padding: 0.8rem 1rem;
+  }
+  .login {
+    display: none;
+  }
+  .signup {
+    min-height: 2.4rem;
+    padding: 0.55rem 0.7rem;
+  }
+  .left .logo {
+    font-size: 0.85rem;
+  }
 }

@@ -21,7 +21,9 @@ export default function ChatWidget() {
 
   useEffect(() => {
     if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, setOpen]);
@@ -36,25 +38,53 @@ export default function ChatWidget() {
   return (
     <>
       {!isOpen && (
-        <button ref={iconRef} className={styles.launcher} onClick={() => setOpen(true)} aria-label="Open chat">✦</button>
+        <button
+          ref={iconRef}
+          className={styles.launcher}
+          onClick={() => setOpen(true)}
+          aria-label="Open chat"
+        >
+          ✦
+        </button>
       )}
       {isOpen && (
         <aside className={styles.drawer} aria-label="Ascenda chat">
           <header className={styles.drawerHead}>
             <b>ASCENDA CHAT</b>
             <span className={styles.headBtns}>
-              {user && <button onClick={() => setShowHistory((s) => !s)}>{showHistory ? "Chat" : "History"}</button>}
-              {user && <Link href="/chat" onClick={() => setOpen(false)}>Full page</Link>}
-              <button onClick={() => setOpen(false)} aria-label="Close chat">✕</button>
+              {user && (
+                <button onClick={() => setShowHistory((s) => !s)}>
+                  {showHistory ? "Chat" : "History"}
+                </button>
+              )}
+              {user && (
+                <Link href="/chat" onClick={() => setOpen(false)}>
+                  Full page
+                </Link>
+              )}
+              <button onClick={() => setOpen(false)} aria-label="Close chat">
+                ✕
+              </button>
             </span>
           </header>
           {!user ? (
             <div className={styles.signIn}>
-              <p>Sign in to chat with Ascenda. Your conversations are saved to your account.</p>
-              <Link href="/login" onClick={() => setOpen(false)}>Log in</Link>
-              <Link href="/signup" onClick={() => setOpen(false)}>Create account</Link>
+              <p>
+                Sign in to chat with Ascenda. Your conversations are saved to
+                your account.
+              </p>
+              <Link href="/login" onClick={() => setOpen(false)}>
+                Log in
+              </Link>
+              <Link href="/signup" onClick={() => setOpen(false)}>
+                Create account
+              </Link>
             </div>
-          ) : showHistory ? <HistoryList onPick={() => setShowHistory(false)} /> : <ChatPanel />}
+          ) : showHistory ? (
+            <HistoryList onPick={() => setShowHistory(false)} />
+          ) : (
+            <ChatPanel />
+          )}
         </aside>
       )}
     </>

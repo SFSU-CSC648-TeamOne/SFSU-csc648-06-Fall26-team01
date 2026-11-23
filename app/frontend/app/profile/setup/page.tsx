@@ -14,7 +14,11 @@ export default function ProfileSetupPage() {
       <ProfileForm
         user={user}
         kicker="Step 2 of 2"
-        title={<>Set up <span>your profile.</span></>}
+        title={
+          <>
+            Set up <span>your profile.</span>
+          </>
+        }
         lead="Tell us your goal, level, schedule and equipment. You can change all of this later from Profile."
         submitLabel="Save profile"
         afterSaveHref="/profile" // redirect after saving profile (first-time setup)

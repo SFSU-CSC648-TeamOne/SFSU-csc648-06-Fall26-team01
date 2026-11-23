@@ -22,24 +22,23 @@ export type DayTemplate = {
   items: { exerciseId: string; role: Role }[];
 };
 
-// adding WGER exercise id that corresponds to the 
+// adding WGER exercise id that corresponds to the
 // exercise in our programs
 
-// -- used localhost:8000/api/docs -> /api/exercises 
+// -- used localhost:8000/api/docs -> /api/exercises
 // to find the id for each exercise in our programs
 export const CATALOG_IDS: Record<string, number> = {
-
   // bodyweight (bw) exercises matched from WGER
   "push-up": 930,
   "bodyweight-squat": 431,
   "reverse-lunge": 286,
   "glute-bridge": 85,
-  "plant": 928,
+  plant: 928,
   "pike-push-up": 141,
   "mountain-climbers": 283,
   "bird-dog": 571,
   "bench-dip": 434,
-  "burpee": 38,
+  burpee: 38,
 
   // loaded / weights (ldw) exercises matched from WGER
   "barbell-bench-press": 927,
@@ -57,7 +56,10 @@ export const CATALOG_IDS: Record<string, number> = {
 /** program exercise slug -> KinemIQ 3D dummy animation (files live in public/about/) */
 export const DUMMY_MODELS: Record<string, { url: string; clip: string }> = {
   "push-up": { url: "/about/Push_up.glb", clip: "Push_up" },
-  "bodyweight-squat": { url: "/about/Hercules_Squat.glb", clip: "Hercules_Squat" },
+  "bodyweight-squat": {
+    url: "/about/Hercules_Squat.glb",
+    clip: "Hercules_Squat",
+  },
 };
 
 export type Program = {
@@ -85,38 +87,139 @@ const BW: Program = {
     "Ten body-weight exercises combined into five training days a week for four weeks. Sets, reps and session length increase each week.",
   equipment: ["No equipment", "Exercise mat (optional)", "Bench or chair"],
   exercises: [
-    { id: "push-up", name: "Push-Up", muscle: "Chest", equipment: "None", baseMinutes: 5 },
-    { id: "bodyweight-squat", name: "Bodyweight Squat", muscle: "Legs", equipment: "None", baseMinutes: 5, demo: "Hercules Squat", video: "/about/demo_one.mp4" },
-    { id: "reverse-lunge", name: "Reverse Lunge", muscle: "Legs", equipment: "None", baseMinutes: 5, demo: "Pistol Squat Jesus", video: "/about/demo_two.mp4" },
-    { id: "glute-bridge", name: "Glute Bridge", muscle: "Glutes", equipment: "Mat", baseMinutes: 4 },
-    { id: "plank", name: "Plank", muscle: "Core", equipment: "Mat", baseMinutes: 3 },
-    { id: "pike-push-up", name: "Pike Push-Up", muscle: "Shoulders", equipment: "None", baseMinutes: 5 },
-    { id: "mountain-climbers", name: "Mountain Climbers", muscle: "Core", equipment: "None", baseMinutes: 4 },
-    { id: "bird-dog", name: "Bird Dog", muscle: "Back", equipment: "Mat", baseMinutes: 4 },
-    { id: "bench-dip", name: "Bench Dip", muscle: "Triceps", equipment: "Bench", baseMinutes: 4 },
-    { id: "burpee", name: "Burpee", muscle: "Full body", equipment: "None", baseMinutes: 5 },
+    {
+      id: "push-up",
+      name: "Push-Up",
+      muscle: "Chest",
+      equipment: "None",
+      baseMinutes: 5,
+    },
+    {
+      id: "bodyweight-squat",
+      name: "Bodyweight Squat",
+      muscle: "Legs",
+      equipment: "None",
+      baseMinutes: 5,
+      demo: "Hercules Squat",
+      video: "/about/demo_one.mp4",
+    },
+    {
+      id: "reverse-lunge",
+      name: "Reverse Lunge",
+      muscle: "Legs",
+      equipment: "None",
+      baseMinutes: 5,
+      demo: "Pistol Squat Jesus",
+      video: "/about/demo_two.mp4",
+    },
+    {
+      id: "glute-bridge",
+      name: "Glute Bridge",
+      muscle: "Glutes",
+      equipment: "Mat",
+      baseMinutes: 4,
+    },
+    {
+      id: "plank",
+      name: "Plank",
+      muscle: "Core",
+      equipment: "Mat",
+      baseMinutes: 3,
+    },
+    {
+      id: "pike-push-up",
+      name: "Pike Push-Up",
+      muscle: "Shoulders",
+      equipment: "None",
+      baseMinutes: 5,
+    },
+    {
+      id: "mountain-climbers",
+      name: "Mountain Climbers",
+      muscle: "Core",
+      equipment: "None",
+      baseMinutes: 4,
+    },
+    {
+      id: "bird-dog",
+      name: "Bird Dog",
+      muscle: "Back",
+      equipment: "Mat",
+      baseMinutes: 4,
+    },
+    {
+      id: "bench-dip",
+      name: "Bench Dip",
+      muscle: "Triceps",
+      equipment: "Bench",
+      baseMinutes: 4,
+    },
+    {
+      id: "burpee",
+      name: "Burpee",
+      muscle: "Full body",
+      equipment: "None",
+      baseMinutes: 5,
+    },
   ],
   days: [
-    { title: "Upper Body Push", focus: "Chest, shoulders, triceps", items: [
-      { exerciseId: "push-up", role: "core" }, { exerciseId: "pike-push-up", role: "core" },
-      { exerciseId: "bench-dip", role: "core" }, { exerciseId: "plank", role: "accessory" },
-      { exerciseId: "mountain-climbers", role: "accessory" } ] },
-    { title: "Lower Body", focus: "Legs and glutes", items: [
-      { exerciseId: "bodyweight-squat", role: "core" }, { exerciseId: "reverse-lunge", role: "core" },
-      { exerciseId: "glute-bridge", role: "core" }, { exerciseId: "burpee", role: "accessory" },
-      { exerciseId: "plank", role: "accessory" } ] },
-    { title: "Core and Back", focus: "Core stability and posture", items: [
-      { exerciseId: "plank", role: "core" }, { exerciseId: "bird-dog", role: "core" },
-      { exerciseId: "glute-bridge", role: "core" }, { exerciseId: "mountain-climbers", role: "accessory" },
-      { exerciseId: "bodyweight-squat", role: "accessory" } ] },
-    { title: "Full Body", focus: "Whole-body strength", items: [
-      { exerciseId: "burpee", role: "core" }, { exerciseId: "push-up", role: "core" },
-      { exerciseId: "bodyweight-squat", role: "core" }, { exerciseId: "reverse-lunge", role: "accessory" },
-      { exerciseId: "bird-dog", role: "accessory" }, { exerciseId: "bench-dip", role: "accessory" } ] },
-    { title: "Conditioning", focus: "Endurance and core", items: [
-      { exerciseId: "mountain-climbers", role: "core" }, { exerciseId: "burpee", role: "core" },
-      { exerciseId: "pike-push-up", role: "core" }, { exerciseId: "bodyweight-squat", role: "accessory" },
-      { exerciseId: "plank", role: "accessory" }, { exerciseId: "glute-bridge", role: "accessory" } ] },
+    {
+      title: "Upper Body Push",
+      focus: "Chest, shoulders, triceps",
+      items: [
+        { exerciseId: "push-up", role: "core" },
+        { exerciseId: "pike-push-up", role: "core" },
+        { exerciseId: "bench-dip", role: "core" },
+        { exerciseId: "plank", role: "accessory" },
+        { exerciseId: "mountain-climbers", role: "accessory" },
+      ],
+    },
+    {
+      title: "Lower Body",
+      focus: "Legs and glutes",
+      items: [
+        { exerciseId: "bodyweight-squat", role: "core" },
+        { exerciseId: "reverse-lunge", role: "core" },
+        { exerciseId: "glute-bridge", role: "core" },
+        { exerciseId: "burpee", role: "accessory" },
+        { exerciseId: "plank", role: "accessory" },
+      ],
+    },
+    {
+      title: "Core and Back",
+      focus: "Core stability and posture",
+      items: [
+        { exerciseId: "plank", role: "core" },
+        { exerciseId: "bird-dog", role: "core" },
+        { exerciseId: "glute-bridge", role: "core" },
+        { exerciseId: "mountain-climbers", role: "accessory" },
+        { exerciseId: "bodyweight-squat", role: "accessory" },
+      ],
+    },
+    {
+      title: "Full Body",
+      focus: "Whole-body strength",
+      items: [
+        { exerciseId: "burpee", role: "core" },
+        { exerciseId: "push-up", role: "core" },
+        { exerciseId: "bodyweight-squat", role: "core" },
+        { exerciseId: "reverse-lunge", role: "accessory" },
+        { exerciseId: "bird-dog", role: "accessory" },
+        { exerciseId: "bench-dip", role: "accessory" },
+      ],
+    },
+    {
+      title: "Conditioning",
+      focus: "Endurance and core",
+      items: [
+        { exerciseId: "mountain-climbers", role: "core" },
+        { exerciseId: "burpee", role: "core" },
+        { exerciseId: "pike-push-up", role: "core" },
+        { exerciseId: "bodyweight-squat", role: "accessory" },
+        { exerciseId: "plank", role: "accessory" },
+        { exerciseId: "glute-bridge", role: "accessory" },
+      ],
+    },
   ],
   weekSchemes: [
     { sets: 3, reps: 10, minutesFactor: 1.0 },
@@ -135,35 +238,134 @@ const LDW: Program = {
     "Ten weighted exercises combined into five training days a week for four weeks. Load goes up as reps come down from week 2 to week 4.",
   equipment: ["Barbell", "Dumbbells", "Cable machine", "Bench"],
   exercises: [
-    { id: "barbell-bench-press", name: "Barbell Bench Press", muscle: "Chest", equipment: "Barbell, bench", baseMinutes: 7 },
-    { id: "barbell-back-squat", name: "Barbell Back Squat", muscle: "Legs", equipment: "Barbell, rack", baseMinutes: 7, demo: "Hercules Squat", video: "/about/demo_one.mp4" },
-    { id: "romanian-deadlift", name: "Romanian Deadlift", muscle: "Hamstrings", equipment: "Barbell", baseMinutes: 7 },
-    { id: "lat-pulldown", name: "Lat Pulldown", muscle: "Back", equipment: "Cable machine", baseMinutes: 6 },
-    { id: "dumbbell-shoulder-press", name: "Dumbbell Shoulder Press", muscle: "Shoulders", equipment: "Dumbbells", baseMinutes: 6 },
-    { id: "dumbbell-row", name: "Dumbbell Row", muscle: "Back", equipment: "Dumbbell, bench", baseMinutes: 6 },
-    { id: "dumbbell-lunge", name: "Dumbbell Lunge", muscle: "Legs", equipment: "Dumbbells", baseMinutes: 6, demo: "Pistol Squat Jesus", video: "/about/demo_two.mp4" },
-    { id: "dumbbell-curl", name: "Dumbbell Biceps Curl", muscle: "Biceps", equipment: "Dumbbells", baseMinutes: 4 },
-    { id: "triceps-pushdown", name: "Triceps Pushdown", muscle: "Triceps", equipment: "Cable machine", baseMinutes: 4 },
-    { id: "cable-fly", name: "Cable Fly", muscle: "Chest", equipment: "Cable machine", baseMinutes: 5 },
+    {
+      id: "barbell-bench-press",
+      name: "Barbell Bench Press",
+      muscle: "Chest",
+      equipment: "Barbell, bench",
+      baseMinutes: 7,
+    },
+    {
+      id: "barbell-back-squat",
+      name: "Barbell Back Squat",
+      muscle: "Legs",
+      equipment: "Barbell, rack",
+      baseMinutes: 7,
+      demo: "Hercules Squat",
+      video: "/about/demo_one.mp4",
+    },
+    {
+      id: "romanian-deadlift",
+      name: "Romanian Deadlift",
+      muscle: "Hamstrings",
+      equipment: "Barbell",
+      baseMinutes: 7,
+    },
+    {
+      id: "lat-pulldown",
+      name: "Lat Pulldown",
+      muscle: "Back",
+      equipment: "Cable machine",
+      baseMinutes: 6,
+    },
+    {
+      id: "dumbbell-shoulder-press",
+      name: "Dumbbell Shoulder Press",
+      muscle: "Shoulders",
+      equipment: "Dumbbells",
+      baseMinutes: 6,
+    },
+    {
+      id: "dumbbell-row",
+      name: "Dumbbell Row",
+      muscle: "Back",
+      equipment: "Dumbbell, bench",
+      baseMinutes: 6,
+    },
+    {
+      id: "dumbbell-lunge",
+      name: "Dumbbell Lunge",
+      muscle: "Legs",
+      equipment: "Dumbbells",
+      baseMinutes: 6,
+      demo: "Pistol Squat Jesus",
+      video: "/about/demo_two.mp4",
+    },
+    {
+      id: "dumbbell-curl",
+      name: "Dumbbell Biceps Curl",
+      muscle: "Biceps",
+      equipment: "Dumbbells",
+      baseMinutes: 4,
+    },
+    {
+      id: "triceps-pushdown",
+      name: "Triceps Pushdown",
+      muscle: "Triceps",
+      equipment: "Cable machine",
+      baseMinutes: 4,
+    },
+    {
+      id: "cable-fly",
+      name: "Cable Fly",
+      muscle: "Chest",
+      equipment: "Cable machine",
+      baseMinutes: 5,
+    },
   ],
   days: [
-    { title: "Push", focus: "Chest, shoulders, triceps", items: [
-      { exerciseId: "barbell-bench-press", role: "core" }, { exerciseId: "dumbbell-shoulder-press", role: "core" },
-      { exerciseId: "cable-fly", role: "accessory" }, { exerciseId: "triceps-pushdown", role: "accessory" } ] },
-    { title: "Pull", focus: "Back and biceps", items: [
-      { exerciseId: "lat-pulldown", role: "core" }, { exerciseId: "dumbbell-row", role: "core" },
-      { exerciseId: "romanian-deadlift", role: "accessory" }, { exerciseId: "dumbbell-curl", role: "accessory" } ] },
-    { title: "Legs", focus: "Quads, hamstrings, glutes", items: [
-      { exerciseId: "barbell-back-squat", role: "core" }, { exerciseId: "romanian-deadlift", role: "core" },
-      { exerciseId: "dumbbell-lunge", role: "core" }, { exerciseId: "dumbbell-curl", role: "accessory" } ] },
-    { title: "Upper Body", focus: "Chest, back, arms", items: [
-      { exerciseId: "barbell-bench-press", role: "core" }, { exerciseId: "lat-pulldown", role: "core" },
-      { exerciseId: "dumbbell-shoulder-press", role: "accessory" }, { exerciseId: "dumbbell-curl", role: "accessory" },
-      { exerciseId: "triceps-pushdown", role: "accessory" } ] },
-    { title: "Lower and Pull", focus: "Legs and back", items: [
-      { exerciseId: "barbell-back-squat", role: "core" }, { exerciseId: "dumbbell-lunge", role: "core" },
-      { exerciseId: "dumbbell-row", role: "core" }, { exerciseId: "romanian-deadlift", role: "accessory" },
-      { exerciseId: "cable-fly", role: "accessory" } ] },
+    {
+      title: "Push",
+      focus: "Chest, shoulders, triceps",
+      items: [
+        { exerciseId: "barbell-bench-press", role: "core" },
+        { exerciseId: "dumbbell-shoulder-press", role: "core" },
+        { exerciseId: "cable-fly", role: "accessory" },
+        { exerciseId: "triceps-pushdown", role: "accessory" },
+      ],
+    },
+    {
+      title: "Pull",
+      focus: "Back and biceps",
+      items: [
+        { exerciseId: "lat-pulldown", role: "core" },
+        { exerciseId: "dumbbell-row", role: "core" },
+        { exerciseId: "romanian-deadlift", role: "accessory" },
+        { exerciseId: "dumbbell-curl", role: "accessory" },
+      ],
+    },
+    {
+      title: "Legs",
+      focus: "Quads, hamstrings, glutes",
+      items: [
+        { exerciseId: "barbell-back-squat", role: "core" },
+        { exerciseId: "romanian-deadlift", role: "core" },
+        { exerciseId: "dumbbell-lunge", role: "core" },
+        { exerciseId: "dumbbell-curl", role: "accessory" },
+      ],
+    },
+    {
+      title: "Upper Body",
+      focus: "Chest, back, arms",
+      items: [
+        { exerciseId: "barbell-bench-press", role: "core" },
+        { exerciseId: "lat-pulldown", role: "core" },
+        { exerciseId: "dumbbell-shoulder-press", role: "accessory" },
+        { exerciseId: "dumbbell-curl", role: "accessory" },
+        { exerciseId: "triceps-pushdown", role: "accessory" },
+      ],
+    },
+    {
+      title: "Lower and Pull",
+      focus: "Legs and back",
+      items: [
+        { exerciseId: "barbell-back-squat", role: "core" },
+        { exerciseId: "dumbbell-lunge", role: "core" },
+        { exerciseId: "dumbbell-row", role: "core" },
+        { exerciseId: "romanian-deadlift", role: "accessory" },
+        { exerciseId: "cable-fly", role: "accessory" },
+      ],
+    },
   ],
   weekSchemes: [
     { sets: 3, reps: 10, minutesFactor: 1.0 },
@@ -211,25 +413,56 @@ export function buildSchedule(program: Program): ScheduledDay[] {
     for (let day = 1; day <= DAYS_PER_WEEK; day++) {
       const number = (week - 1) * DAYS_PER_WEEK + day;
       if (day > WORKOUT_DAYS_PER_WEEK) {
-        days.push({ week, day, number, rest: true, title: "Rest day", focus: "Recover and stretch lightly",
-          exercises: [], coreMinutes: 0, optionalMinutes: 0, totalMinutes: 0 });
+        days.push({
+          week,
+          day,
+          number,
+          rest: true,
+          title: "Rest day",
+          focus: "Recover and stretch lightly",
+          exercises: [],
+          coreMinutes: 0,
+          optionalMinutes: 0,
+          totalMinutes: 0,
+        });
         continue;
       }
       const tpl = program.days[day - 1];
-      const exercises: ScheduledExercise[] = tpl.items.map(({ exerciseId, role }) => {
-        const exercise = byId.get(exerciseId);
-        if (!exercise) throw new Error(`Unknown exercise ${exerciseId} in ${program.slug}`);
-        return {
-          key: `w${week}-d${day}-${exerciseId}`,
-          exercise, role,
-          sets: scheme.sets, reps: scheme.reps,
-          minutes: Math.round(exercise.baseMinutes * scheme.minutesFactor),
-        };
+      const exercises: ScheduledExercise[] = tpl.items.map(
+        ({ exerciseId, role }) => {
+          const exercise = byId.get(exerciseId);
+          if (!exercise)
+            throw new Error(
+              `Unknown exercise ${exerciseId} in ${program.slug}`,
+            );
+          return {
+            key: `w${week}-d${day}-${exerciseId}`,
+            exercise,
+            role,
+            sets: scheme.sets,
+            reps: scheme.reps,
+            minutes: Math.round(exercise.baseMinutes * scheme.minutesFactor),
+          };
+        },
+      );
+      const core = exercises
+        .filter((e) => e.role === "core")
+        .reduce((s, e) => s + e.minutes, 0);
+      const opt = exercises
+        .filter((e) => e.role === "accessory")
+        .reduce((s, e) => s + e.minutes, 0);
+      days.push({
+        week,
+        day,
+        number,
+        rest: false,
+        title: tpl.title,
+        focus: tpl.focus,
+        exercises,
+        coreMinutes: core,
+        optionalMinutes: opt,
+        totalMinutes: core + opt,
       });
-      const core = exercises.filter((e) => e.role === "core").reduce((s, e) => s + e.minutes, 0);
-      const opt = exercises.filter((e) => e.role === "accessory").reduce((s, e) => s + e.minutes, 0);
-      days.push({ week, day, number, rest: false, title: tpl.title, focus: tpl.focus,
-        exercises, coreMinutes: core, optionalMinutes: opt, totalMinutes: core + opt });
     }
   }
   return days;

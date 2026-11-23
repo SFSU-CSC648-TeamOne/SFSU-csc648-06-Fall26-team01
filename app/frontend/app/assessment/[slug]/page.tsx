@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -59,9 +58,7 @@ export default function ProgramAssessmentPage() {
 
     Promise.all([
       api<Test[]>(`/program-baselines/tests?program=${slug}`),
-      api<Baseline | null>(
-        `/program-baselines/latest?program=${slug}`
-      ),
+      api<Baseline | null>(`/program-baselines/latest?program=${slug}`),
     ])
       .then(([testList, latest]) => {
         setTests(testList);
@@ -69,19 +66,13 @@ export default function ProgramAssessmentPage() {
       })
       .catch((err) => {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to load assessment."
+          err instanceof Error ? err.message : "Unable to load assessment.",
         );
       })
       .finally(() => setLoading(false));
   }, [authLoading, user?.id, slug, program?.slug]);
 
-  function update(
-    exerciseId: string,
-    field: keyof FormResult,
-    value: string
-  ) {
+  function update(exerciseId: string, field: keyof FormResult, value: string) {
     setValues((current) => ({
       ...current,
       [exerciseId]: {
@@ -133,9 +124,7 @@ export default function ProgramAssessmentPage() {
     const results: Result[] = tests.map((test) => ({
       exercise_id: test.id,
       value: Number(values[test.id].value),
-      load_kg: test.weighted
-        ? Number(values[test.id].load_kg)
-        : null,
+      load_kg: test.weighted ? Number(values[test.id].load_kg) : null,
     }));
 
     try {
@@ -150,11 +139,7 @@ export default function ProgramAssessmentPage() {
       setSaved(record);
       setPrevious(record);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to save baseline."
-      );
+      setError(err instanceof Error ? err.message : "Failed to save baseline.");
     } finally {
       setSaving(false);
     }
@@ -201,8 +186,8 @@ export default function ProgramAssessmentPage() {
         </h1>
 
         <p className={s.lead}>
-          {program.fullName}. Complete each test with controlled
-          technique and record your actual performance.
+          {program.fullName}. Complete each test with controlled technique and
+          record your actual performance.
         </p>
 
         {error && (
@@ -218,38 +203,29 @@ export default function ProgramAssessmentPage() {
             <h2>Assessment complete</h2>
 
             {saved.results.map((result) => {
-              const test = tests.find(
-                (item) => item.id === result.exercise_id
-              );
+              const test = tests.find((item) => item.id === result.exercise_id);
 
               return (
                 <p key={result.exercise_id}>
                   <strong>{test?.name ?? result.exercise_id}</strong>
                   {" — "}
                   {result.value} {test?.metric ?? "reps"}
-                  {result.load_kg !== null &&
-                    ` at ${result.load_kg} kg`}
+                  {result.load_kg !== null && ` at ${result.load_kg} kg`}
                 </p>
               );
             })}
 
             <p className={s.muted}>
-              Your baseline has been saved. Personalized sets and
-              reps will be connected in the next implementation section.
+              Your baseline has been saved. Personalized sets and reps will be
+              connected in the next implementation section.
             </p>
 
             <div className={s.actions}>
-              <Link
-                href={`/programs/${program.slug}`}
-                className={s.btn}
-              >
+              <Link href={`/programs/${program.slug}`} className={s.btn}>
                 View program ↗
               </Link>
 
-              <Link
-                href="/profile"
-                className={`${s.btn} ${s.btnGhost}`}
-              >
+              <Link href="/profile" className={`${s.btn} ${s.btnGhost}`}>
                 Profile
               </Link>
             </div>
@@ -263,26 +239,22 @@ export default function ProgramAssessmentPage() {
             <h2>Starting point recorded</h2>
 
             <p className={s.muted}>
-              You have already completed an initial assessment
-              for this program.
+              You have already completed an initial assessment for this program.
             </p>
 
             <div className={s.list}>
               {previous.results.map((result) => {
                 const test = tests.find(
-                  (item) => item.id === result.exercise_id
+                  (item) => item.id === result.exercise_id,
                 );
 
                 return (
                   <div key={result.exercise_id} className={s.row}>
                     <span className={s.rowTitle}>
-                      <strong>
-                        {test?.name ?? result.exercise_id}
-                      </strong>
+                      <strong>{test?.name ?? result.exercise_id}</strong>
                       <small>
                         {result.value} {test?.metric ?? "reps"}
-                        {result.load_kg !== null &&
-                          ` at ${result.load_kg} kg`}
+                        {result.load_kg !== null && ` at ${result.load_kg} kg`}
                       </small>
                     </span>
                   </div>
@@ -291,10 +263,7 @@ export default function ProgramAssessmentPage() {
             </div>
 
             <div className={s.actions}>
-              <Link
-                href={`/programs/${program.slug}`}
-                className={s.btn}
-              >
+              <Link href={`/programs/${program.slug}`} className={s.btn}>
                 View program ↗
               </Link>
 
@@ -337,23 +306,14 @@ export default function ProgramAssessmentPage() {
                     required
                     value={values[test.id]?.value ?? ""}
                     onChange={(event) =>
-                      update(
-                        test.id,
-                        "value",
-                        event.target.value
-                      )
+                      update(test.id, "value", event.target.value)
                     }
                   />
                 </div>
 
                 {test.weighted && (
-                  <div
-                    className={s.field}
-                    style={{ marginTop: 16 }}
-                  >
-                    <label htmlFor={`${test.id}-load`}>
-                      Load used (kg)
-                    </label>
+                  <div className={s.field} style={{ marginTop: 16 }}>
+                    <label htmlFor={`${test.id}-load`}>Load used (kg)</label>
 
                     <input
                       id={`${test.id}-load`}
@@ -365,11 +325,7 @@ export default function ProgramAssessmentPage() {
                       required
                       value={values[test.id]?.load_kg ?? ""}
                       onChange={(event) =>
-                        update(
-                          test.id,
-                          "load_kg",
-                          event.target.value
-                        )
+                        update(test.id, "load_kg", event.target.value)
                       }
                     />
                   </div>

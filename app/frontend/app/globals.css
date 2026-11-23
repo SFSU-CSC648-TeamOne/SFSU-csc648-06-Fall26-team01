@@ -56,7 +56,7 @@ button {
       rgba(79, 124, 255, 0.12),
       transparent 30%
     ),
-    #171A1F;
+    #171a1f;
 
   background-size: 140% 140%;
   animation: ascendaGradient 18s ease-in-out infinite;
@@ -931,7 +931,6 @@ footer {
 /* RESPONSIVE */
 
 @media (max-width: 1000px) {
-
   .navbar nav {
     display: none;
   }
@@ -956,7 +955,6 @@ footer {
 }
 
 @media (max-width: 650px) {
-
   .navbar {
     padding: 0 5vw;
   }
@@ -1268,12 +1266,11 @@ footer {
   justify-content: center;
 
   border: 1px solid rgba(79, 124, 255, 0.45);
-  background:
-    radial-gradient(
-      circle,
-      rgba(79, 124, 255, 0.22),
-      rgba(23, 26, 31, 0.2)
-    );
+  background: radial-gradient(
+    circle,
+    rgba(79, 124, 255, 0.22),
+    rgba(23, 26, 31, 0.2)
+  );
 
   font-size: 2rem;
   font-weight: 600;
@@ -1494,12 +1491,11 @@ footer {
   justify-content: center;
   align-items: center;
   text-align: center;
-  background:
-    radial-gradient(
-      circle at center,
-      rgba(79, 124, 255, 0.12),
-      transparent 55%
-    );
+  background: radial-gradient(
+    circle at center,
+    rgba(79, 124, 255, 0.12),
+    transparent 55%
+  );
 }
 
 .viewer-orbit {

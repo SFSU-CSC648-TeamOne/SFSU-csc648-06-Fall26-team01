@@ -9,11 +9,22 @@ import styles from "./LandingAuthButtons.module.css";
 export default function LandingAuthButtons() {
   const { user, loading } = useAuth();
   if (loading) return <div className={styles.box} aria-hidden="true" />;
-  if (user) return <div className={styles.box}><Link href="/programs" className={styles.fill}>Go to Programs</Link></div>;
+  if (user)
+    return (
+      <div className={styles.box}>
+        <Link href="/programs" className={styles.fill}>
+          Go to Programs
+        </Link>
+      </div>
+    );
   return (
     <div className={styles.box}>
-      <Link href="/login" className={styles.ghost}>Sign in</Link>
-      <Link href="/signup" className={styles.fill}>Register</Link>
+      <Link href="/login" className={styles.ghost}>
+        Sign in
+      </Link>
+      <Link href="/signup" className={styles.fill}>
+        Register
+      </Link>
     </div>
   );
 }
