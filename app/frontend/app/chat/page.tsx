@@ -10,20 +10,22 @@ export default function ChatPage() {
   const { user } = useRequireAuth();
   return (
     <>
-    <Navbar />
-    <main className={styles.fullPage}>
-      <aside className={styles.sideHist}><HistoryList /></aside>
-      <section className={styles.fullMain}>
-        <ChatPanel
-          greeting={
-            <div className={styles.greeting}>
-              <p className={styles.hi}>Hi, {displayName(user)}</p>
-              <p className={styles.pill}>ASCENDA</p>
-            </div>
-          }
-        />
-      </section>
-    </main>
+      <Navbar />
+      <main className={styles.fullPage}>
+        <aside className={styles.sideHist}>
+          <HistoryList />
+        </aside>
+        <section className={styles.fullMain}>
+          <ChatPanel
+            greeting={
+              <div className={styles.greeting}>
+                <p className={styles.hi}>Hi, {displayName(user)}</p>
+                <p className={styles.pill}>ASCENDA</p>
+              </div>
+            }
+          />
+        </section>
+      </main>
     </>
   );
 }

@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 
 import Navbar from "../../components/Navbar";
@@ -18,8 +17,8 @@ export default function AssessmentPage() {
         </h1>
 
         <p className={s.lead}>
-          Choose a program to measure your starting performance.
-          Your results will be used to personalize training.
+          Choose a program to measure your starting performance. Your results
+          will be used to personalize training.
         </p>
 
         <div className={s.list}>
@@ -29,9 +28,7 @@ export default function AssessmentPage() {
               href={`/assessment/${program.slug}`}
               className={s.row}
             >
-              <span className={s.rowIdx}>
-                {program.name}
-              </span>
+              <span className={s.rowIdx}>{program.name}</span>
 
               <span className={s.rowTitle}>
                 <strong>{program.fullName}</strong>

@@ -5,7 +5,13 @@ import { OrbitControls } from "@react-three/drei";
 import { Suspense } from "react";
 import AnimatedDummy from "../app/about/AnimatedDummy";
 
-export default function DummyViewer({ url, clip }: { url: string; clip?: string }) {
+export default function DummyViewer({
+  url,
+  clip,
+}: {
+  url: string;
+  clip?: string;
+}) {
   return (
     <div style={{ width: "100%", aspectRatio: "4 / 3" }}>
       <Canvas camera={{ position: [0, 1.3, 3.4], fov: 45 }}>

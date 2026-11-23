@@ -42,7 +42,8 @@ export default function VideoPlane({
       }
     };
     const failed = () => {
-      if (active) onStatusChange("Unable to load video. Check the MP4 path and codec.");
+      if (active)
+        onStatusChange("Unable to load video. Check the MP4 path and codec.");
     };
     video.addEventListener("loadedmetadata", metadata);
     video.addEventListener("error", failed);
@@ -53,11 +54,15 @@ export default function VideoPlane({
 
     // A muted looping video can normally autoplay. The viewer provides a
     // user-gesture Play control for browsers that still block it.
-    void video.play().then(() => {
-      if (active) onStatusChange("Playing looping demonstration inside 3D scene");
-    }).catch(() => {
-      if (active) onStatusChange("Select Play to start the demonstration");
-    });
+    void video
+      .play()
+      .then(() => {
+        if (active)
+          onStatusChange("Playing looping demonstration inside 3D scene");
+      })
+      .catch(() => {
+        if (active) onStatusChange("Select Play to start the demonstration");
+      });
 
     return () => {
       active = false;

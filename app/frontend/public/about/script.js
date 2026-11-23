@@ -22,163 +22,111 @@ const popupNextSibling = popup.nextElementSibling;
 let activeCard = null;
 let suppressHover = false;
 
-
 function closeProfile() {
+  popup.classList.add("hidden");
 
-    popup.classList.add("hidden");
+  if (activeCard) {
+    activeCard.classList.remove("selected");
+    activeCard.classList.remove("zoomed");
+  }
 
-    if (activeCard) {
-        activeCard.classList.remove("selected");
-        activeCard.classList.remove("zoomed");
-    }
+  if (popup.parentElement !== popupParent) {
+    popupParent.insertBefore(popup, popupNextSibling);
+  }
 
-    if (popup.parentElement !== popupParent) {
-        popupParent.insertBefore(popup, popupNextSibling);
-    }
-
-    activeCard = null;
+  activeCard = null;
 }
-
 
 function openProfile(card) {
+  cards.forEach((c) => c.classList.remove("selected"));
 
-    cards.forEach(c => c.classList.remove("selected"));
+  card.classList.add("selected");
+  activeCard = card;
 
-    card.classList.add("selected");
-    activeCard = card;
+  popupName.textContent = card.dataset.name;
 
+  popupRole.textContent = card.dataset.role;
 
-    popupName.textContent =
-        card.dataset.name;
+  popupDescription.textContent = card.dataset.description;
 
-    popupRole.textContent =
-        card.dataset.role;
+  detailRole.textContent = card.dataset.role;
 
-    popupDescription.textContent =
-        card.dataset.description;
+  detailFocus.textContent = card.dataset.focus;
 
-    detailRole.textContent =
-        card.dataset.role;
+  detailJoined.textContent = card.dataset.joined;
 
-    detailFocus.textContent =
-        card.dataset.focus;
+  detailEducation.textContent = card.dataset.education;
 
-    detailJoined.textContent =
-        card.dataset.joined;
+  detailAbout.textContent = card.dataset.about;
 
-    detailEducation.textContent =
-        card.dataset.education;
+  const portrait = card.querySelector(".portrait");
 
-    detailAbout.textContent =
-        card.dataset.about;
+  popupPhoto.className =
+    "popup-photo " +
+    [...portrait.classList]
+      .filter((name) => name.startsWith("portrait-"))
+      .join(" ");
 
+  popupPhoto.textContent = portrait.textContent;
 
-    const portrait =
-        card.querySelector(".portrait");
+  popupSocials.innerHTML = card.querySelector(".socials").innerHTML;
 
-    popupPhoto.className =
-        "popup-photo " +
-        [...portrait.classList]
-            .filter(name =>
-                name.startsWith("portrait-")
-            )
-            .join(" ");
+  viewPageButton.href = card.dataset.page || "#";
 
-    popupPhoto.textContent =
-        portrait.textContent;
+  card.appendChild(popup);
+  card.classList.add("zoomed");
+  popup.classList.remove("hidden");
 
-    popupSocials.innerHTML =
-        card.querySelector(".socials").innerHTML;
+  const cardRect = card.getBoundingClientRect();
+  const viewportMargin = 20;
+  const popupLeft = Math.max(
+    viewportMargin,
+    Math.min(
+      cardRect.left,
+      window.innerWidth - viewportMargin - popup.offsetWidth,
+    ),
+  );
 
-    viewPageButton.href =
-        card.dataset.page || "#";
-
-
-    card.appendChild(popup);
-    card.classList.add("zoomed");
-    popup.classList.remove("hidden");
-
-    const cardRect = card.getBoundingClientRect();
-    const viewportMargin = 20;
-    const popupLeft = Math.max(
-        viewportMargin,
-        Math.min(
-            cardRect.left,
-            window.innerWidth - viewportMargin - popup.offsetWidth
-        )
-    );
-
-    popup.style.left = `${popupLeft - cardRect.left}px`;
+  popup.style.left = `${popupLeft - cardRect.left}px`;
 }
 
+cards.forEach((card) => {
+  card.addEventListener("mouseenter", () => {
+    if (!suppressHover) {
+      openProfile(card);
+    }
+  });
 
-cards.forEach(card => {
+  card.addEventListener("click", () => openProfile(card));
 
-    card.addEventListener(
-        "mouseenter",
-        () => {
-            if (!suppressHover) {
-                openProfile(card);
-            }
-        }
-    );
-
-    card.addEventListener(
-        "click",
-        () => openProfile(card)
-    );
-
-    card.addEventListener(
-        "mouseleave",
-        event => {
-            if (!popup.contains(event.relatedTarget)) {
-                closeProfile();
-            }
-        }
-    );
-
+  card.addEventListener("mouseleave", (event) => {
+    if (!popup.contains(event.relatedTarget)) {
+      closeProfile();
+    }
+  });
 });
 
+closeButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  suppressHover = true;
+  closeProfile();
+});
 
-closeButton.addEventListener(
-    "click",
-    event => {
-        event.stopPropagation();
-        suppressHover = true;
-        closeProfile();
-    }
-);
+popup.addEventListener("mouseleave", (event) => {
+  if (!activeCard || !activeCard.contains(event.relatedTarget)) {
+    closeProfile();
+  }
+});
 
+document.addEventListener("mousemove", (event) => {
+  if (!event.target.closest(".member-card") && !popup.contains(event.target)) {
+    suppressHover = false;
+  }
+});
 
-popup.addEventListener(
-    "mouseleave",
-    event => {
-        if (!activeCard || !activeCard.contains(event.relatedTarget)) {
-            closeProfile();
-        }
-    }
-);
-
-
-document.addEventListener(
-    "mousemove",
-    event => {
-        if (
-            !event.target.closest(".member-card") &&
-            !popup.contains(event.target)
-        ) {
-            suppressHover = false;
-        }
-    }
-);
-
-
-document.addEventListener(
-    "keydown",
-    event => {
-        if (event.key === "Escape" && activeCard) {
-            suppressHover = true;
-            closeProfile();
-        }
-    }
-);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && activeCard) {
+    suppressHover = true;
+    closeProfile();
+  }
+});

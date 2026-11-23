@@ -63,7 +63,8 @@ export default function ProgramSummaryPage() {
           <p className={styles.kicker}>PROGRAM COMPLETION</p>
 
           <h1 className={styles.h1}>
-            {program.name} <span>{percent === 100 ? "Complete." : "Summary."}</span>
+            {program.name}{" "}
+            <span>{percent === 100 ? "Complete." : "Summary."}</span>
           </h1>
 
           <div
@@ -74,7 +75,9 @@ export default function ProgramSummaryPage() {
               background: "var(--card, #252b38)",
             }}
           >
-            <h2>{completedDays.length} / {TOTAL_DAYS} workout days completed</h2>
+            <h2>
+              {completedDays.length} / {TOTAL_DAYS} workout days completed
+            </h2>
 
             <div
               style={{
@@ -95,9 +98,7 @@ export default function ProgramSummaryPage() {
               />
             </div>
 
-            <p style={{ marginTop: 12 }}>
-              {percent}% complete
-            </p>
+            <p style={{ marginTop: 12 }}>{percent}% complete</p>
 
             {percent === 100 && (
               <h3 style={{ marginTop: 20 }}>
@@ -124,10 +125,10 @@ export default function ProgramSummaryPage() {
               }}
             >
               <div>
-                <strong>Day {day.number} — {day.title}</strong>
-                <p style={{ marginTop: 6, opacity: 0.7 }}>
-                  Week {day.week}
-                </p>
+                <strong>
+                  Day {day.number} — {day.title}
+                </strong>
+                <p style={{ marginTop: 6, opacity: 0.7 }}>Week {day.week}</p>
               </div>
 
               <div style={{ textAlign: "right" }}>

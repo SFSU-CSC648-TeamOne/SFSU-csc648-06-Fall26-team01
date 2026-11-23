@@ -1,4 +1,3 @@
-
 import styles from "./search.module.css";
 import WorkoutMain from "../../components/WorkoutMain";
 
@@ -6,9 +5,7 @@ export default function SearchPage() {
   return (
     <main className={styles.page}>
       <section className={styles.heading}>
-        <span className={styles.eyebrow}>
-          07 — EXERCISE LIBRARY
-        </span>
+        <span className={styles.eyebrow}>07 — EXERCISE LIBRARY</span>
 
         <h1>
           EXPLORE
@@ -17,8 +14,8 @@ export default function SearchPage() {
         </h1>
 
         <p>
-          Find exercises based on your target muscle groups,
-          available equipment, and training needs.
+          Find exercises based on your target muscle groups, available
+          equipment, and training needs.
         </p>
       </section>
 

@@ -5,8 +5,7 @@ const team = [
     number: "01",
     name: "Alisha Sinha",
     role: "Team Lead",
-    description:
-      "Leads planning and coordination to keep the team on track.",
+    description: "Leads planning and coordination to keep the team on track.",
     focus: "Project Planning, Agile, Documentation",
     joined: "August 2026",
     education: "Computer Science, San Francisco State University",
@@ -118,9 +117,8 @@ export default function AboutPage() {
           </h1>
 
           <p>
-            Six students working together to build Ascenda, an adaptive
-            fitness platform designed to make structured training more
-            flexible.
+            Six students working together to build Ascenda, an adaptive fitness
+            platform designed to make structured training more flexible.
           </p>
         </div>
 

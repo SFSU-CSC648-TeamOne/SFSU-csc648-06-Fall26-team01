@@ -43,7 +43,9 @@ export default function WorkoutsPage() {
   const [details, setDetails] = useState<Record<number, Detail>>({});
 
   useEffect(() => {
-    get<Named[]>("/muscle-groups").then(setMuscles).catch((e) => setError(String(e)));
+    get<Named[]>("/muscle-groups")
+      .then(setMuscles)
+      .catch((e) => setError(String(e)));
   }, []);
 
   useEffect(() => {
@@ -82,13 +84,19 @@ export default function WorkoutsPage() {
           ))}
         </select>{" "}
         Difficulty:{" "}
-        <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
+        <select
+          value={difficulty}
+          onChange={(e) => setDifficulty(e.target.value)}
+        >
           <option value="">Any</option>
           <option value="beginner">Beginner</option>
           <option value="intermediate">Intermediate</option>
         </select>{" "}
         Length:{" "}
-        <select value={maxMinutes} onChange={(e) => setMaxMinutes(e.target.value)}>
+        <select
+          value={maxMinutes}
+          onChange={(e) => setMaxMinutes(e.target.value)}
+        >
           <option value="">Any</option>
           <option value="15">Up to 15 min</option>
           <option value="30">Up to 30 min</option>
@@ -103,13 +111,15 @@ export default function WorkoutsPage() {
       <ul>
         {workouts.map((w) => (
           <li key={w.id} style={{ marginBottom: 16 }}>
-            <strong>{w.name}</strong> — {w.difficulty}, {w.total_minutes} min, {w.muscle_groups.join(", ")}{" "}
+            <strong>{w.name}</strong> — {w.difficulty}, {w.total_minutes} min,{" "}
+            {w.muscle_groups.join(", ")}{" "}
             <button onClick={() => showExercises(w.id)}>show exercises</button>
             {details[w.id] && (
               <ul>
                 {details[w.id].exercises.map((ex) => (
                   <li key={ex.id}>
-                    {ex.name} ({ex.role}, {ex.sets}x{ex.reps}) — {ex.primary_muscles.join(", ") || "no muscle"} —{" "}
+                    {ex.name} ({ex.role}, {ex.sets}x{ex.reps}) —{" "}
+                    {ex.primary_muscles.join(", ") || "no muscle"} —{" "}
                     {ex.equipment.join(", ") || "no equipment"}
                   </li>
                 ))}

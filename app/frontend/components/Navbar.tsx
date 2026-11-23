@@ -49,12 +49,17 @@ export default function Navbar({ signedIn: forced, actions }: Props) {
   // Escape closes; page behind does not scroll while the panel is open.
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeRef.current?.focus();
-    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   // Give focus back to the hamburger when the panel closes.
@@ -67,7 +72,11 @@ export default function Navbar({ signedIn: forced, actions }: Props) {
 
   const panel = (
     <>
-      <div className={`${styles.overlay} ${open ? styles.overlayOn : ""}`} onClick={close} aria-hidden="true" />
+      <div
+        className={`${styles.overlay} ${open ? styles.overlayOn : ""}`}
+        onClick={close}
+        aria-hidden="true"
+      />
       <aside
         id="ascenda-site-menu"
         className={`${styles.drawer} ${open ? styles.drawerOn : ""}`}
@@ -80,13 +89,26 @@ export default function Navbar({ signedIn: forced, actions }: Props) {
             <span className={styles.logoSymbol}>A</span>
             ASCENDA
           </Link>
-          <button ref={closeRef} type="button" className={styles.closeBtn} onClick={close} aria-label="Close navigation menu">✕</button>
+          <button
+            ref={closeRef}
+            type="button"
+            className={styles.closeBtn}
+            onClick={close}
+            aria-label="Close navigation menu"
+          >
+            ✕
+          </button>
         </div>
 
         <nav className={styles.drawerNav}>
           <p className={styles.menuLabel}>MENU</p>
           {mainLinks.map((l, i) => (
-            <Link key={l.href} href={l.href} onClick={close} className={`${styles.menuLink} ${pathname === l.href ? styles.menuLinkOn : ""}`}>
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={close}
+              className={`${styles.menuLink} ${pathname === l.href ? styles.menuLinkOn : ""}`}
+            >
               <span className={styles.menuNum}>{i + 1}</span>
               <span>{l.label}</span>
               <span aria-hidden="true">↗</span>
@@ -95,7 +117,12 @@ export default function Navbar({ signedIn: forced, actions }: Props) {
 
           <p className={`${styles.menuLabel} ${styles.menuLabelGap}`}>MORE</p>
           {moreLinks.map((l) => (
-            <Link key={l.href} href={l.href} onClick={close} className={`${styles.menuLink} ${styles.menuLinkSmall} ${pathname === l.href ? styles.menuLinkOn : ""}`}>
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={close}
+              className={`${styles.menuLink} ${styles.menuLinkSmall} ${pathname === l.href ? styles.menuLinkOn : ""}`}
+            >
               <span />
               <span>{l.label}</span>
               <span aria-hidden="true">↗</span>
@@ -107,12 +134,24 @@ export default function Navbar({ signedIn: forced, actions }: Props) {
           {signedIn ? (
             <>
               <span>{user?.email}</span>
-              <Link href="/" onClick={() => { logout(); close(); }}>Log out</Link>
+              <Link
+                href="/"
+                onClick={() => {
+                  logout();
+                  close();
+                }}
+              >
+                Log out
+              </Link>
             </>
           ) : (
             <>
-              <Link href="/login" onClick={close}>Log in</Link>
-              <Link href="/signup" onClick={close}>Create account</Link>
+              <Link href="/login" onClick={close}>
+                Log in
+              </Link>
+              <Link href="/signup" onClick={close}>
+                Create account
+              </Link>
             </>
           )}
         </div>
@@ -143,12 +182,17 @@ export default function Navbar({ signedIn: forced, actions }: Props) {
         </Link>
       </div>
 
-      {actions ?? (!signedIn && !loading && (
-        <div className={styles.actions}>
-          <Link href="/login" className={styles.login}>LOG IN</Link>
-          <Link href="/signup" className={styles.signup}>SIGN UP ↗</Link>
-        </div>
-      ))}
+      {actions ??
+        (!signedIn && !loading && (
+          <div className={styles.actions}>
+            <Link href="/login" className={styles.login}>
+              LOG IN
+            </Link>
+            <Link href="/signup" className={styles.signup}>
+              SIGN UP ↗
+            </Link>
+          </div>
+        ))}
 
       {/* Rendered into <body> so no parent can clip it or sit above it. */}
       {mounted && createPortal(panel, document.body)}
