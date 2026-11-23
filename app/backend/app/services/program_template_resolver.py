@@ -1,4 +1,3 @@
-
 """Resolve Ascenda program definitions into enrollment schedules.
 
 Requires:
@@ -32,7 +31,6 @@ from app.services.program_schedule import (
     build_enrollment_schedule,
 )
 from app.services.program_enrollment import EnrollmentWorkout
-
 
 # (week, day) -> phase type
 PhaseMap = dict[tuple[int, int], str]
@@ -74,9 +72,7 @@ def resolve_program_template(
     program = get_program_definition(program_slug)
 
     if program is None:
-        raise ValidationFailed(
-            f"Unsupported program: {program_slug}"
-        )
+        raise ValidationFailed(f"Unsupported program: {program_slug}")
 
     return _resolve(
         db=db,
@@ -116,25 +112,15 @@ def _resolve(
     # Distinct exercise slugs must not silently resolve
     # to the same catalog exercise.
     if len(set(exercise_ids.values())) != len(exercise_ids):
-        raise ValidationFailed(
-            "Multiple exercise slugs map to the same database ID."
-        )
+        raise ValidationFailed("Multiple exercise slugs map to the same database ID.")
 
     # 2. Verify referenced database rows exist.
     ids = set(exercise_ids.values())
 
-    found = set(
-        db.scalars(
-            select(Exercise.id).where(
-                Exercise.id.in_(ids)
-            )
-        ).all()
-    )
+    found = set(db.scalars(select(Exercise.id).where(Exercise.id.in_(ids))).all())
 
     if found != ids:
-        raise ValidationFailed(
-            "One or more mapped exercises do not exist."
-        )
+        raise ValidationFailed("One or more mapped exercises do not exist.")
 
     # 3. Require phases for every scheduled workout.
     required_days = {
@@ -152,17 +138,10 @@ def _resolve(
             "exactly once, with no additional dates."
         )
 
-    valid_phases = {
-        phase.value for phase in ProgramPhaseType
-    }
+    valid_phases = {phase.value for phase in ProgramPhaseType}
 
-    if any(
-        phase not in valid_phases
-        for phase in phases.values()
-    ):
-        raise ValidationFailed(
-            "Phase map contains an invalid classification."
-        )
+    if any(phase not in valid_phases for phase in phases.values()):
+        raise ValidationFailed("Phase map contains an invalid classification.")
 
     # 4. Require a target for every scheduled exercise.
     required_targets = {
@@ -189,14 +168,10 @@ def _resolve(
                 target = targets[(week, day, item.slug)]
 
                 if not isinstance(target, ExerciseTarget):
-                    raise ValidationFailed(
-                        "Invalid exercise target specification."
-                    )
+                    raise ValidationFailed("Invalid exercise target specification.")
 
                 set_count = (
-                    target.set_count
-                    if target.set_count is not None
-                    else scheme.sets
+                    target.set_count if target.set_count is not None else scheme.sets
                 )
 
                 exercises.append(
@@ -205,13 +180,9 @@ def _resolve(
                         set_count=set_count,
                         load_basis=target.load_basis,
                         target_reps=target.target_reps,
-                        target_duration_seconds=(
-                            target.target_duration_seconds
-                        ),
+                        target_duration_seconds=(target.target_duration_seconds),
                         target_weight_kg=target.target_weight_kg,
-                        is_optional=(
-                            item.role == "accessory"
-                        ),
+                        is_optional=(item.role == "accessory"),
                     )
                 )
 

@@ -1,4 +1,3 @@
-
 """Audit records for user-approved training adaptations.
 
 Each record represents one approved change to a
@@ -43,8 +42,7 @@ class AdaptationApproval(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "adjustment_type IN "
-            "('reps', 'duration', 'weight')",
+            "adjustment_type IN " "('reps', 'duration', 'weight')",
             name="ck_adaptation_approval_type",
         ),
         CheckConstraint(
@@ -106,9 +104,9 @@ class AdaptationApproval(Base):
     )
 
     previous_value: Mapped[Decimal] = mapped_column(
-    Numeric(12, 2, asdecimal=True),
-    nullable=False,
-)
+        Numeric(12, 2, asdecimal=True),
+        nullable=False,
+    )
 
     approved_value: Mapped[Decimal] = mapped_column(
         Numeric(12, 2, asdecimal=True),

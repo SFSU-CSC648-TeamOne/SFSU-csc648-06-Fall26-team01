@@ -1,5 +1,5 @@
 # Creates connect to Supabase and the get_db function gives each request
-# their own database session. 
+# their own database session.
 
 import os
 from typing import Iterator
@@ -17,6 +17,7 @@ if os.getenv("VERCEL"):
 
 engine = create_engine(get_settings().database_url, **_kwargs)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
 
 def get_db() -> Iterator[Session]:
     db = SessionLocal()

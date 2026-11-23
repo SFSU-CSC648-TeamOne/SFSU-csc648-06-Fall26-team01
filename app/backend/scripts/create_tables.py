@@ -1,4 +1,4 @@
-# creates every table in Supabase from the model, 
+# creates every table in Supabase from the model,
 # runes it onces and again if any other models are added
 
 import app.models

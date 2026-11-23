@@ -4,7 +4,8 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
-from app.models.enums import (EntryStatus, LoadBasis, ObservationType)
+from app.models.enums import EntryStatus, LoadBasis, ObservationType
+
 
 class EntryIn(BaseModel):
     exercise_id: int = Field(gt=0)
@@ -21,6 +22,7 @@ class EntryIn(BaseModel):
     assistance_kg: Optional[float] = Field(default=None, ge=0, le=2000)
     is_user_modified: bool = False
 
+
 class WorkoutRecordIn(BaseModel):
     workout_session_id: Optional[int] = None
     performed_at: Optional[datetime] = None
@@ -31,6 +33,7 @@ class WorkoutRecordIn(BaseModel):
     program_week: Optional[int] = Field(default=None, ge=1, le=52)
     program_day: Optional[int] = Field(default=None, ge=1, le=100)
     entries: list[EntryIn] = Field(min_length=1, max_length=500)
+
 
 class EntryOut(BaseModel):
     id: int
@@ -44,11 +47,11 @@ class EntryOut(BaseModel):
     status: str
     substituted_for_exercise_id: Optional[int]
     prescription_set_id: Optional[int] = None
-    observation_type: ObservationType = (ObservationType.training
-)
+    observation_type: ObservationType = ObservationType.training
     load_basis: Optional[LoadBasis] = None
     assistance_kg: Optional[float] = None
     is_user_modified: bool = False
+
 
 class WorkoutRecordSummary(BaseModel):
     id: int
@@ -62,9 +65,11 @@ class WorkoutRecordSummary(BaseModel):
     program_week: Optional[int] = None
     program_day: Optional[int] = None
 
+
 class WorkoutRecordOut(WorkoutRecordSummary):
     notes: Optional[str]
     entries: list[EntryOut]
+
 
 class Totals(BaseModel):
     sets: int
@@ -72,13 +77,16 @@ class Totals(BaseModel):
     volume_kg: float  # sum of reps x weight (0 for bodyweight)
     seconds: int
 
+
 class WeekTotals(Totals):
     week: int
     days_completed: int
 
+
 class ExerciseTotals(Totals):
     exercise_id: int
     name: str
+
 
 class ProgramSummaryOut(BaseModel):
     program: str

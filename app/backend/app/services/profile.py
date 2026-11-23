@@ -7,17 +7,24 @@ from app.models import User
 from app.repositories import profile as repo
 from app.schemas.profile import ProfileIn, ProfileOut
 
+
 def _out(p) -> ProfileOut:
-    return ProfileOut(goals=list(p.goals or []), experience_level=p.experience_level,
-                      days_per_week=p.days_per_week, session_minutes=p.session_minutes,
-                      physical_constraints=p.physical_constraints,
-                      equipment_ids=sorted(e.id for e in p.equipment))
+    return ProfileOut(
+        goals=list(p.goals or []),
+        experience_level=p.experience_level,
+        days_per_week=p.days_per_week,
+        session_minutes=p.session_minutes,
+        physical_constraints=p.physical_constraints,
+        equipment_ids=sorted(e.id for e in p.equipment),
+    )
+
 
 def get_profile(db: Session, user: User) -> ProfileOut:
     p = repo.get_profile(db, user.id)
     if p is None:
         raise NotFoundError("Profile not set up yet.")
     return _out(p)
+
 
 def save_profile(db: Session, user: User, data: ProfileIn) -> ProfileOut:
     equipment = repo.equipment_by_ids(db, data.equipment_ids)

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+
 class AppError(Exception):
     status_code = 400
     code = "bad_request"
@@ -9,17 +10,22 @@ class AppError(Exception):
         super().__init__(message)
         self.message = message
 
+
 class NotFoundError(AppError):
     status_code, code = 404, "not_found"
+
 
 class ConflictError(AppError):
     status_code, code = 409, "conflict"
 
+
 class AuthenticationError(AppError):
     status_code, code = 401, "unauthenticated"
 
+
 class ValidationFailed(AppError):
     status_code, code = 422, "invalid"
+
 
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)

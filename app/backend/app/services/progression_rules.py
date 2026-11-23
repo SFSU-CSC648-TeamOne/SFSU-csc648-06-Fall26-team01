@@ -1,4 +1,3 @@
-
 """Conservative progression rules for adaptive training.
 
 Transforms an adaptation decision and a prescribed set into
@@ -22,7 +21,6 @@ from typing import Literal
 
 from app.models.enums import LoadBasis
 from app.services.adaptive_engine import AdaptationDecision
-
 
 AdjustmentType = Literal[
     "reps",
@@ -155,24 +153,19 @@ def propose_progression(
     ):
         return _no_adjustment(
             target,
-            "No approved progression recommendation "
-            "with sufficient evidence.",
+            "No approved progression recommendation " "with sufficient evidence.",
         )
 
     basis = target.load_basis
 
     if basis == LoadBasis.bodyweight.value:
-        if (
-            target.target_reps is not None
-            and target.target_reps > 0
-        ):
+        if target.target_reps is not None and target.target_reps > 0:
             return _proposal(
                 target,
                 "reps",
                 target.target_reps,
                 target.target_reps + REP_INCREMENT,
-                "Increase the bodyweight repetition target "
-                "by one repetition.",
+                "Increase the bodyweight repetition target " "by one repetition.",
             )
 
         if (
@@ -185,10 +178,7 @@ def propose_progression(
             # whole-second increment is required.
             increase = min(
                 DURATION_INCREMENT_SECONDS,
-                int(
-                    _decimal(current)
-                    * MAX_DURATION_INCREASE_PCT
-                ),
+                int(_decimal(current) * MAX_DURATION_INCREASE_PCT),
             )
 
             if increase < 1:
@@ -203,24 +193,19 @@ def propose_progression(
                 "duration",
                 current,
                 current + increase,
-                "Increase duration conservatively, "
-                "without exceeding the 5% cap.",
+                "Increase duration conservatively, " "without exceeding the 5% cap.",
             )
 
         return _no_adjustment(
             target,
-            "No valid bodyweight repetition or duration "
-            "target is available.",
+            "No valid bodyweight repetition or duration " "target is available.",
         )
 
     if basis in {
         LoadBasis.external.value,
         LoadBasis.added.value,
     }:
-        if (
-            target.target_weight_kg is None
-            or target.target_weight_kg <= 0
-        ):
+        if target.target_weight_kg is None or target.target_weight_kg <= 0:
             return _no_adjustment(
                 target,
                 "A positive prescribed resistance is "
@@ -239,8 +224,7 @@ def propose_progression(
         if proposed <= current:
             return _no_adjustment(
                 target,
-                "The calculated increase is too small "
-                "at the supported precision.",
+                "The calculated increase is too small " "at the supported precision.",
             )
 
         return _proposal(
@@ -275,15 +259,12 @@ def propose_progression(
             MAX_ASSISTANCE_REDUCTION_KG,
         )
 
-        proposed = _round_weight(
-            max(Decimal("0"), current - reduction)
-        )
+        proposed = _round_weight(max(Decimal("0"), current - reduction))
 
         if proposed >= current:
             return _no_adjustment(
                 target,
-                "The assistance reduction is too small "
-                "at the supported precision.",
+                "The assistance reduction is too small " "at the supported precision.",
             )
 
         return _proposal(

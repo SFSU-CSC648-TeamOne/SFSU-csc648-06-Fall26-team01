@@ -1,4 +1,3 @@
-
 """Tests for the exercise progress-analysis service.
 
 Run independently:
@@ -91,31 +90,20 @@ def add_observation(
 ):
     record = WorkoutRecord(
         user_id=user.id,
-        performed_at=(
-            datetime(2026, 1, 1, tzinfo=timezone.utc)
-            + timedelta(days=day)
-        ),
+        performed_at=(datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(days=day)),
     )
 
     entry = PerformanceEntry(
         exercise_id=exercise.id,
         set_number=set_number,
         reps=reps if status == "completed" else None,
-        duration_seconds=(
-            seconds if status == "completed" else None
-        ),
-        weight_kg=(
-            weight_kg if status == "completed" else None
-        ),
+        duration_seconds=(seconds if status == "completed" else None),
+        weight_kg=(weight_kg if status == "completed" else None),
         load_basis=load_basis,
-        assistance_kg=(
-            assistance_kg if status == "completed" else None
-        ),
+        assistance_kg=(assistance_kg if status == "completed" else None),
         status=status,
         observation_type=observation_type,
-        substituted_for_exercise_id=(
-            substituted_for_exercise_id
-        ),
+        substituted_for_exercise_id=(substituted_for_exercise_id),
     )
 
     record.entries.append(entry)
@@ -137,8 +125,11 @@ def analyze(db, data, **kwargs):
 def test_insufficient_observations(db, data):
     for day, reps in enumerate([8, 10]):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=reps,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=reps,
         )
 
     result = analyze(db, data)
@@ -152,8 +143,11 @@ def test_insufficient_observations(db, data):
 def test_preliminary_at_three_observations(db, data):
     for day, reps in enumerate([8, 10, 12]):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=reps,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=reps,
         )
 
     result = analyze(db, data)[0]
@@ -167,8 +161,11 @@ def test_preliminary_at_three_observations(db, data):
 def test_four_observations_remain_preliminary(db, data):
     for day, reps in enumerate([8, 9, 10, 12]):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=reps,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=reps,
         )
 
     result = analyze(db, data)[0]
@@ -182,8 +179,11 @@ def test_robust_at_five_observations(db, data):
 
     for day, reps in enumerate(values):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=reps,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=reps,
         )
 
     result = analyze(db, data)[0]
@@ -197,13 +197,19 @@ def test_robust_at_five_observations(db, data):
 def test_skipped_sets_excluded(db, data):
     for day, reps in enumerate([8, 10]):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=reps,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=reps,
         )
 
     add_observation(
-        db, data["user"], data["exercise"],
-        day=2, status="skipped",
+        db,
+        data["user"],
+        data["exercise"],
+        day=2,
+        status="skipped",
     )
 
     result = analyze(db, data)[0]
@@ -215,15 +221,21 @@ def test_skipped_sets_excluded(db, data):
 def test_loading_conditions_remain_separate(db, data):
     for day, reps in enumerate([8, 10, 12]):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=reps,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=reps,
             load_basis="bodyweight",
         )
 
     for day, reps in enumerate([6, 7]):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day + 3, reps=reps,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day + 3,
+            reps=reps,
             load_basis="external",
             weight_kg=20,
         )
@@ -232,10 +244,7 @@ def test_loading_conditions_remain_separate(db, data):
 
     assert len(results) == 2
 
-    by_basis = {
-        result["load_basis"]: result
-        for result in results
-    }
+    by_basis = {result["load_basis"]: result for result in results}
 
     assert by_basis["bodyweight"]["observation_count"] == 3
     assert by_basis["external"]["observation_count"] == 2
@@ -244,15 +253,21 @@ def test_loading_conditions_remain_separate(db, data):
 def test_different_external_loads_not_mixed(db, data):
     for day in range(3):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=8 + day,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=8 + day,
             load_basis="external",
             weight_kg=20,
         )
 
     add_observation(
-        db, data["user"], data["exercise"],
-        day=3, reps=6,
+        db,
+        data["user"],
+        data["exercise"],
+        day=3,
+        reps=6,
         load_basis="external",
         weight_kg=40,
     )
@@ -261,10 +276,7 @@ def test_different_external_loads_not_mixed(db, data):
 
     assert len(results) == 2
 
-    by_weight = {
-        result["weight_kg"]: result
-        for result in results
-    }
+    by_weight = {result["weight_kg"]: result for result in results}
 
     assert by_weight[20]["observation_count"] == 3
     assert by_weight[40]["observation_count"] == 1
@@ -273,20 +285,24 @@ def test_different_external_loads_not_mixed(db, data):
 def test_benchmark_separate_from_training(db, data):
     for day in range(3):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=10 + day,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=10 + day,
         )
 
     add_observation(
-        db, data["user"], data["exercise"],
-        day=4, reps=20,
+        db,
+        data["user"],
+        data["exercise"],
+        day=4,
+        reps=20,
         observation_type="benchmark",
     )
 
     training = analyze(db, data)[0]
-    benchmark = analyze(
-        db, data, observation_type="benchmark"
-    )[0]
+    benchmark = analyze(db, data, observation_type="benchmark")[0]
 
     assert training["observation_count"] == 3
     assert benchmark["observation_count"] == 1
@@ -295,44 +311,50 @@ def test_benchmark_separate_from_training(db, data):
 def test_user_isolation(db, data):
     for day in range(3):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=8 + day,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=8 + day,
         )
 
     add_observation(
-        db, data["other"], data["exercise"],
-        day=4, reps=100,
+        db,
+        data["other"],
+        data["exercise"],
+        day=4,
+        reps=100,
     )
 
     result = analyze(db, data)[0]
 
     assert result["observation_count"] == 3
-    assert all(
-        point["actual"] < 100
-        for point in result["points"]
-    )
+    assert all(point["actual"] < 100 for point in result["points"])
 
 
 def test_set_positions_not_mixed(db, data):
     for day in range(3):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=10,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=10,
             set_number=1,
         )
 
     add_observation(
-        db, data["user"], data["exercise"],
-        day=4, reps=5,
+        db,
+        data["user"],
+        data["exercise"],
+        day=4,
+        reps=5,
         set_number=2,
     )
 
     results = analyze(db, data)
 
-    counts = {
-        result["set_number"]: result["observation_count"]
-        for result in results
-    }
+    counts = {result["set_number"]: result["observation_count"] for result in results}
 
     assert counts == {1: 3, 2: 1}
 
@@ -340,13 +362,19 @@ def test_set_positions_not_mixed(db, data):
 def test_substituted_entries_excluded(db, data):
     for day in range(3):
         add_observation(
-            db, data["user"], data["exercise"],
-            day=day, reps=10,
+            db,
+            data["user"],
+            data["exercise"],
+            day=day,
+            reps=10,
         )
 
     add_observation(
-        db, data["user"], data["exercise"],
-        day=4, reps=20,
+        db,
+        data["user"],
+        data["exercise"],
+        day=4,
+        reps=20,
         substituted_for_exercise_id=data["alternative"].id,
     )
 
@@ -358,7 +386,8 @@ def test_substituted_entries_excluded(db, data):
 def test_invalid_observation_type(db, data):
     with pytest.raises(ValueError):
         analyze(
-            db, data,
+            db,
+            data,
             observation_type="invalid",
         )
 

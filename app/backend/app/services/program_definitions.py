@@ -1,4 +1,3 @@
-
 """Backend definitions for Ascenda's BW and LDW programs.
 
 Source: existing frontend programsData.ts templates.
@@ -54,17 +53,11 @@ class ProgramDefinition:
 
 
 def core(*slugs: str) -> tuple[ProgramExercise, ...]:
-    return tuple(
-        ProgramExercise(slug, "core")
-        for slug in slugs
-    )
+    return tuple(ProgramExercise(slug, "core") for slug in slugs)
 
 
 def accessory(*slugs: str) -> tuple[ProgramExercise, ...]:
-    return tuple(
-        ProgramExercise(slug, "accessory")
-        for slug in slugs
-    )
+    return tuple(ProgramExercise(slug, "accessory") for slug in slugs)
 
 
 BODYWEIGHT = ProgramDefinition(
@@ -216,7 +209,5 @@ def required_exercise_slugs(
 ) -> frozenset[str]:
     """Return exercise identifiers requiring DB resolution."""
     return frozenset(
-        exercise.slug
-        for day in program.days
-        for exercise in day.exercises
+        exercise.slug for day in program.days for exercise in day.exercises
     )

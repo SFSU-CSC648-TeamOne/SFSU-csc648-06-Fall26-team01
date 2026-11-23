@@ -1,4 +1,3 @@
-
 """Unit tests for adaptive progression rules.
 
 Run:
@@ -52,13 +51,9 @@ def make_target(
         load_basis=load_basis,
         target_reps=reps,
         target_duration_seconds=duration,
-        target_weight_kg=(
-            Decimal(str(weight))
-            if weight is not None else None
-        ),
+        target_weight_kg=(Decimal(str(weight)) if weight is not None else None),
         target_assistance_kg=(
-            Decimal(str(assistance))
-            if assistance is not None else None
+            Decimal(str(assistance)) if assistance is not None else None
         ),
     )
 
@@ -66,6 +61,7 @@ def make_target(
 # --------------------------------------------------
 # Repetition progression
 # --------------------------------------------------
+
 
 def test_bodyweight_reps_increase_by_one():
     proposal = propose_progression(
@@ -103,6 +99,7 @@ def test_invalid_reps_do_not_progress(reps):
 # --------------------------------------------------
 # Duration progression
 # --------------------------------------------------
+
 
 def test_duration_increases_by_five_seconds():
     proposal = propose_progression(
@@ -146,6 +143,7 @@ def test_invalid_duration_does_not_progress():
 # Resistance progression
 # --------------------------------------------------
 
+
 def test_external_weight_increases_by_2_5_percent():
     proposal = propose_progression(
         make_decision(),
@@ -185,11 +183,14 @@ def test_added_load_uses_weight_progression():
     assert proposal.proposed_value == Decimal("20.50")
 
 
-@pytest.mark.parametrize("weight", [
-    None,
-    "0",
-    "-10",
-])
+@pytest.mark.parametrize(
+    "weight",
+    [
+        None,
+        "0",
+        "-10",
+    ],
+)
 def test_invalid_weight_does_not_progress(weight):
     proposal = propose_progression(
         make_decision(),
@@ -205,6 +206,7 @@ def test_invalid_weight_does_not_progress(weight):
 # --------------------------------------------------
 # Assistance progression
 # --------------------------------------------------
+
 
 def test_assistance_decreases_by_five_percent():
     proposal = propose_progression(
@@ -259,12 +261,16 @@ def test_zero_assistance_does_not_progress():
 # Decision safeguards
 # --------------------------------------------------
 
-@pytest.mark.parametrize("action", [
-    "maintain",
-    "review_regression",
-    "insufficient_data",
-    "reassess",
-])
+
+@pytest.mark.parametrize(
+    "action",
+    [
+        "maintain",
+        "review_regression",
+        "insufficient_data",
+        "reassess",
+    ],
+)
 def test_non_progress_decisions_do_not_adjust(action):
     proposal = propose_progression(
         make_decision(action=action),
@@ -275,10 +281,13 @@ def test_non_progress_decisions_do_not_adjust(action):
     assert proposal.requires_approval is False
 
 
-@pytest.mark.parametrize("confidence", [
-    "insufficient",
-    "preliminary",
-])
+@pytest.mark.parametrize(
+    "confidence",
+    [
+        "insufficient",
+        "preliminary",
+    ],
+)
 def test_non_robust_evidence_blocks_progression(
     confidence,
 ):
@@ -342,6 +351,7 @@ def test_none_loading_does_not_progress():
 # --------------------------------------------------
 # Proposal integrity
 # --------------------------------------------------
+
 
 def test_proposal_preserves_exercise_and_set():
     proposal = propose_progression(

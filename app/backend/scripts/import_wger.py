@@ -18,20 +18,23 @@ from app.db.session import SessionLocal
 from app.models import Equipment, Exercise, ExerciseMuscle, MuscleGroup
 
 BASE = "https://wger.de/api/v2"
-ENGLISH = 2          # wger's language id for English
+ENGLISH = 2  # wger's language id for English
 PAGE_SIZE = 100
 
-MUSCLE_RENAMES: dict = {} #used for demo data test
+MUSCLE_RENAMES: dict = {}  # used for demo data test
 
 # I don't see wger has difficulty, role or duration.
 # These are our own defaults, not wger data. Change them if needed
 HARDER_EQUIPMENT = {"barbell", "sz-bar", "kettlebell"}
 CORE_MINUTES, ACCESSORY_MINUTES = 8, 5
 
+
 # connecting with wger api
 def fetch_json(url: str) -> dict:
     request = urllib.request.Request(
-        url, headers={"Accept": "application/json", "User-Agent": "ascenda-csc648-import"})
+        url,
+        headers={"Accept": "application/json", "User-Agent": "ascenda-csc648-import"},
+    )
     for attempt in range(1, 4):
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
@@ -42,6 +45,7 @@ def fetch_json(url: str) -> dict:
             time.sleep(2 * attempt)
     raise RuntimeError("unreachable")
 
+
 def paginate(url: str) -> Iterator[dict]:
     """Yields every result, following wger's 'next' links page by page."""
     while url:
@@ -51,31 +55,45 @@ def paginate(url: str) -> Iterator[dict]:
         if url:
             url = url.replace("http://", "https://", 1)
 
+
 # cleaning and rules (no database needed)
 def clean_text(value: Optional[str]) -> str:
     """wger descriptions contain HTML such as <p>; keep plain text."""
     text = re.sub(r"<[^>]+>", " ", value or "")
     return re.sub(r"\s+", " ", html.unescape(text)).strip()
 
+
 def english_translation(info: dict) -> Optional[dict]:
     for translation in info.get("translations") or []:
-        if translation.get("language") == ENGLISH and (translation.get("name") or "").strip():
+        if (
+            translation.get("language") == ENGLISH
+            and (translation.get("name") or "").strip()
+        ):
             return translation
     return None
+
 
 def muscle_label(muscle: dict) -> str:
     name = (muscle.get("name_en") or "").strip() or (muscle.get("name") or "").strip()
     return MUSCLE_RENAMES.get(name, name)
 
+
 def is_bodyweight(equipment: dict) -> bool:
     return (equipment.get("name") or "").strip().lower().startswith("none")
 
+
 def guess_difficulty(equipment_names: list) -> str:
-    return "intermediate" if any(n.lower() in HARDER_EQUIPMENT for n in equipment_names) else "beginner"
+    return (
+        "intermediate"
+        if any(n.lower() in HARDER_EQUIPMENT for n in equipment_names)
+        else "beginner"
+    )
+
 
 def guess_role(secondary_muscle_count: int) -> str:
     # exercises that work multiple other muscles are treated as compound exercises
     return "core" if secondary_muscle_count > 0 else "accessory"
+
 
 # writing to the database
 def upsert_lookup(db, model, wger_id: int, name: str):
@@ -91,16 +109,24 @@ def upsert_lookup(db, model, wger_id: int, name: str):
     db.flush()
     return row
 
+
 def import_lookups(db) -> tuple:
     muscles, equipment = {}, {}
     for m in paginate(f"{BASE}/muscle/?limit={PAGE_SIZE}"):
         if m.get("id") is not None and muscle_label(m):
             muscles[m["id"]] = upsert_lookup(db, MuscleGroup, m["id"], muscle_label(m))
     for e in paginate(f"{BASE}/equipment/?limit={PAGE_SIZE}"):
-        if e.get("id") is not None and (e.get("name") or "").strip() and not is_bodyweight(e):
-            equipment[e["id"]] = upsert_lookup(db, Equipment, e["id"], e["name"].strip())
+        if (
+            e.get("id") is not None
+            and (e.get("name") or "").strip()
+            and not is_bodyweight(e)
+        ):
+            equipment[e["id"]] = upsert_lookup(
+                db, Equipment, e["id"], e["name"].strip()
+            )
     db.commit()
     return muscles, equipment
+
 
 def import_exercises(db, muscles: dict, equipment: dict, limit: int) -> dict:
     def muscle_for(m: dict):
@@ -110,7 +136,9 @@ def import_exercises(db, muscles: dict, equipment: dict, limit: int) -> dict:
 
     def equipment_for(e: dict):
         if e["id"] not in equipment:
-            equipment[e["id"]] = upsert_lookup(db, Equipment, e["id"], e["name"].strip())
+            equipment[e["id"]] = upsert_lookup(
+                db, Equipment, e["id"], e["name"].strip()
+            )
         return equipment[e["id"]]
 
     counts = {"created": 0, "updated": 0, "skipped": 0}
@@ -133,8 +161,12 @@ def import_exercises(db, muscles: dict, equipment: dict, limit: int) -> dict:
             category=((info.get("category") or {}).get("name") or None),
             description=clean_text(translation.get("description")) or None,
             source="wger",
-            license_name=(license_info.get("short_name") or license_info.get("full_name") or None),
-            license_author=(translation.get("license_author") or info.get("license_author") or None),
+            license_name=(
+                license_info.get("short_name") or license_info.get("full_name") or None
+            ),
+            license_author=(
+                translation.get("license_author") or info.get("license_author") or None
+            ),
         )
         if fields["license_name"]:
             fields["license_name"] = fields["license_name"][:100]
@@ -149,15 +181,24 @@ def import_exercises(db, muscles: dict, equipment: dict, limit: int) -> dict:
             continue
 
         # names must be unique in our catalog; skip wger exercises that repeat an existing name
-        taken = db.scalar(select(Exercise.id).where(func.lower(Exercise.name) == name.lower()))
+        taken = db.scalar(
+            select(Exercise.id).where(func.lower(Exercise.name) == name.lower())
+        )
         if taken is not None:
             counts["skipped"] += 1
             continue
 
         primary = [m for m in (info.get("muscles") or []) if m.get("id") is not None]
-        secondary = [m for m in (info.get("muscles_secondary") or []) if m.get("id") is not None]
-        gear = [e for e in (info.get("equipment") or [])
-                if e.get("id") is not None and (e.get("name") or "").strip() and not is_bodyweight(e)]
+        secondary = [
+            m for m in (info.get("muscles_secondary") or []) if m.get("id") is not None
+        ]
+        gear = [
+            e
+            for e in (info.get("equipment") or [])
+            if e.get("id") is not None
+            and (e.get("name") or "").strip()
+            and not is_bodyweight(e)
+        ]
 
         links = {}
         for m in primary:
@@ -191,9 +232,14 @@ def import_exercises(db, muscles: dict, equipment: dict, limit: int) -> dict:
     db.commit()
     return counts
 
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Import wger muscles, equipment and exercises.")
-    parser.add_argument("--max", type=int, default=0, help="stop after this many exercises (0 = all)")
+    parser = argparse.ArgumentParser(
+        description="Import wger muscles, equipment and exercises."
+    )
+    parser.add_argument(
+        "--max", type=int, default=0, help="stop after this many exercises (0 = all)"
+    )
     args = parser.parse_args()
 
     with SessionLocal() as db:
@@ -208,7 +254,10 @@ def main() -> None:
             db.rollback()
             raise
 
-    print(f"Done. created={counts['created']} updated={counts['updated']} skipped={counts['skipped']}")
+    print(
+        f"Done. created={counts['created']} updated={counts['updated']} skipped={counts['skipped']}"
+    )
+
 
 if __name__ == "__main__":
     main()

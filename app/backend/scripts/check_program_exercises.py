@@ -35,22 +35,30 @@ PROGRAM_EXERCISES = {
     ],
 }
 
+
 def main() -> None:
     with SessionLocal() as db:
         for program, items in PROGRAM_EXERCISES.items():
             print(f"\n=== {program} ===")
             for name, words in items:
-                exact = db.scalar(select(Exercise).where(func.lower(Exercise.name) == name.lower()))
+                exact = db.scalar(
+                    select(Exercise).where(func.lower(Exercise.name) == name.lower())
+                )
                 if exact is not None:
                     print(f"OK: {name} -> id {exact.id}: {exact.name}")
                     continue
                 like = or_(*[Exercise.name.ilike(f"%{w}%") for w in words])
-                found = list(db.scalars(select(Exercise).where(like).order_by(Exercise.name).limit(5)))
+                found = list(
+                    db.scalars(
+                        select(Exercise).where(like).order_by(Exercise.name).limit(5)
+                    )
+                )
                 if found:
                     options = "; ".join(f"id {e.id}: {e.name}" for e in found)
                     print(f"CHECK: {name} -> close matches: {options}")
                 else:
                     print(f"MISSING: {name} -> no matches found")
+
 
 if __name__ == "__main__":
     main()

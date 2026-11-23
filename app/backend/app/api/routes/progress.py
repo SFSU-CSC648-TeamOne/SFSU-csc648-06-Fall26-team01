@@ -1,4 +1,3 @@
-
 """Authenticated progress-analysis endpoints."""
 
 from typing import Annotated, Literal
@@ -11,7 +10,6 @@ from app.services.progress_analysis import (
     analyze_exercise_progress,
     analyze_movement_group_progress,
 )
-
 
 router = APIRouter(
     prefix="/progress",

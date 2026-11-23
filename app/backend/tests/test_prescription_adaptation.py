@@ -1,4 +1,3 @@
-
 """Tests for read-only workout prescription adaptation.
 
 Run from app/backend:
@@ -90,11 +89,7 @@ def create_prescription(
         set_number=set_number,
         target_reps=reps,
         target_duration_seconds=duration,
-        target_weight_kg=(
-            Decimal(str(weight))
-            if weight is not None
-            else None
-        ),
+        target_weight_kg=(Decimal(str(weight)) if weight is not None else None),
         load_basis=load_basis,
     )
 
@@ -147,11 +142,7 @@ def mock_history(monkeypatch, trends):
         observation_type,
     ):
         assert observation_type == "training"
-        return [
-            trend
-            for trend in trends
-            if trend["exercise_id"] == exercise_id
-        ]
+        return [trend for trend in trends if trend["exercise_id"] == exercise_id]
 
     monkeypatch.setattr(
         service,
@@ -168,9 +159,7 @@ def analyze(db, user_id, prescription):
     )
 
 
-def test_no_history_returns_insufficient_data(
-    db, data, monkeypatch
-):
+def test_no_history_returns_insufficient_data(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -187,9 +176,7 @@ def test_no_history_returns_insufficient_data(
     assert item["proposal"]["requires_approval"] is False
 
 
-def test_robust_bodyweight_progression(
-    db, data, monkeypatch
-):
+def test_robust_bodyweight_progression(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -197,9 +184,7 @@ def test_robust_bodyweight_progression(
         reps=15,
     )
 
-    mock_history(monkeypatch, [
-        make_trend(data["pushup"].id)
-    ])
+    mock_history(monkeypatch, [make_trend(data["pushup"].id)])
 
     result = analyze(db, data["owner"].id, prescription)
     item = result["sets"][0]
@@ -207,9 +192,7 @@ def test_robust_bodyweight_progression(
     assert result["status"] == "proposed"
     assert result["prescription_id"] == prescription.id
     assert result["user_id"] == data["owner"].id
-    assert result["proposal_engine_version"] == (
-        "adaptive-v1-proposal"
-    )
+    assert result["proposal_engine_version"] == ("adaptive-v1-proposal")
 
     assert item["decision"]["action"] == "progress"
     assert item["proposal"]["adjustment_type"] == "reps"
@@ -227,13 +210,16 @@ def test_duration_progression(db, data, monkeypatch):
         duration=120,
     )
 
-    mock_history(monkeypatch, [
-        make_trend(
-            data["pushup"].id,
-            metric="seconds",
-            prescribed=120,
-        )
-    ])
+    mock_history(
+        monkeypatch,
+        [
+            make_trend(
+                data["pushup"].id,
+                metric="seconds",
+                prescribed=120,
+            )
+        ],
+    )
 
     result = analyze(db, data["owner"].id, prescription)
     proposal = result["sets"][0]["proposal"]
@@ -243,9 +229,7 @@ def test_duration_progression(db, data, monkeypatch):
     assert proposal["proposed_value"] == 125
 
 
-def test_external_weight_progression(
-    db, data, monkeypatch
-):
+def test_external_weight_progression(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -255,14 +239,17 @@ def test_external_weight_progression(
         weight="60",
     )
 
-    mock_history(monkeypatch, [
-        make_trend(
-            data["bench"].id,
-            load_basis="external",
-            weight=60.0,
-            prescribed=10,
-        )
-    ])
+    mock_history(
+        monkeypatch,
+        [
+            make_trend(
+                data["bench"].id,
+                load_basis="external",
+                weight=60.0,
+                prescribed=10,
+            )
+        ],
+    )
 
     result = analyze(db, data["owner"].id, prescription)
     proposal = result["sets"][0]["proposal"]
@@ -273,9 +260,7 @@ def test_external_weight_progression(
     assert proposal["requires_approval"] is True
 
 
-def test_different_resistance_is_not_comparable(
-    db, data, monkeypatch
-):
+def test_different_resistance_is_not_comparable(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -285,28 +270,25 @@ def test_different_resistance_is_not_comparable(
         weight="60",
     )
 
-    mock_history(monkeypatch, [
-        make_trend(
-            data["bench"].id,
-            load_basis="external",
-            weight=50.0,
-            prescribed=10,
-        )
-    ])
+    mock_history(
+        monkeypatch,
+        [
+            make_trend(
+                data["bench"].id,
+                load_basis="external",
+                weight=50.0,
+                prescribed=10,
+            )
+        ],
+    )
 
     result = analyze(db, data["owner"].id, prescription)
 
-    assert result["sets"][0]["decision"]["action"] == (
-        "insufficient_data"
-    )
-    assert result["sets"][0]["proposal"]["adjustment_type"] == (
-        "none"
-    )
+    assert result["sets"][0]["decision"]["action"] == ("insufficient_data")
+    assert result["sets"][0]["proposal"]["adjustment_type"] == ("none")
 
 
-def test_mismatched_set_number_excluded(
-    db, data, monkeypatch
-):
+def test_mismatched_set_number_excluded(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -314,20 +296,14 @@ def test_mismatched_set_number_excluded(
         set_number=2,
     )
 
-    mock_history(monkeypatch, [
-        make_trend(data["pushup"].id, set_number=1)
-    ])
+    mock_history(monkeypatch, [make_trend(data["pushup"].id, set_number=1)])
 
     result = analyze(db, data["owner"].id, prescription)
 
-    assert result["sets"][0]["decision"]["action"] == (
-        "insufficient_data"
-    )
+    assert result["sets"][0]["decision"]["action"] == ("insufficient_data")
 
 
-def test_incompatible_metric_excluded(
-    db, data, monkeypatch
-):
+def test_incompatible_metric_excluded(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -335,23 +311,22 @@ def test_incompatible_metric_excluded(
         reps=15,
     )
 
-    mock_history(monkeypatch, [
-        make_trend(
-            data["pushup"].id,
-            metric="seconds",
-        )
-    ])
+    mock_history(
+        monkeypatch,
+        [
+            make_trend(
+                data["pushup"].id,
+                metric="seconds",
+            )
+        ],
+    )
 
     result = analyze(db, data["owner"].id, prescription)
 
-    assert result["sets"][0]["proposal"]["adjustment_type"] == (
-        "none"
-    )
+    assert result["sets"][0]["proposal"]["adjustment_type"] == ("none")
 
 
-def test_assisted_prescription_not_adjusted(
-    db, data, monkeypatch
-):
+def test_assisted_prescription_not_adjusted(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -359,28 +334,30 @@ def test_assisted_prescription_not_adjusted(
         load_basis="assisted",
     )
 
-    mock_history(monkeypatch, [
-        make_trend(
-            data["pushup"].id,
-            load_basis="assisted",
-            assistance=20.0,
-        )
-    ])
+    mock_history(
+        monkeypatch,
+        [
+            make_trend(
+                data["pushup"].id,
+                load_basis="assisted",
+                assistance=20.0,
+            )
+        ],
+    )
 
     result = analyze(db, data["owner"].id, prescription)
 
-    assert result["sets"][0]["proposal"]["adjustment_type"] == (
-        "none"
-    )
+    assert result["sets"][0]["proposal"]["adjustment_type"] == ("none")
 
 
-@pytest.mark.parametrize("status", [
-    "completed",
-    "skipped",
-])
-def test_non_planned_prescription_rejected(
-    db, data, monkeypatch, status
-):
+@pytest.mark.parametrize(
+    "status",
+    [
+        "completed",
+        "skipped",
+    ],
+)
+def test_non_planned_prescription_rejected(db, data, monkeypatch, status):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -394,9 +371,7 @@ def test_non_planned_prescription_rejected(
         analyze(db, data["owner"].id, prescription)
 
 
-def test_other_user_cannot_access_prescription(
-    db, data, monkeypatch
-):
+def test_other_user_cannot_access_prescription(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -409,9 +384,7 @@ def test_other_user_cannot_access_prescription(
         analyze(db, data["other"].id, prescription)
 
 
-def test_unknown_prescription_rejected(
-    db, data, monkeypatch
-):
+def test_unknown_prescription_rejected(db, data, monkeypatch):
     mock_history(monkeypatch, [])
 
     with pytest.raises(LookupError):
@@ -422,23 +395,24 @@ def test_unknown_prescription_rejected(
         )
 
 
-def test_preliminary_evidence_does_not_progress(
-    db, data, monkeypatch
-):
+def test_preliminary_evidence_does_not_progress(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
         data["pushup"].id,
     )
 
-    mock_history(monkeypatch, [
-        make_trend(
-            data["pushup"].id,
-            count=3,
-            confidence="preliminary",
-            change_pct=30.0,
-        )
-    ])
+    mock_history(
+        monkeypatch,
+        [
+            make_trend(
+                data["pushup"].id,
+                count=3,
+                confidence="preliminary",
+                change_pct=30.0,
+            )
+        ],
+    )
 
     result = analyze(db, data["owner"].id, prescription)
     item = result["sets"][0]
@@ -447,21 +421,22 @@ def test_preliminary_evidence_does_not_progress(
     assert item["proposal"]["adjustment_type"] == "none"
 
 
-def test_negative_trend_requests_review(
-    db, data, monkeypatch
-):
+def test_negative_trend_requests_review(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
         data["pushup"].id,
     )
 
-    mock_history(monkeypatch, [
-        make_trend(
-            data["pushup"].id,
-            change_pct=-12.0,
-        )
-    ])
+    mock_history(
+        monkeypatch,
+        [
+            make_trend(
+                data["pushup"].id,
+                change_pct=-12.0,
+            )
+        ],
+    )
 
     result = analyze(db, data["owner"].id, prescription)
     item = result["sets"][0]
@@ -470,9 +445,7 @@ def test_negative_trend_requests_review(
     assert item["proposal"]["adjustment_type"] == "none"
 
 
-def test_multiple_sets_are_evaluated(
-    db, data, monkeypatch
-):
+def test_multiple_sets_are_evaluated(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -491,32 +464,27 @@ def test_multiple_sets_are_evaluated(
     db.add(second)
     db.commit()
 
-    mock_history(monkeypatch, [
-        make_trend(data["pushup"].id, set_number=1),
-        make_trend(
-            data["pushup"].id,
-            set_number=2,
-            prescribed=12,
-        ),
-    ])
+    mock_history(
+        monkeypatch,
+        [
+            make_trend(data["pushup"].id, set_number=1),
+            make_trend(
+                data["pushup"].id,
+                set_number=2,
+                prescribed=12,
+            ),
+        ],
+    )
 
     result = analyze(db, data["owner"].id, prescription)
 
     assert len(result["sets"]) == 2
-    assert {
-        item["set_number"]
-        for item in result["sets"]
-    } == {1, 2}
+    assert {item["set_number"] for item in result["sets"]} == {1, 2}
 
-    assert all(
-        item["proposal"]["adjustment_type"] == "reps"
-        for item in result["sets"]
-    )
+    assert all(item["proposal"]["adjustment_type"] == "reps" for item in result["sets"])
 
 
-def test_exercise_analysis_is_cached(
-    db, data, monkeypatch
-):
+def test_exercise_analysis_is_cached(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -562,9 +530,7 @@ def test_exercise_analysis_is_cached(
     ]
 
 
-def test_service_is_read_only(
-    db, data, monkeypatch
-):
+def test_service_is_read_only(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"].id,
@@ -574,9 +540,7 @@ def test_service_is_read_only(
 
     prescribed_set_id = prescription.sets[0].id
 
-    mock_history(monkeypatch, [
-        make_trend(data["pushup"].id)
-    ])
+    mock_history(monkeypatch, [make_trend(data["pushup"].id)])
 
     result = analyze(db, data["owner"].id, prescription)
 
@@ -587,9 +551,7 @@ def test_service_is_read_only(
     db.expire_all()
 
     stored_set = db.scalar(
-        select(PrescriptionSet).where(
-            PrescriptionSet.id == prescribed_set_id
-        )
+        select(PrescriptionSet).where(PrescriptionSet.id == prescribed_set_id)
     )
 
     assert stored_set.target_reps == 15

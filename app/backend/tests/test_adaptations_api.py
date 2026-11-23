@@ -1,4 +1,3 @@
-
 """HTTP integration tests for the adaptive recommendations API.
 
 Run from app/backend:
@@ -28,7 +27,6 @@ from app.models import (
     WorkoutPrescription,
 )
 from app.services import prescription_adaptation as service
-
 
 ENDPOINT = "/api/adaptations/prescriptions"
 
@@ -93,9 +91,7 @@ def client(db):
 def authenticate(user):
     """Simulate an authenticated user for API integration tests."""
 
-    app.dependency_overrides[get_current_user] = (
-        lambda: user
-    )
+    app.dependency_overrides[get_current_user] = lambda: user
 
 
 def create_prescription(
@@ -122,11 +118,7 @@ def create_prescription(
             exercise_id=exercise.id,
             set_number=1,
             target_reps=reps,
-            target_weight_kg=(
-                Decimal(str(weight))
-                if weight is not None
-                else None
-            ),
+            target_weight_kg=(Decimal(str(weight)) if weight is not None else None),
             load_basis=load_basis,
         )
     )
@@ -173,11 +165,7 @@ def mock_history(monkeypatch, trends):
     ):
         assert observation_type == "training"
 
-        return [
-            trend
-            for trend in trends
-            if trend["exercise_id"] == exercise_id
-        ]
+        return [trend for trend in trends if trend["exercise_id"] == exercise_id]
 
     monkeypatch.setattr(
         service,
@@ -187,25 +175,18 @@ def mock_history(monkeypatch, trends):
 
 
 def get_adaptations(client, prescription_id):
-    return client.get(
-        f"{ENDPOINT}/{prescription_id}"
-    )
+    return client.get(f"{ENDPOINT}/{prescription_id}")
 
 
 # --------------------------------------------------
 # Route and authentication
 # --------------------------------------------------
 
-def test_route_is_registered():
-    routes = {
-        route.path
-        for route in app.routes
-    }
 
-    assert (
-        "/api/adaptations/prescriptions/{prescription_id}"
-        in routes
-    )
+def test_route_is_registered():
+    routes = {route.path for route in app.routes}
+
+    assert "/api/adaptations/prescriptions/{prescription_id}" in routes
 
 
 def test_authentication_required(client):
@@ -214,9 +195,7 @@ def test_authentication_required(client):
     assert response.status_code == 401
 
 
-def test_invalid_prescription_id_rejected(
-    client, data
-):
+def test_invalid_prescription_id_rejected(client, data):
     authenticate(data["owner"])
 
     response = get_adaptations(client, 0)
@@ -224,9 +203,7 @@ def test_invalid_prescription_id_rejected(
     assert response.status_code == 422
 
 
-def test_non_numeric_prescription_id_rejected(
-    client, data
-):
+def test_non_numeric_prescription_id_rejected(client, data):
     authenticate(data["owner"])
 
     response = get_adaptations(client, "invalid")
@@ -238,18 +215,15 @@ def test_non_numeric_prescription_id_rejected(
 # Successful adaptation responses
 # --------------------------------------------------
 
-def test_valid_prescription_returns_200(
-    client, db, data, monkeypatch
-):
+
+def test_valid_prescription_returns_200(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
         data["exercise"],
     )
 
-    mock_history(monkeypatch, [
-        make_trend(data["exercise"].id)
-    ])
+    mock_history(monkeypatch, [make_trend(data["exercise"].id)])
 
     authenticate(data["owner"])
 
@@ -269,18 +243,12 @@ def test_valid_prescription_returns_200(
     assert result["program_day"] == 1
     assert result["status"] == "proposed"
 
-    assert result["source_engine_version"] == (
-        "baseline-v1"
-    )
+    assert result["source_engine_version"] == ("baseline-v1")
 
-    assert result["proposal_engine_version"] == (
-        "adaptive-v1-proposal"
-    )
+    assert result["proposal_engine_version"] == ("adaptive-v1-proposal")
 
 
-def test_response_contains_progression_proposal(
-    client, db, data, monkeypatch
-):
+def test_response_contains_progression_proposal(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -288,9 +256,7 @@ def test_response_contains_progression_proposal(
         reps=15,
     )
 
-    mock_history(monkeypatch, [
-        make_trend(data["exercise"].id)
-    ])
+    mock_history(monkeypatch, [make_trend(data["exercise"].id)])
 
     authenticate(data["owner"])
 
@@ -325,9 +291,7 @@ def test_response_contains_progression_proposal(
     assert len(proposal["reason"]) > 0
 
 
-def test_no_history_returns_no_adjustment(
-    client, db, data, monkeypatch
-):
+def test_no_history_returns_no_adjustment(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -346,17 +310,13 @@ def test_no_history_returns_no_adjustment(
 
     item = response.json()["sets"][0]
 
-    assert item["decision"]["action"] == (
-        "insufficient_data"
-    )
+    assert item["decision"]["action"] == ("insufficient_data")
 
     assert item["proposal"]["adjustment_type"] == "none"
     assert item["proposal"]["requires_approval"] is False
 
 
-def test_negative_trend_never_reduces_target(
-    client, db, data, monkeypatch
-):
+def test_negative_trend_never_reduces_target(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -364,12 +324,15 @@ def test_negative_trend_never_reduces_target(
         reps=15,
     )
 
-    mock_history(monkeypatch, [
-        make_trend(
-            data["exercise"].id,
-            change_pct=-10.0,
-        )
-    ])
+    mock_history(
+        monkeypatch,
+        [
+            make_trend(
+                data["exercise"].id,
+                change_pct=-10.0,
+            )
+        ],
+    )
 
     authenticate(data["owner"])
 
@@ -382,9 +345,7 @@ def test_negative_trend_never_reduces_target(
 
     item = response.json()["sets"][0]
 
-    assert item["decision"]["action"] == (
-        "review_regression"
-    )
+    assert item["decision"]["action"] == ("review_regression")
 
     assert item["proposal"]["adjustment_type"] == "none"
     assert item["proposal"]["proposed_value"] is None
@@ -394,9 +355,8 @@ def test_negative_trend_never_reduces_target(
 # Ownership and lifecycle protection
 # --------------------------------------------------
 
-def test_other_user_prescription_returns_404(
-    client, db, data, monkeypatch
-):
+
+def test_other_user_prescription_returns_404(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -415,9 +375,7 @@ def test_other_user_prescription_returns_404(
     assert response.status_code == 404
 
 
-def test_unknown_prescription_returns_404(
-    client, data, monkeypatch
-):
+def test_unknown_prescription_returns_404(client, data, monkeypatch):
     mock_history(monkeypatch, [])
 
     authenticate(data["owner"])
@@ -430,13 +388,14 @@ def test_unknown_prescription_returns_404(
     assert response.status_code == 404
 
 
-@pytest.mark.parametrize("status", [
-    "completed",
-    "skipped",
-])
-def test_non_planned_prescription_returns_409(
-    client, db, data, monkeypatch, status
-):
+@pytest.mark.parametrize(
+    "status",
+    [
+        "completed",
+        "skipped",
+    ],
+)
+def test_non_planned_prescription_returns_409(client, db, data, monkeypatch, status):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -460,9 +419,8 @@ def test_non_planned_prescription_returns_409(
 # Read-only guarantees
 # --------------------------------------------------
 
-def test_api_does_not_modify_prescription(
-    client, db, data, monkeypatch
-):
+
+def test_api_does_not_modify_prescription(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -472,9 +430,7 @@ def test_api_does_not_modify_prescription(
 
     set_id = prescription.sets[0].id
 
-    mock_history(monkeypatch, [
-        make_trend(data["exercise"].id)
-    ])
+    mock_history(monkeypatch, [make_trend(data["exercise"].id)])
 
     authenticate(data["owner"])
 
@@ -484,20 +440,11 @@ def test_api_does_not_modify_prescription(
     )
 
     assert response.status_code == 200, response.text
-    assert (
-        response.json()["sets"][0]["proposal"][
-            "proposed_value"
-        ]
-        == 16
-    )
+    assert response.json()["sets"][0]["proposal"]["proposed_value"] == 16
 
     db.expire_all()
 
-    stored_set = db.scalar(
-        select(PrescriptionSet).where(
-            PrescriptionSet.id == set_id
-        )
-    )
+    stored_set = db.scalar(select(PrescriptionSet).where(PrescriptionSet.id == set_id))
 
     stored_prescription = db.get(
         WorkoutPrescription,
@@ -513,18 +460,14 @@ def test_api_does_not_modify_prescription(
     assert not db.deleted
 
 
-def test_repeated_requests_are_read_only(
-    client, db, data, monkeypatch
-):
+def test_repeated_requests_are_read_only(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
         data["exercise"],
     )
 
-    mock_history(monkeypatch, [
-        make_trend(data["exercise"].id)
-    ])
+    mock_history(monkeypatch, [make_trend(data["exercise"].id)])
 
     authenticate(data["owner"])
 

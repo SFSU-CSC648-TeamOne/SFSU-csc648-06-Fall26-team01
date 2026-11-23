@@ -4,18 +4,24 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db # use routes from other imports
+from app.api.deps import get_db  # use routes from other imports
 from app.models import Exercise
 from app.models.media import ExerciseModel
 from app.schemas.media import ExerciseModelOut
 
 router = APIRouter(tags=["3d models"])
 
+
 def _out(model: ExerciseModel, name: str) -> ExerciseModelOut:
     return ExerciseModelOut(
-        exercise_id=model.exercise_id, exercise_name=name, model_url=model.model_url,
-        video_url=model.video_url, animation_name=model.animation_name, credit=model.credit,
+        exercise_id=model.exercise_id,
+        exercise_name=name,
+        model_url=model.model_url,
+        video_url=model.video_url,
+        animation_name=model.animation_name,
+        credit=model.credit,
     )
+
 
 @router.get("/exercise-models", response_model=List[ExerciseModelOut])
 def list_models(db: Session = Depends(get_db)):
@@ -26,6 +32,7 @@ def list_models(db: Session = Depends(get_db)):
         .order_by(Exercise.name)
     ).all()
     return [_out(m, n) for m, n in rows]
+
 
 @router.get("/exercises/{exercise_id}/model", response_model=ExerciseModelOut)
 def get_model(exercise_id: int, db: Session = Depends(get_db)):

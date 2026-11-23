@@ -1,4 +1,3 @@
-
 """Isolated PostgreSQL integration tests for program enrollment.
 
 Run only against the dedicated local ascenda_test database.
@@ -44,7 +43,6 @@ from app.services.program_enrollment import (
     create_program_enrollment,
 )
 
-
 REQUIRED_TABLES = {
     "users",
     "exercises",
@@ -58,14 +56,10 @@ REQUIRED_TABLES = {
 
 @pytest.fixture
 def db():
-    raw_url = os.environ.get(
-        "ASCENDA_TEST_DATABASE_URL"
-    )
+    raw_url = os.environ.get("ASCENDA_TEST_DATABASE_URL")
 
     if not raw_url:
-        pytest.fail(
-            "ASCENDA_TEST_DATABASE_URL is required."
-        )
+        pytest.fail("ASCENDA_TEST_DATABASE_URL is required.")
 
     url = make_url(raw_url)
 
@@ -78,17 +72,14 @@ def db():
         or url.get_driver_name() != "psycopg"
     ):
         pytest.fail(
-            "Refusing to run outside the dedicated "
-            "local PostgreSQL test database."
+            "Refusing to run outside the dedicated " "local PostgreSQL test database."
         )
 
     engine = create_engine(url)
 
     try:
         with engine.connect() as connection:
-            if (
-                connection.dialect.name != "postgresql"
-            ):
+            if connection.dialect.name != "postgresql":
                 pytest.fail("PostgreSQL is required.")
 
             actual_database = connection.exec_driver_sql(
@@ -98,16 +89,12 @@ def db():
             if actual_database != "ascenda_test":
                 pytest.fail("Wrong database.")
 
-            available = set(
-                inspect(connection).get_table_names()
-            )
+            available = set(inspect(connection).get_table_names())
 
             missing = REQUIRED_TABLES - available
 
             if missing:
-                pytest.fail(
-                    f"Missing tables: {sorted(missing)}"
-                )
+                pytest.fail(f"Missing tables: {sorted(missing)}")
 
             # End the read-only inspection-transaction.
             # SQLAlchemy automatically began it on the first query.
@@ -156,23 +143,15 @@ def data(db, request):
 
     mappings = {}
 
-    for exercise_slug in sorted(
-        required_exercise_slugs(program)
-    ):
-        exercise = Exercise(
-            name=f"Integration {exercise_slug}"
-        )
+    for exercise_slug in sorted(required_exercise_slugs(program)):
+        exercise = Exercise(name=f"Integration {exercise_slug}")
         db.add(exercise)
         db.flush()
         mappings[exercise_slug] = exercise.id
 
     db.commit()
 
-    phases = {
-        (week, day): "training"
-        for week in range(1, 5)
-        for day in range(1, 6)
-    }
+    phases = {(week, day): "training" for week in range(1, 5) for day in range(1, 6)}
 
     phases[(2, 1)] = "deload"
     phases[(4, 5)] = "assessment"
@@ -180,9 +159,7 @@ def data(db, request):
     targets = {}
 
     for week in range(1, 5):
-        for day, template in enumerate(
-            program.days, start=1
-        ):
+        for day, template in enumerate(program.days, start=1):
             for item in template.exercises:
                 key = (week, day, item.slug)
 
@@ -234,9 +211,7 @@ def enroll(db, data, workouts):
 
 
 def count(db, model):
-    return db.scalar(
-        select(func.count()).select_from(model)
-    )
+    return db.scalar(select(func.count()).select_from(model))
 
 
 def test_complete_enrollment_persists(db, data):
@@ -254,10 +229,7 @@ def test_complete_enrollment_persists(db, data):
 
     prescriptions = db.scalars(
         select(WorkoutPrescription)
-        .where(
-            WorkoutPrescription.program_instance_id
-            == instance.id
-        )
+        .where(WorkoutPrescription.program_instance_id == instance.id)
         .order_by(
             WorkoutPrescription.program_week,
             WorkoutPrescription.program_day,
@@ -275,34 +247,21 @@ def test_complete_enrollment_persists(db, data):
         )
         .join(
             ProgramPhase,
-            ProgramPhase.workout_prescription_id
-            == WorkoutPrescription.id,
+            ProgramPhase.workout_prescription_id == WorkoutPrescription.id,
         )
-        .where(
-            WorkoutPrescription.program_instance_id
-            == instance.id
-        )
+        .where(WorkoutPrescription.program_instance_id == instance.id)
     ).all()
 
-    phase_lookup = {
-        (week, day): phase
-        for week, day, phase in phases
-    }
+    phase_lookup = {(week, day): phase for week, day, phase in phases}
 
     assert len(phase_lookup) == 20
     assert phase_lookup[(2, 1)] == "deload"
     assert phase_lookup[(4, 5)] == "assessment"
     assert phase_lookup[(1, 1)] == "training"
 
-    actual_sets = sum(
-        len(p.sets)
-        for p in prescriptions
-    )
+    actual_sets = sum(len(p.sets) for p in prescriptions)
 
-    expected_sets = sum(
-        len(workout.sets)
-        for workout in workouts
-    )
+    expected_sets = sum(len(workout.sets) for workout in workouts)
 
     assert actual_sets == expected_sets
 
@@ -328,8 +287,7 @@ def test_repeated_enrollment_is_isolated(db, data):
     first_prescriptions = set(
         db.scalars(
             select(WorkoutPrescription.id).where(
-                WorkoutPrescription.program_instance_id
-                == first_id
+                WorkoutPrescription.program_instance_id == first_id
             )
         )
     )
@@ -337,17 +295,14 @@ def test_repeated_enrollment_is_isolated(db, data):
     second_prescriptions = set(
         db.scalars(
             select(WorkoutPrescription.id).where(
-                WorkoutPrescription.program_instance_id
-                == second_id
+                WorkoutPrescription.program_instance_id == second_id
             )
         )
     )
 
     assert len(first_prescriptions) == 20
     assert len(second_prescriptions) == 20
-    assert first_prescriptions.isdisjoint(
-        second_prescriptions
-    )
+    assert first_prescriptions.isdisjoint(second_prescriptions)
 
 
 def test_database_failure_rolls_back_plan(db, data):
@@ -364,9 +319,7 @@ def test_database_failure_rolls_back_plan(db, data):
     }
 
     def fail_phase(mapper, connection, target):
-        raise RuntimeError(
-            "Simulated PostgreSQL insertion failure"
-        )
+        raise RuntimeError("Simulated PostgreSQL insertion failure")
 
     event.listen(
         ProgramPhase,
@@ -387,9 +340,6 @@ def test_database_failure_rolls_back_plan(db, data):
             fail_phase,
         )
 
-    after = {
-        model: count(db, model)
-        for model in before
-    }
+    after = {model: count(db, model) for model in before}
 
     assert after == before

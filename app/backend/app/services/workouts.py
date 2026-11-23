@@ -1,4 +1,3 @@
-
 """Workout logging, history retrieval, and program summaries.
 
 Concurrency protection:
@@ -116,44 +115,33 @@ def _validate_entries(
                 )
             ):
                 raise ValidationFailed(
-                    "Skipped sets cannot contain "
-                    "performance values."
+                    "Skipped sets cannot contain " "performance values."
                 )
 
         # Substitution must reference a different exercise.
         if entry.substituted_for_exercise_id is not None:
-            if (
-                entry.substituted_for_exercise_id
-                == entry.exercise_id
-            ):
+            if entry.substituted_for_exercise_id == entry.exercise_id:
                 raise ValidationFailed(
-                    "A substitution must use a "
-                    "different exercise."
+                    "A substitution must use a " "different exercise."
                 )
 
         if entry.status == EntryStatus.substituted:
             if entry.substituted_for_exercise_id is None:
                 raise ValidationFailed(
-                    "Substituted entries require "
-                    "the original exercise."
+                    "Substituted entries require " "the original exercise."
                 )
 
         # Assistance only makes sense for assisted loading.
         if entry.assistance_kg is not None:
             if entry.load_basis != LoadBasis.assisted:
-                raise ValidationFailed(
-                    "Assistance requires "
-                    "load_basis='assisted'."
-                )
+                raise ValidationFailed("Assistance requires " "load_basis='assisted'.")
 
         if (
             entry.load_basis == LoadBasis.assisted
             and entry.status != EntryStatus.skipped
             and entry.assistance_kg is None
         ):
-            raise ValidationFailed(
-                "Assisted sets require assistance_kg."
-            )
+            raise ValidationFailed("Assisted sets require assistance_kg.")
 
         if entry.prescription_set_id is not None:
             if entry.prescription_set_id in seen_prescriptions:
@@ -162,12 +150,8 @@ def _validate_entries(
                     "twice in the same workout."
                 )
 
-            seen_prescriptions.add(
-                entry.prescription_set_id
-            )
-            prescription_ids.add(
-                entry.prescription_set_id
-            )
+            seen_prescriptions.add(entry.prescription_set_id)
+            prescription_ids.add(entry.prescription_set_id)
 
     if not prescription_ids:
         return
@@ -180,16 +164,14 @@ def _validate_entries(
         or data.program_day is None
     ):
         raise ValidationFailed(
-            "Prescription-linked entries require "
-            "program, week, and day."
+            "Prescription-linked entries require " "program, week, and day."
         )
 
     statement = (
         select(PrescriptionSet, WorkoutPrescription)
         .join(
             WorkoutPrescription,
-            PrescriptionSet.workout_prescription_id
-            == WorkoutPrescription.id,
+            PrescriptionSet.workout_prescription_id == WorkoutPrescription.id,
         )
         .where(
             PrescriptionSet.id.in_(prescription_ids),
@@ -217,34 +199,25 @@ def _validate_entries(
         if entry.prescription_set_id is None:
             continue
 
-        prescribed_set, prescription = found[
-            entry.prescription_set_id
-        ]
+        prescribed_set, prescription = found[entry.prescription_set_id]
 
         if (
             prescription.program_slug != data.program_slug
             or prescription.program_week != data.program_week
             or prescription.program_day != data.program_day
         ):
-            raise ValidationFailed(
-                "Prescription does not match "
-                "this program day."
-            )
+            raise ValidationFailed("Prescription does not match " "this program day.")
 
         if (
             prescription.workout_session_id is not None
-            and prescription.workout_session_id
-            != data.workout_session_id
+            and prescription.workout_session_id != data.workout_session_id
         ):
             raise ValidationFailed(
-                "Prescription does not match "
-                "this workout session."
+                "Prescription does not match " "this workout session."
             )
 
         if entry.set_number != prescribed_set.set_number:
-            raise ValidationFailed(
-                "Set number does not match its prescription."
-            )
+            raise ValidationFailed("Set number does not match its prescription.")
 
         # The performed exercise may differ if substituted.
         original_exercise_id = (
@@ -254,9 +227,7 @@ def _validate_entries(
         )
 
         if original_exercise_id != prescribed_set.exercise_id:
-            raise ValidationFailed(
-                "Exercise does not match its prescription."
-            )
+            raise ValidationFailed("Exercise does not match its prescription.")
 
 
 def create_record(
@@ -288,39 +259,28 @@ def create_record(
             and catalog_repo.get_workout_session(
                 db,
                 data.workout_session_id,
-            ) is None
-        ):
-            raise ValidationFailed(
-                "workout_session_id does not exist."
             )
+            is None
+        ):
+            raise ValidationFailed("workout_session_id does not exist.")
 
-        wanted = {
-            entry.exercise_id
-            for entry in data.entries
-        }
+        wanted = {entry.exercise_id for entry in data.entries}
 
         wanted |= {
             entry.substituted_for_exercise_id
             for entry in data.entries
-            if entry.substituted_for_exercise_id
-            is not None
+            if entry.substituted_for_exercise_id is not None
         }
 
-        missing = (
-            wanted
-            - catalog_repo.existing_exercise_ids(
-                db,
-                wanted,
-            )
+        missing = wanted - catalog_repo.existing_exercise_ids(
+            db,
+            wanted,
         )
 
         if missing:
             raise ValidationFailed(
                 "Unknown exercise ids: "
-                + ", ".join(
-                    str(item)
-                    for item in sorted(missing)
-                )
+                + ", ".join(str(item) for item in sorted(missing))
             )
 
         # ----------------------------------------------
@@ -339,24 +299,15 @@ def create_record(
             values = entry.model_dump()
 
             values["status"] = entry.status.value
-            values["observation_type"] = (
-                entry.observation_type.value
-            )
+            values["observation_type"] = entry.observation_type.value
             values["load_basis"] = (
-                entry.load_basis.value
-                if entry.load_basis is not None
-                else None
+                entry.load_basis.value if entry.load_basis is not None else None
             )
 
-            if (
-                entry.substituted_for_exercise_id
-                is not None
-            ):
+            if entry.substituted_for_exercise_id is not None:
                 values["is_user_modified"] = True
 
-            entries.append(
-                PerformanceEntry(**values)
-            )
+            entries.append(PerformanceEntry(**values))
 
         # ----------------------------------------------
         # 5. Create workout and its performed sets
@@ -365,10 +316,7 @@ def create_record(
         record = WorkoutRecord(
             user_id=user.id,
             workout_session_id=data.workout_session_id,
-            performed_at=(
-                data.performed_at
-                or datetime.now(timezone.utc)
-            ),
+            performed_at=(data.performed_at or datetime.now(timezone.utc)),
             available_minutes=data.available_minutes,
             duration_minutes=data.duration_minutes,
             notes=data.notes,
@@ -431,9 +379,7 @@ def get_record(
     )
 
     if record is None:
-        raise NotFoundError(
-            "Workout record not found."
-        )
+        raise NotFoundError("Workout record not found.")
 
     return WorkoutRecordOut(
         **_summary(
@@ -452,12 +398,8 @@ def get_record(
                 duration_seconds=entry.duration_seconds,
                 distance_m=entry.distance_m,
                 status=entry.status,
-                substituted_for_exercise_id=(
-                    entry.substituted_for_exercise_id
-                ),
-                prescription_set_id=(
-                    entry.prescription_set_id
-                ),
+                substituted_for_exercise_id=(entry.substituted_for_exercise_id),
+                prescription_set_id=(entry.prescription_set_id),
                 observation_type=entry.observation_type,
                 load_basis=entry.load_basis,
                 assistance_kg=entry.assistance_kg,
@@ -483,9 +425,7 @@ def _blank() -> dict:
 def _add(bucket: dict, entry) -> None:
     bucket["sets"] += 1
     bucket["reps"] += entry.reps or 0
-    bucket["volume_kg"] += (
-        (entry.reps or 0) * (entry.weight_kg or 0)
-    )
+    bucket["volume_kg"] += (entry.reps or 0) * (entry.weight_kg or 0)
     bucket["seconds"] += entry.duration_seconds or 0
 
 
@@ -507,10 +447,7 @@ def program_summary(
         user.id,
         slug,
     ):
-        exercise_ids = {
-            entry.exercise_id
-            for entry in record.entries
-        }
+        exercise_ids = {entry.exercise_id for entry in record.entries}
 
         for exercise_id in exercise_ids:
             key = (
@@ -537,8 +474,7 @@ def program_summary(
             for entry in record.entries
             if (
                 entry.exercise_id == exercise_id
-                and entry.status
-                == EntryStatus.completed.value
+                and entry.status == EntryStatus.completed.value
             )
         ]
 
@@ -580,17 +516,13 @@ def program_summary(
                 days_completed=len(week_days[week]),
                 **values,
             )
-            for week, values in sorted(
-                weeks.items()
-            )
+            for week, values in sorted(weeks.items())
         ],
         exercises=[
             ExerciseTotals(
                 exercise_id=exercise_id,
                 **values,
             )
-            for exercise_id, values in sorted(
-                exercises.items()
-            )
+            for exercise_id, values in sorted(exercises.items())
         ],
     )

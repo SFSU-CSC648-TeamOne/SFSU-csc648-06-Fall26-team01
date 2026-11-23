@@ -1,4 +1,3 @@
-
 """Unit tests for the adaptive decision engine.
 
 Run independently:
@@ -47,10 +46,13 @@ def make_trend(
     }
 
 
-@pytest.mark.parametrize("values", [
-    [10],
-    [10, 12],
-])
+@pytest.mark.parametrize(
+    "values",
+    [
+        [10],
+        [10, 12],
+    ],
+)
 def test_insufficient_observations(values):
     trend = make_trend(
         values,
@@ -245,12 +247,14 @@ def test_service_uses_training_history_and_user_scope(
         exercise_id,
         observation_type,
     ):
-        captured.update({
-            "db": db,
-            "user_id": user_id,
-            "exercise_id": exercise_id,
-            "observation_type": observation_type,
-        })
+        captured.update(
+            {
+                "db": db,
+                "user_id": user_id,
+                "exercise_id": exercise_id,
+                "observation_type": observation_type,
+            }
+        )
 
         return [expected_trend]
 
@@ -262,12 +266,10 @@ def test_service_uses_training_history_and_user_scope(
 
     db = object()
 
-    decisions = (
-        adaptive_engine.recommend_exercise_adaptations(
-            db=db,
-            user_id=42,
-            exercise_id=101,
-        )
+    decisions = adaptive_engine.recommend_exercise_adaptations(
+        db=db,
+        user_id=42,
+        exercise_id=101,
     )
 
     assert captured == {
@@ -288,12 +290,10 @@ def test_empty_history_returns_no_decisions(monkeypatch):
         lambda **kwargs: [],
     )
 
-    decisions = (
-        adaptive_engine.recommend_exercise_adaptations(
-            db=object(),
-            user_id=42,
-            exercise_id=101,
-        )
+    decisions = adaptive_engine.recommend_exercise_adaptations(
+        db=object(),
+        user_id=42,
+        exercise_id=101,
     )
 
     assert decisions == []
@@ -302,10 +302,7 @@ def test_empty_history_returns_no_decisions(monkeypatch):
 def test_recommendation_does_not_mutate_trend():
     trend = make_trend()
 
-    original_points = [
-        point.copy()
-        for point in trend["points"]
-    ]
+    original_points = [point.copy() for point in trend["points"]]
 
     decide_adaptation(trend)
 

@@ -1,4 +1,3 @@
-
 """HTTP integration tests for enrollment-scoped adaptation previews.
 
 Run from app/backend:
@@ -34,11 +33,7 @@ from app.models.program_instance import ProgramInstance
 from app.models.program_phase import ProgramPhase
 from app.models.users import User
 
-
-ENDPOINT = (
-    "/api/adaptations/program-instances/"
-    "{instance_id}/preview"
-)
+ENDPOINT = "/api/adaptations/program-instances/" "{instance_id}/preview"
 
 
 @pytest.fixture
@@ -126,9 +121,7 @@ def data(db):
 
 def authenticate(user):
     """Override identity for HTTP authorization tests."""
-    app.dependency_overrides[get_current_user] = (
-        lambda: user
-    )
+    app.dependency_overrides[get_current_user] = lambda: user
 
 
 def make_prescription(
@@ -226,12 +219,12 @@ def post_preview(client, instance_id, body):
 # Route registration and authentication
 # --------------------------------------------------
 
+
 def test_route_is_registered():
     paths = {route.path for route in app.routes}
 
     assert (
-        "/api/adaptations/program-instances/"
-        "{program_instance_id}/preview"
+        "/api/adaptations/program-instances/" "{program_instance_id}/preview"
     ) in paths
 
 
@@ -245,9 +238,7 @@ def test_authentication_required(client, data):
     assert response.status_code == 401
 
 
-def test_invalid_enrollment_id_returns_422(
-    client, data
-):
+def test_invalid_enrollment_id_returns_422(client, data):
     authenticate(data["owner"])
 
     response = post_preview(
@@ -296,6 +287,7 @@ def test_extra_request_fields_rejected(client, data):
 # Successful HTTP preview
 # --------------------------------------------------
 
+
 def test_valid_preview_returns_200(client, db, data):
     source_id, set_id = make_source(db, data)
 
@@ -320,9 +312,7 @@ def test_valid_preview_returns_200(client, db, data):
     result = response.json()
 
     assert result["user_id"] == data["owner"].id
-    assert result["program_instance_id"] == (
-        data["first_id"]
-    )
+    assert result["program_instance_id"] == (data["first_id"])
     assert result["program_slug"] == "bw"
     assert result["source_prescription_id"] == source_id
     assert result["source_prescription_set_id"] == set_id
@@ -346,18 +336,12 @@ def test_valid_preview_returns_200(client, db, data):
     assert candidate["status"] == "review_required"
 
 
-def test_other_enrollment_is_excluded(
-    client, db, data
-):
+def test_other_enrollment_is_excluded(client, db, data):
     source_id, set_id = make_source(db, data)
 
-    included_id, _ = make_prescription(
-        db, data, data["first_id"], week=3
-    )
+    included_id, _ = make_prescription(db, data, data["first_id"], week=3)
 
-    excluded_id, _ = make_prescription(
-        db, data, data["second_id"], week=3
-    )
+    excluded_id, _ = make_prescription(db, data, data["second_id"], week=3)
 
     authenticate(data["owner"])
 
@@ -369,18 +353,13 @@ def test_other_enrollment_is_excluded(
 
     assert response.status_code == 200, response.text
 
-    candidates = {
-        item["prescription_id"]
-        for item in response.json()["candidates"]
-    }
+    candidates = {item["prescription_id"] for item in response.json()["candidates"]}
 
     assert candidates == {included_id}
     assert excluded_id not in candidates
 
 
-def test_protected_phases_are_excluded(
-    client, db, data
-):
+def test_protected_phases_are_excluded(client, db, data):
     source_id, set_id = make_source(db, data)
 
     make_prescription(
@@ -421,10 +400,7 @@ def test_protected_phases_are_excluded(
 
     assert result["candidates"] == []
 
-    assert {
-        item["reason"]
-        for item in result["excluded"]
-    } == {
+    assert {item["reason"] for item in result["excluded"]} == {
         "deload_protected",
         "assessment_protected",
         "phase_unclassified",
@@ -434,6 +410,7 @@ def test_protected_phases_are_excluded(
 # --------------------------------------------------
 # Enrollment access and lifecycle
 # --------------------------------------------------
+
 
 def test_other_user_returns_404(client, db, data):
     source_id, set_id = make_source(db, data)
@@ -449,9 +426,7 @@ def test_other_user_returns_404(client, db, data):
     assert response.status_code == 404
 
 
-def test_wrong_source_enrollment_returns_404(
-    client, db, data
-):
+def test_wrong_source_enrollment_returns_404(client, db, data):
     source_id, set_id = make_source(db, data)
 
     authenticate(data["owner"])
@@ -469,9 +444,7 @@ def test_wrong_source_enrollment_returns_404(
     "status",
     ["completed", "abandoned"],
 )
-def test_inactive_enrollment_returns_409(
-    client, db, data, status
-):
+def test_inactive_enrollment_returns_409(client, db, data, status):
     source_id, set_id = make_source(db, data)
 
     instance = db.get(
@@ -492,9 +465,7 @@ def test_inactive_enrollment_returns_409(
     assert response.status_code == 409
 
 
-def test_missing_approval_returns_409(
-    client, db, data
-):
+def test_missing_approval_returns_409(client, db, data):
     source_id, set_id = make_prescription(
         db,
         data,
@@ -518,9 +489,8 @@ def test_missing_approval_returns_409(
 # Read-only behavior
 # --------------------------------------------------
 
-def test_preview_does_not_modify_targets(
-    client, db, data
-):
+
+def test_preview_does_not_modify_targets(client, db, data):
     source_id, set_id = make_source(db, data)
 
     _, future_set_id = make_prescription(
@@ -552,9 +522,7 @@ def test_preview_does_not_modify_targets(
     db.expire_all()
 
     stored = db.scalar(
-        select(PrescriptionSet).where(
-            PrescriptionSet.id == future_set_id
-        )
+        select(PrescriptionSet).where(PrescriptionSet.id == future_set_id)
     )
 
     assert stored.target_reps == 18

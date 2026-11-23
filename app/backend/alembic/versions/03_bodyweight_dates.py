@@ -1,4 +1,3 @@
-
 """Add local date and timezone to bodyweight measurements.
 
 Revision ID: 03
@@ -7,7 +6,6 @@ Revises: 02
 
 from alembic import op
 import sqlalchemy as sa
-
 
 revision = "03"
 down_revision = "02"
@@ -31,14 +29,12 @@ def upgrade() -> None:
     # The original timezone is unknown, so use the
     # UTC calendar date of the existing timestamp.
     # Do not invent a timezone for legacy records.
-    op.execute(
-        """
+    op.execute("""
         UPDATE bodyweight_measurements
         SET measurement_date =
             (measured_at AT TIME ZONE 'UTC')::date
         WHERE measurement_date IS NULL
-        """
-    )
+        """)
 
     # 3. Require a measurement date going forward.
     op.alter_column(
@@ -77,15 +73,11 @@ def downgrade() -> None:
 
     # Previous schema requires measured_at for every row.
     # Refuse to invent timestamps for date-only records.
-    missing = connection.execute(
-        sa.text(
-            """
+    missing = connection.execute(sa.text("""
             SELECT COUNT(*)
             FROM bodyweight_measurements
             WHERE measured_at IS NULL
-            """
-        )
-    ).scalar_one()
+            """)).scalar_one()
 
     if missing:
         raise RuntimeError(

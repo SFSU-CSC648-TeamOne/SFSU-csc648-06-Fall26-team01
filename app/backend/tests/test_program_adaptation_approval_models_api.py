@@ -1,4 +1,3 @@
-
 """HTTP integration tests for program-wide adaptation approval.
 
 Run from app/backend:
@@ -39,16 +38,13 @@ from app.models.program_adaptation_approval import (
 from app.models.tracking import WorkoutRecord
 from app.models.users import User
 
-
-ENDPOINT = (
-    "/api/adaptations/program-instances/"
-    "{instance_id}/approve"
-)
+ENDPOINT = "/api/adaptations/program-instances/" "{instance_id}/approve"
 
 
 # --------------------------------------------------
 # Isolated database and HTTP client
 # --------------------------------------------------
+
 
 @pytest.fixture
 def db():
@@ -91,9 +87,7 @@ def data(db):
         email=f"bulk-other-{uuid4().hex}@example.com",
         password_hash="test-hash",
     )
-    exercise = Exercise(
-        name=f"Bulk API Push-Up {uuid4().hex[:8]}"
-    )
+    exercise = Exercise(name=f"Bulk API Push-Up {uuid4().hex[:8]}")
 
     db.add_all([owner, other, exercise])
     db.flush()
@@ -165,9 +159,7 @@ def data(db):
             prescription.sets[0].id,
         )
 
-    source_id, source_set = add_workout(
-        first.id, 2, 16, "training"
-    )
+    source_id, source_set = add_workout(first.id, 2, 16, "training")
 
     source_approval = AdaptationApproval(
         user_id=owner.id,
@@ -182,21 +174,13 @@ def data(db):
     db.add(source_approval)
     db.flush()
 
-    future_id, future_set = add_workout(
-        first.id, 3, 18, "training"
-    )
+    future_id, future_set = add_workout(first.id, 3, 18, "training")
 
-    later_id, later_set = add_workout(
-        first.id, 4, 20, "training"
-    )
+    later_id, later_set = add_workout(first.id, 4, 20, "training")
 
-    deload_id, deload_set = add_workout(
-        first.id, 5, 12, "deload"
-    )
+    deload_id, deload_set = add_workout(first.id, 5, 12, "deload")
 
-    other_id, other_set = add_workout(
-        second.id, 3, 18, "training"
-    )
+    other_id, other_set = add_workout(second.id, 3, 18, "training")
 
     db.commit()
 
@@ -219,9 +203,7 @@ def data(db):
 
 def authenticate(user):
     """Simulate an authenticated identity in HTTP tests."""
-    app.dependency_overrides[get_current_user] = (
-        lambda: user
-    )
+    app.dependency_overrides[get_current_user] = lambda: user
 
 
 def selection(set_id, previous, proposed):
@@ -260,14 +242,13 @@ def target(db, set_id):
 
 
 def count(db, model):
-    return db.scalar(
-        select(func.count()).select_from(model)
-    )
+    return db.scalar(select(func.count()).select_from(model))
 
 
 # --------------------------------------------------
 # Route and request validation
 # --------------------------------------------------
+
 
 def test_approval_route_registered():
     routes = {
@@ -277,8 +258,7 @@ def test_approval_route_registered():
     }
 
     assert (
-        "/api/adaptations/program-instances/"
-        "{program_instance_id}/approve",
+        "/api/adaptations/program-instances/" "{program_instance_id}/approve",
         "POST",
     ) in routes
 
@@ -293,9 +273,7 @@ def test_authentication_required(client, data):
     assert response.status_code == 401
 
 
-def test_invalid_enrollment_id_returns_422(
-    client, data
-):
+def test_invalid_enrollment_id_returns_422(client, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -336,9 +314,7 @@ def test_duplicate_selection_returns_422(client, data):
     assert response.status_code == 422
 
 
-def test_invalid_progression_returns_422(
-    client, data
-):
+def test_invalid_progression_returns_422(client, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -374,9 +350,8 @@ def test_client_cannot_override_user_id(client, data):
 # Successful approval
 # --------------------------------------------------
 
-def test_valid_approval_updates_selected_sets(
-    client, db, data
-):
+
+def test_valid_approval_updates_selected_sets(client, db, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -390,19 +365,12 @@ def test_valid_approval_updates_selected_sets(
     result = response.json()
 
     assert result["status"] == "updated"
-    assert result["program_instance_id"] == (
-        data["instance_id"]
-    )
-    assert result["source_approval_id"] == (
-        data["source_approval_id"]
-    )
+    assert result["program_instance_id"] == (data["instance_id"])
+    assert result["source_approval_id"] == (data["source_approval_id"])
     assert result["updated_set_count"] == 2
     assert result["program_adaptation_approval_id"] > 0
 
-    assert {
-        item["prescription_set_id"]
-        for item in result["updated_sets"]
-    } == {
+    assert {item["prescription_set_id"] for item in result["updated_sets"]} == {
         data["future_set"],
         data["later_set"],
     }
@@ -433,9 +401,7 @@ def test_only_selected_sets_change(client, db, data):
     assert target(db, data["other_set"]) == 18
 
 
-def test_approval_creates_complete_audit(
-    client, db, data
-):
+def test_approval_creates_complete_audit(client, db, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -455,27 +421,18 @@ def test_approval_creates_complete_audit(
 
     assert approval is not None
     assert approval.user_id == data["owner"].id
-    assert approval.program_instance_id == (
-        data["instance_id"]
-    )
-    assert approval.source_approval_id == (
-        data["source_approval_id"]
-    )
+    assert approval.program_instance_id == (data["instance_id"])
+    assert approval.source_approval_id == (data["source_approval_id"])
 
     items = db.scalars(
         select(ProgramAdaptationApprovalItem).where(
-            ProgramAdaptationApprovalItem
-            .program_adaptation_approval_id
-            == approval.id
+            ProgramAdaptationApprovalItem.program_adaptation_approval_id == approval.id
         )
     ).all()
 
     assert len(items) == 2
 
-    assert {
-        item.prescription_set_id
-        for item in items
-    } == {
+    assert {item.prescription_set_id for item in items} == {
         data["future_set"],
         data["later_set"],
     }
@@ -485,20 +442,15 @@ def test_approval_creates_complete_audit(
 # Idempotency
 # --------------------------------------------------
 
-def test_identical_retry_does_not_apply_twice(
-    client, db, data
-):
+
+def test_identical_retry_does_not_apply_twice(client, db, data):
     authenticate(data["owner"])
 
     body = request_body(data, key=uuid4().hex)
 
-    first = post_approval(
-        client, data["instance_id"], body
-    )
+    first = post_approval(client, data["instance_id"], body)
 
-    second = post_approval(
-        client, data["instance_id"], body
-    )
+    second = post_approval(client, data["instance_id"], body)
 
     assert first.status_code == 200, first.text
     assert second.status_code == 200, second.text
@@ -518,9 +470,7 @@ def test_identical_retry_does_not_apply_twice(
     assert target(db, data["later_set"]) == 21
 
 
-def test_reused_key_with_different_values_returns_409(
-    client, db, data
-):
+def test_reused_key_with_different_values_returns_409(client, db, data):
     authenticate(data["owner"])
 
     key = uuid4().hex
@@ -557,6 +507,7 @@ def test_reused_key_with_different_values_returns_409(
 # Enrollment security
 # --------------------------------------------------
 
+
 def test_other_user_returns_404(client, db, data):
     authenticate(data["other"])
 
@@ -571,9 +522,7 @@ def test_other_user_returns_404(client, db, data):
     assert target(db, data["future_set"]) == 18
 
 
-def test_wrong_enrollment_returns_404(
-    client, db, data
-):
+def test_wrong_enrollment_returns_404(client, db, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -585,9 +534,7 @@ def test_wrong_enrollment_returns_404(
     assert response.status_code == 404
 
 
-def test_unknown_enrollment_returns_404(
-    client, db, data
-):
+def test_unknown_enrollment_returns_404(client, db, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -603,9 +550,8 @@ def test_unknown_enrollment_returns_404(
 # Protected workouts and stale proposals
 # --------------------------------------------------
 
-def test_deload_selection_returns_409(
-    client, db, data
-):
+
+def test_deload_selection_returns_409(client, db, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -623,9 +569,7 @@ def test_deload_selection_returns_409(
     assert target(db, data["deload_set"]) == 12
 
 
-def test_stale_selection_returns_409(
-    client, db, data
-):
+def test_stale_selection_returns_409(client, db, data):
     prescribed_set = db.get(
         PrescriptionSet,
         data["future_set"],
@@ -651,9 +595,7 @@ def test_stale_selection_returns_409(
     assert count(db, ProgramAdaptationApproval) == 0
 
 
-def test_recorded_workout_returns_409(
-    client, db, data
-):
+def test_recorded_workout_returns_409(client, db, data):
     db.add(
         WorkoutRecord(
             user_id=data["owner"].id,
@@ -685,9 +627,8 @@ def test_recorded_workout_returns_409(
 # Atomicity through the HTTP route
 # --------------------------------------------------
 
-def test_partial_invalid_selection_changes_nothing(
-    client, db, data
-):
+
+def test_partial_invalid_selection_changes_nothing(client, db, data):
     authenticate(data["owner"])
 
     response = post_approval(

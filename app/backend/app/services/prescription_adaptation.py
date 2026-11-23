@@ -1,4 +1,3 @@
-
 """Read-only workout prescription adaptation service.
 
 Connects exercise-performance analysis, adaptation decisions,
@@ -25,7 +24,6 @@ from app.services.progression_rules import (
     ProgressionTarget,
     propose_progression,
 )
-
 
 ENGINE_VERSION = "adaptive-v1-proposal"
 
@@ -65,9 +63,7 @@ def _matches_prescription(
             return False
 
         observed = Decimal(str(trend["weight_kg"]))
-        prescribed = Decimal(str(
-            prescribed_set.target_weight_kg
-        ))
+        prescribed = Decimal(str(prescribed_set.target_weight_kg))
 
         if observed != prescribed:
             return False
@@ -75,10 +71,7 @@ def _matches_prescription(
     # Do not treat observations involving added load
     # or assistance as unweighted bodyweight observations.
     elif prescribed_set.load_basis == "bodyweight":
-        if (
-            trend["weight_kg"] is not None
-            or trend["assistance_kg"] is not None
-        ):
+        if trend["weight_kg"] is not None or trend["assistance_kg"] is not None:
             return False
 
     else:
@@ -97,9 +90,7 @@ def _select_trend(
     """Select the strongest comparable observation series."""
 
     comparable = [
-        trend
-        for trend in trends
-        if _matches_prescription(trend, prescribed_set)
+        trend for trend in trends if _matches_prescription(trend, prescribed_set)
     ]
 
     if not comparable:
@@ -125,9 +116,7 @@ def _target_from_set(
         set_number=prescribed_set.set_number,
         load_basis=prescribed_set.load_basis,
         target_reps=prescribed_set.target_reps,
-        target_duration_seconds=(
-            prescribed_set.target_duration_seconds
-        ),
+        target_duration_seconds=(prescribed_set.target_duration_seconds),
         target_weight_kg=prescribed_set.target_weight_kg,
     )
 
@@ -179,9 +168,7 @@ def analyze_prescription_adaptations(
 
     statement = (
         select(WorkoutPrescription)
-        .options(
-            selectinload(WorkoutPrescription.sets)
-        )
+        .options(selectinload(WorkoutPrescription.sets))
         .where(
             WorkoutPrescription.id == prescription_id,
             WorkoutPrescription.user_id == user_id,
@@ -191,14 +178,11 @@ def analyze_prescription_adaptations(
     prescription = db.scalar(statement)
 
     if prescription is None:
-        raise LookupError(
-            "Workout prescription not found."
-        )
+        raise LookupError("Workout prescription not found.")
 
     if prescription.status != PrescriptionStatus.planned.value:
         raise ValueError(
-            "Only planned prescriptions can receive "
-            "adaptation proposals."
+            "Only planned prescriptions can receive " "adaptation proposals."
         )
 
     # Avoid reanalyzing the same exercise for each set.
@@ -210,13 +194,11 @@ def analyze_prescription_adaptations(
         exercise_id = prescribed_set.exercise_id
 
         if exercise_id not in exercise_cache:
-            exercise_cache[exercise_id] = (
-                analyze_exercise_progress(
-                    db=db,
-                    user_id=user_id,
-                    exercise_id=exercise_id,
-                    observation_type="training",
-                )
+            exercise_cache[exercise_id] = analyze_exercise_progress(
+                db=db,
+                user_id=user_id,
+                exercise_id=exercise_id,
+                observation_type="training",
             )
 
         trends = exercise_cache[exercise_id]
@@ -227,9 +209,7 @@ def analyze_prescription_adaptations(
         )
 
         if trend is None:
-            results.append(
-                _no_history_result(prescribed_set)
-            )
+            results.append(_no_history_result(prescribed_set))
             continue
 
         decision = decide_adaptation(trend)
@@ -263,27 +243,21 @@ def analyze_prescription_adaptations(
             if isinstance(value, Decimal):
                 proposal_data[field] = float(value)
 
-        results.append({
-            "prescription_set_id": prescribed_set.id,
-            "exercise_id": exercise_id,
-            "set_number": prescribed_set.set_number,
-            "decision": decision_data,
-            "proposal": {
-                "adjustment_type": proposal_data[
-                    "adjustment_type"
-                ],
-                "previous_value": proposal_data[
-                    "previous_value"
-                ],
-                "proposed_value": proposal_data[
-                    "proposed_value"
-                ],
-                "requires_approval": proposal_data[
-                    "requires_approval"
-                ],
-                "reason": proposal_data["reason"],
-            },
-        })
+        results.append(
+            {
+                "prescription_set_id": prescribed_set.id,
+                "exercise_id": exercise_id,
+                "set_number": prescribed_set.set_number,
+                "decision": decision_data,
+                "proposal": {
+                    "adjustment_type": proposal_data["adjustment_type"],
+                    "previous_value": proposal_data["previous_value"],
+                    "proposed_value": proposal_data["proposed_value"],
+                    "requires_approval": proposal_data["requires_approval"],
+                    "reason": proposal_data["reason"],
+                },
+            }
+        )
 
     return {
         "prescription_id": prescription.id,

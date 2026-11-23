@@ -1,4 +1,3 @@
-
 """Tests for enrollment-scoped program adaptation previews.
 
 Run from app/backend:
@@ -191,18 +190,13 @@ def preview(
 ):
     return preview_program_propagation(
         db=db,
-        user_id=(
-            data["owner"] if user_id is None else user_id
-        ),
+        user_id=(data["owner"] if user_id is None else user_id),
         prescription_id=source_id,
         prescription_set_id=set_id,
         adjustment_type="reps",
         previous_value=Decimal("15"),
         approved_value=Decimal("16"),
-        program_instance_id=(
-            data["first"] if instance_id is None
-            else instance_id
-        ),
+        program_instance_id=(data["first"] if instance_id is None else instance_id),
     )
 
 
@@ -210,23 +204,17 @@ def preview(
 # Enrollment isolation
 # --------------------------------------------------
 
+
 def test_only_selected_enrollment_is_considered(db, data):
     source_id, set_id = make_source(db, data)
 
-    included_id, _ = make_prescription(
-        db, data, data["first"], week=3, reps=18
-    )
+    included_id, _ = make_prescription(db, data, data["first"], week=3, reps=18)
 
-    excluded_id, _ = make_prescription(
-        db, data, data["second"], week=3, reps=20
-    )
+    excluded_id, _ = make_prescription(db, data, data["second"], week=3, reps=20)
 
     result = preview(db, data, source_id, set_id)
 
-    candidate_ids = {
-        item["prescription_id"]
-        for item in result["candidates"]
-    }
+    candidate_ids = {item["prescription_id"] for item in result["candidates"]}
 
     assert result["program_instance_id"] == data["first"]
     assert candidate_ids == {included_id}
@@ -234,30 +222,18 @@ def test_only_selected_enrollment_is_considered(db, data):
     assert result["candidates"][0]["proposed_value"] == 19
 
 
-def test_repeated_enrollment_same_baseline_remains_isolated(
-    db, data
-):
+def test_repeated_enrollment_same_baseline_remains_isolated(db, data):
     source_id, set_id = make_source(db, data)
 
     # Same owner, program, baseline, and workout position.
-    first_id, _ = make_prescription(
-        db, data, data["first"], week=4
-    )
-    second_id, _ = make_prescription(
-        db, data, data["second"], week=4
-    )
+    first_id, _ = make_prescription(db, data, data["first"], week=4)
+    second_id, _ = make_prescription(db, data, data["second"], week=4)
 
     result = preview(db, data, source_id, set_id)
 
-    assert [
-        item["prescription_id"]
-        for item in result["candidates"]
-    ] == [first_id]
+    assert [item["prescription_id"] for item in result["candidates"]] == [first_id]
 
-    assert second_id not in {
-        item["prescription_id"]
-        for item in result["candidates"]
-    }
+    assert second_id not in {item["prescription_id"] for item in result["candidates"]}
 
 
 def test_foreign_source_enrollment_is_rejected(db, data):
@@ -303,13 +279,12 @@ def test_foreign_owned_enrollment_is_rejected(db, data):
 # Enrollment status
 # --------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "status",
     ["completed", "abandoned"],
 )
-def test_inactive_enrollment_is_rejected(
-    db, data, status
-):
+def test_inactive_enrollment_is_rejected(db, data, status):
     source_id, set_id = make_source(db, data)
 
     instance = db.get(
@@ -340,38 +315,23 @@ def test_unknown_enrollment_is_rejected(db, data):
 # Phase and history protection
 # --------------------------------------------------
 
+
 def test_protected_phases_remain_excluded(db, data):
     source_id, set_id = make_source(db, data)
 
-    training_id, _ = make_prescription(
-        db, data, data["first"], week=3
-    )
+    training_id, _ = make_prescription(db, data, data["first"], week=3)
 
-    make_prescription(
-        db, data, data["first"],
-        week=4, phase="deload"
-    )
+    make_prescription(db, data, data["first"], week=4, phase="deload")
 
-    make_prescription(
-        db, data, data["first"],
-        week=5, phase="assessment"
-    )
+    make_prescription(db, data, data["first"], week=5, phase="assessment")
 
-    make_prescription(
-        db, data, data["first"],
-        week=6, phase=None
-    )
+    make_prescription(db, data, data["first"], week=6, phase=None)
 
     result = preview(db, data, source_id, set_id)
 
-    assert [
-        item["prescription_id"]
-        for item in result["candidates"]
-    ] == [training_id]
+    assert [item["prescription_id"] for item in result["candidates"]] == [training_id]
 
-    assert {
-        item["reason"] for item in result["excluded"]
-    } == {
+    assert {item["reason"] for item in result["excluded"]} == {
         "deload_protected",
         "assessment_protected",
         "phase_unclassified",
@@ -381,9 +341,7 @@ def test_protected_phases_remain_excluded(db, data):
 def test_recorded_workout_is_conservatively_excluded(db, data):
     source_id, set_id = make_source(db, data)
 
-    future_id, _ = make_prescription(
-        db, data, data["first"], week=3
-    )
+    future_id, _ = make_prescription(db, data, data["first"], week=3)
 
     # WorkoutRecord currently lacks program_instance_id.
     # History matching must remain conservative.
@@ -412,6 +370,7 @@ def test_recorded_workout_is_conservatively_excluded(db, data):
 # Read-only guarantee
 # --------------------------------------------------
 
+
 def test_preview_does_not_modify_prescriptions(db, data):
     source_id, set_id = make_source(db, data)
 
@@ -431,9 +390,11 @@ def test_preview_does_not_modify_prescriptions(db, data):
     assert stored.target_reps == 18
     assert stored.workout_prescription_id == future_id
 
-    assert db.scalar(
-        select(AdaptationApproval).where(
-            AdaptationApproval.prescription_set_id
-            == future_set_id
+    assert (
+        db.scalar(
+            select(AdaptationApproval).where(
+                AdaptationApproval.prescription_set_id == future_set_id
+            )
         )
-    ) is None
+        is None
+    )

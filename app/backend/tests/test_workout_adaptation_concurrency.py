@@ -1,4 +1,3 @@
-
 """Cross-service PostgreSQL concurrency tests.
 
 Run from app/backend with ASCENDA_TEST_DATABASE_URL set:
@@ -68,9 +67,7 @@ def validated_database_url():
     raw = os.environ.get("ASCENDA_TEST_DATABASE_URL")
 
     if not raw:
-        pytest.fail(
-            "ASCENDA_TEST_DATABASE_URL is required."
-        )
+        pytest.fail("ASCENDA_TEST_DATABASE_URL is required.")
 
     url = make_url(raw)
 
@@ -82,9 +79,7 @@ def validated_database_url():
         or url.database != "ascenda_test"
         or url.username != "devuser"
     ):
-        pytest.fail(
-            "Refusing to connect to a non-test database."
-        )
+        pytest.fail("Refusing to connect to a non-test database.")
 
     return url
 
@@ -106,25 +101,19 @@ def engine():
 
     try:
         with admin.connect() as connection:
-            assert connection.scalar(
-                text("SELECT current_database()")
-            ) == "ascenda_test"
-
-            connection.execute(
-                text(f'CREATE SCHEMA "{schema}"')
+            assert (
+                connection.scalar(text("SELECT current_database()")) == "ascenda_test"
             )
+
+            connection.execute(text(f'CREATE SCHEMA "{schema}"'))
             created = True
 
         test_engine = create_engine(
             url,
             pool_size=5,
             max_overflow=2,
-            connect_args={
-                "options": "-cstatement_timeout=15000"
-            },
-        ).execution_options(
-            schema_translate_map={None: schema}
-        )
+            connect_args={"options": "-cstatement_timeout=15000"},
+        ).execution_options(schema_translate_map={None: schema})
 
         Base.metadata.create_all(
             test_engine,
@@ -148,11 +137,12 @@ def engine():
                     schema=schema,
                 )
 
-            assert connection.scalar(
-                select(func.count()).select_from(
-                    ProgramAdaptationApproval
+            assert (
+                connection.scalar(
+                    select(func.count()).select_from(ProgramAdaptationApproval)
                 )
-            ) == 0
+                == 0
+            )
 
         yield test_engine
 
@@ -162,11 +152,7 @@ def engine():
 
         if created:
             with admin.connect() as connection:
-                connection.execute(
-                    text(
-                        f'DROP SCHEMA "{schema}" CASCADE'
-                    )
-                )
+                connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
 
         admin.dispose()
 
@@ -181,9 +167,7 @@ def data(engine):
             password_hash="test-hash",
         )
 
-        exercise = Exercise(
-            name=f"Concurrency Push-Up {uuid4().hex[:8]}"
-        )
+        exercise = Exercise(name=f"Concurrency Push-Up {uuid4().hex[:8]}")
 
         db.add_all([user, exercise])
         db.flush()
@@ -297,9 +281,7 @@ def log_workout(engine, data, *, linked):
         }
 
         if linked:
-            entry["prescription_set_id"] = (
-                data["future_set_id"]
-            )
+            entry["prescription_set_id"] = data["future_set_id"]
 
         body = WorkoutRecordIn(
             program_slug="bw",
@@ -327,9 +309,7 @@ def approve(engine, data):
             request_key=uuid4().hex,
             selections=[
                 SelectedProgramAdjustment(
-                    prescription_set_id=(
-                        data["future_set_id"]
-                    ),
+                    prescription_set_id=(data["future_set_id"]),
                     expected_previous_value=Decimal("18"),
                     expected_proposed_value=Decimal("19"),
                 )
@@ -360,19 +340,13 @@ def stored_state(engine, data):
         bulk_approvals = db.scalar(
             select(func.count())
             .select_from(ProgramAdaptationApproval)
-            .where(
-                ProgramAdaptationApproval.user_id
-                == data["user_id"]
-            )
+            .where(ProgramAdaptationApproval.user_id == data["user_id"])
         )
 
         linked_entries = db.scalar(
             select(func.count())
             .select_from(PerformanceEntry)
-            .where(
-                PerformanceEntry.prescription_set_id
-                == data["future_set_id"]
-            )
+            .where(PerformanceEntry.prescription_set_id == data["future_set_id"])
         )
 
         return {
@@ -393,6 +367,7 @@ def assert_waiting(future):
 # --------------------------------------------------
 # Logging first: linked and unlinked history
 # --------------------------------------------------
+
 
 @pytest.mark.parametrize("linked", [True, False])
 def test_logging_first_blocks_and_invalidates_approval(
@@ -416,9 +391,7 @@ def test_logging_first_blocks_and_invalidates_approval(
         logged_but_uncommitted.set()
 
         if not allow_log_commit.wait(timeout=10):
-            raise RuntimeError(
-                "Timed out waiting to commit workout."
-            )
+            raise RuntimeError("Timed out waiting to commit workout.")
 
         return result
 
@@ -470,6 +443,7 @@ def test_logging_first_blocks_and_invalidates_approval(
 # Approval first: workout waits for adapted targets
 # --------------------------------------------------
 
+
 def test_approval_first_serializes_workout_logging(
     engine,
     data,
@@ -481,9 +455,7 @@ def test_approval_first_serializes_workout_logging(
     allow_approval = Event()
     logging_reached_lock = Event()
 
-    original_preview = (
-        approval_service.preview_program_propagation
-    )
+    original_preview = approval_service.preview_program_propagation
 
     def pause_approval_preview(*args, **kwargs):
         # The approval service has already locked
@@ -491,9 +463,7 @@ def test_approval_first_serializes_workout_logging(
         approval_has_locks.set()
 
         if not allow_approval.wait(timeout=10):
-            raise RuntimeError(
-                "Timed out waiting to finish approval."
-            )
+            raise RuntimeError("Timed out waiting to finish approval.")
 
         return original_preview(*args, **kwargs)
 
@@ -503,9 +473,7 @@ def test_approval_first_serializes_workout_logging(
         pause_approval_preview,
     )
 
-    original_lock = (
-        workout_service._lock_program_enrollments
-    )
+    original_lock = workout_service._lock_program_enrollments
 
     def observe_logging_lock(db, user, body):
         logging_reached_lock.set()

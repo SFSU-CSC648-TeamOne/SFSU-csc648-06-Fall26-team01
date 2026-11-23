@@ -1,4 +1,3 @@
-
 """Tests for read-only program adaptation previews.
 
 Run from app/backend:
@@ -68,12 +67,8 @@ def data(db):
         email="propagation-other@example.com",
         password_hash="test-hash",
     )
-    exercise = Exercise(
-        name="Propagation Test Push-Up"
-    )
-    alternate = Exercise(
-        name="Propagation Test Squat"
-    )
+    exercise = Exercise(name="Propagation Test Push-Up")
+    alternate = Exercise(name="Propagation Test Squat")
 
     db.add_all([owner, other, exercise, alternate])
     db.flush()
@@ -105,7 +100,6 @@ def data(db):
     }
 
 
-
 def make_prescription(
     db,
     data,
@@ -133,11 +127,7 @@ def make_prescription(
         baseline_id = data["baseline_id"]
 
     prescription = WorkoutPrescription(
-        user_id=(
-            user_id
-            if user_id is not None
-            else data["owner_id"]
-        ),
+        user_id=(user_id if user_id is not None else data["owner_id"]),
         program_slug=program,
         program_week=week,
         program_day=day,
@@ -149,18 +139,12 @@ def make_prescription(
     prescription.sets.append(
         PrescriptionSet(
             exercise_id=(
-                exercise_id
-                if exercise_id is not None
-                else data["exercise_id"]
+                exercise_id if exercise_id is not None else data["exercise_id"]
             ),
             set_number=1,
             target_reps=reps,
             target_duration_seconds=duration,
-            target_weight_kg=(
-                Decimal(str(weight))
-                if weight is not None
-                else None
-            ),
+            target_weight_kg=(Decimal(str(weight)) if weight is not None else None),
             load_basis=load_basis,
             is_optional=optional,
         )
@@ -181,6 +165,7 @@ def make_prescription(
     db.commit()
 
     return prescription.id, prescription.sets[0].id
+
 
 def record_approval(
     db,
@@ -203,20 +188,12 @@ def record_approval(
     """
 
     audit = AdaptationApproval(
-        user_id=(
-            data["owner_id"]
-            if user_id is None
-            else user_id
-        ),
+        user_id=(data["owner_id"] if user_id is None else user_id),
         workout_prescription_id=(
-            source_id
-            if prescription_id is None
-            else prescription_id
+            source_id if prescription_id is None else prescription_id
         ),
         prescription_set_id=(
-            source_set_id
-            if prescription_set_id is None
-            else prescription_set_id
+            source_set_id if prescription_set_id is None else prescription_set_id
         ),
         adjustment_type=adjustment_type,
         previous_value=Decimal(str(previous)),
@@ -228,6 +205,7 @@ def record_approval(
     db.commit()
 
     return audit.id
+
 
 def preview(
     db,
@@ -248,6 +226,7 @@ def preview(
         previous_value=Decimal(str(previous)),
         approved_value=Decimal(str(approved)),
     )
+
 
 def make_source(db, data):
     """Create a source prescription with persisted approval."""
@@ -271,25 +250,19 @@ def make_source(db, data):
 
     return source_id, source_set_id
 
+
 # --------------------------------------------------
 # Basic progression previews
 # --------------------------------------------------
 
-def test_progression_preserves_future_structure(
-    db, data
-):
+
+def test_progression_preserves_future_structure(db, data):
     source_id, source_set_id = make_source(db, data)
 
-    future_1, set_1 = make_prescription(
-        db, data, week=4, reps=16
-    )
-    future_2, set_2 = make_prescription(
-        db, data, week=5, reps=18
-    )
+    future_1, set_1 = make_prescription(db, data, week=4, reps=16)
+    future_2, set_2 = make_prescription(db, data, week=5, reps=18)
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["status"] == "review_required"
     assert result["delta"] == 1
@@ -297,10 +270,7 @@ def test_progression_preserves_future_structure(
 
     assert len(result["candidates"]) == 2
 
-    by_id = {
-        item["prescription_set_id"]: item
-        for item in result["candidates"]
-    }
+    by_id = {item["prescription_set_id"]: item for item in result["candidates"]}
 
     assert by_id[set_1]["current_value"] == 16
     assert by_id[set_1]["proposed_value"] == 17
@@ -308,29 +278,18 @@ def test_progression_preserves_future_structure(
     assert by_id[set_2]["current_value"] == 18
     assert by_id[set_2]["proposed_value"] == 19
 
-    assert all(
-        item["requires_program_phase_review"]
-        for item in result["candidates"]
-    )
+    assert all(item["requires_program_phase_review"] for item in result["candidates"])
 
 
 def test_only_future_workouts_considered(db, data):
-    make_prescription(
-        db, data, week=2, reps=14
-    )
+    make_prescription(db, data, week=2, reps=14)
 
     source_id, source_set_id = make_source(db, data)
 
-    make_prescription(
-        db, data, week=3, day=2, reps=16
-    )
-    make_prescription(
-        db, data, week=4, reps=17
-    )
+    make_prescription(db, data, week=3, day=2, reps=16)
+    make_prescription(db, data, week=4, reps=17)
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert [
         (
@@ -341,14 +300,10 @@ def test_only_future_workouts_considered(db, data):
     ] == [(3, 2), (4, 1)]
 
 
-def test_no_future_workouts_returns_empty_preview(
-    db, data
-):
+def test_no_future_workouts_returns_empty_preview(db, data):
     source_id, source_set_id = make_source(db, data)
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
     assert result["excluded"] == []
@@ -358,29 +313,27 @@ def test_no_future_workouts_returns_empty_preview(
 def test_preview_never_modifies_database(db, data):
     source_id, source_set_id = make_source(db, data)
 
-    _, future_set_id = make_prescription(
-        db, data, week=4, reps=18
-    )
+    _, future_set_id = make_prescription(db, data, week=4, reps=18)
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
-    assert result["candidates"][0][
-        "proposed_value"
-    ] == 19
+    assert result["candidates"][0]["proposed_value"] == 19
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet,
-        future_set_id,
-    ).target_reps == 18
+    assert (
+        db.get(
+            PrescriptionSet,
+            future_set_id,
+        ).target_reps
+        == 18
+    )
 
 
 # --------------------------------------------------
 # Program-phase safeguards
 # --------------------------------------------------
+
 
 def test_training_phase_is_eligible(db, data):
     source_id, source_set_id = make_source(db, data)
@@ -393,9 +346,7 @@ def test_training_phase_is_eligible(db, data):
         phase_type="training",
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert len(result["candidates"]) == 1
 
@@ -419,18 +370,18 @@ def test_deload_phase_is_excluded(db, data):
         phase_type="deload",
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
 
-    assert result["excluded"] == [{
-        "prescription_id": future_id,
-        "program_week": 4,
-        "program_day": 1,
-        "reason": "deload_protected",
-    }]
+    assert result["excluded"] == [
+        {
+            "prescription_id": future_id,
+            "program_week": 4,
+            "program_day": 1,
+            "reason": "deload_protected",
+        }
+    ]
 
 
 def test_assessment_phase_is_excluded(db, data):
@@ -443,18 +394,18 @@ def test_assessment_phase_is_excluded(db, data):
         phase_type="assessment",
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
 
-    assert result["excluded"] == [{
-        "prescription_id": future_id,
-        "program_week": 4,
-        "program_day": 1,
-        "reason": "assessment_protected",
-    }]
+    assert result["excluded"] == [
+        {
+            "prescription_id": future_id,
+            "program_week": 4,
+            "program_day": 1,
+            "reason": "assessment_protected",
+        }
+    ]
 
 
 def test_unclassified_phase_is_excluded(db, data):
@@ -467,27 +418,25 @@ def test_unclassified_phase_is_excluded(db, data):
         phase_type=None,
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
 
-    assert result["excluded"] == [{
-        "prescription_id": future_id,
-        "program_week": 4,
-        "program_day": 1,
-        "reason": "phase_unclassified",
-    }]
+    assert result["excluded"] == [
+        {
+            "prescription_id": future_id,
+            "program_week": 4,
+            "program_day": 1,
+            "reason": "phase_unclassified",
+        }
+    ]
 
 
 @pytest.mark.parametrize(
     "phase_type",
     ["deload", "assessment", None],
 )
-def test_non_training_source_is_rejected(
-    db, data, phase_type
-):
+def test_non_training_source_is_rejected(db, data, phase_type):
     source_id, source_set_id = make_prescription(
         db,
         data,
@@ -505,9 +454,7 @@ def test_non_training_source_is_rejected(
     )
 
     with pytest.raises(ConflictError):
-        preview(
-            db, data, source_id, source_set_id
-        )
+        preview(db, data, source_id, source_set_id)
 
 
 def test_mixed_program_only_proposes_training(db, data):
@@ -541,20 +488,13 @@ def test_mixed_program_only_proposes_training(db, data):
         phase_type=None,
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert len(result["candidates"]) == 1
 
-    assert result["candidates"][0][
-        "prescription_id"
-    ] == training_id
+    assert result["candidates"][0]["prescription_id"] == training_id
 
-    assert {
-        item["reason"]
-        for item in result["excluded"]
-    } == {
+    assert {item["reason"] for item in result["excluded"]} == {
         "deload_protected",
         "assessment_protected",
         "phase_unclassified",
@@ -580,26 +520,22 @@ def test_protected_phases_are_not_modified(db, data):
         phase_type="assessment",
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["database_modified"] is False
     assert result["candidates"] == []
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet, deload_set_id
-    ).target_reps == 10
+    assert db.get(PrescriptionSet, deload_set_id).target_reps == 10
 
-    assert db.get(
-        PrescriptionSet, assessment_set_id
-    ).target_reps == 20
+    assert db.get(PrescriptionSet, assessment_set_id).target_reps == 20
+
 
 # --------------------------------------------------
 # Program and user isolation
 # --------------------------------------------------
+
 
 def test_different_program_excluded(db, data):
     source_id, source_set_id = make_source(db, data)
@@ -612,9 +548,7 @@ def test_different_program_excluded(db, data):
         reps=16,
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
 
@@ -629,9 +563,7 @@ def test_different_baseline_excluded(db, data):
         baseline_id=data["other_baseline_id"],
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
 
@@ -646,9 +578,7 @@ def test_other_user_prescriptions_excluded(db, data):
         user_id=data["other_id"],
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
 
@@ -672,6 +602,7 @@ def test_other_user_cannot_preview_source(db, data):
 # Exercise compatibility
 # --------------------------------------------------
 
+
 def test_different_exercise_excluded(db, data):
     source_id, source_set_id = make_source(db, data)
 
@@ -682,18 +613,18 @@ def test_different_exercise_excluded(db, data):
         exercise_id=data["alternate_exercise_id"],
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
 
-    assert result["excluded"] == [{
-        "prescription_id": future_id,
-        "program_week": 4,
-        "program_day": 1,
-        "reason": "missing_matching_set",
-    }]
+    assert result["excluded"] == [
+        {
+            "prescription_id": future_id,
+            "program_week": 4,
+            "program_day": 1,
+            "reason": "missing_matching_set",
+        }
+    ]
 
 
 def test_different_load_basis_excluded(db, data):
@@ -707,14 +638,10 @@ def test_different_load_basis_excluded(db, data):
         weight=20,
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
-    assert result["excluded"][0]["reason"] == (
-        "missing_matching_set"
-    )
+    assert result["excluded"][0]["reason"] == ("missing_matching_set")
 
 
 def test_optional_set_mismatch_excluded(db, data):
@@ -727,9 +654,7 @@ def test_optional_set_mismatch_excluded(db, data):
         optional=True,
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
 
@@ -737,9 +662,7 @@ def test_optional_set_mismatch_excluded(db, data):
 def test_ambiguous_matching_sets_excluded(db, data):
     source_id, source_set_id = make_source(db, data)
 
-    future_id, _ = make_prescription(
-        db, data, week=4
-    )
+    future_id, _ = make_prescription(db, data, week=4)
 
     db.add(
         PrescriptionSet(
@@ -753,26 +676,21 @@ def test_ambiguous_matching_sets_excluded(db, data):
     )
     db.commit()
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
-    assert result["excluded"][0]["reason"] == (
-        "ambiguous_matching_sets"
-    )
+    assert result["excluded"][0]["reason"] == ("ambiguous_matching_sets")
 
 
 # --------------------------------------------------
 # Historical data protection
 # --------------------------------------------------
 
+
 def test_recorded_future_workout_excluded(db, data):
     source_id, source_set_id = make_source(db, data)
 
-    future_id, _ = make_prescription(
-        db, data, week=4
-    )
+    future_id, _ = make_prescription(db, data, week=4)
 
     db.add(
         WorkoutRecord(
@@ -784,9 +702,7 @@ def test_recorded_future_workout_excluded(db, data):
     )
     db.commit()
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
 
@@ -798,14 +714,10 @@ def test_recorded_future_workout_excluded(db, data):
     }
 
 
-def test_linked_performance_entry_excludes_set(
-    db, data
-):
+def test_linked_performance_entry_excludes_set(db, data):
     source_id, source_set_id = make_source(db, data)
 
-    _, future_set_id = make_prescription(
-        db, data, week=4
-    )
+    _, future_set_id = make_prescription(db, data, week=4)
 
     record = WorkoutRecord(
         user_id=data["owner_id"],
@@ -829,19 +741,13 @@ def test_linked_performance_entry_excludes_set(
     db.add(record)
     db.commit()
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
-    assert result["excluded"][0]["reason"] == (
-        "set_has_recorded_performance"
-    )
+    assert result["excluded"][0]["reason"] == ("set_has_recorded_performance")
 
 
-def test_completed_future_prescription_not_considered(
-    db, data
-):
+def test_completed_future_prescription_not_considered(db, data):
     source_id, source_set_id = make_source(db, data)
 
     make_prescription(
@@ -851,9 +757,7 @@ def test_completed_future_prescription_not_considered(
         status="completed",
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
 
@@ -861,6 +765,7 @@ def test_completed_future_prescription_not_considered(
 # --------------------------------------------------
 # Validation and conflicts
 # --------------------------------------------------
+
 
 def test_missing_source_baseline_rejected(db, data):
     source_id, source_set_id = make_source(db, data)
@@ -870,9 +775,7 @@ def test_missing_source_baseline_rejected(db, data):
     db.commit()
 
     with pytest.raises(ConflictError):
-        preview(
-            db, data, source_id, source_set_id
-        )
+        preview(db, data, source_id, source_set_id)
 
 
 def test_unapproved_source_target_rejected(db, data):
@@ -897,9 +800,7 @@ def test_non_planned_source_rejected(db, data):
     db.commit()
 
     with pytest.raises(ConflictError):
-        preview(
-            db, data, source_id, source_set_id
-        )
+        preview(db, data, source_id, source_set_id)
 
 
 def test_non_positive_progression_rejected(db, data):
@@ -927,9 +828,7 @@ def test_missing_target_metric_excluded(db, data):
         duration=60,
     )
 
-    result = preview(
-        db, data, source_id, source_set_id
-    )
+    result = preview(db, data, source_id, source_set_id)
 
     assert result["candidates"] == []
     assert result["excluded"][0] == {
@@ -1030,9 +929,11 @@ def test_weight_progression(db, data):
     assert candidate["proposed_value"] == 72.5
     assert result["database_modified"] is False
 
+
 # --------------------------------------------------
 # Persisted approval verification
 # --------------------------------------------------
+
 
 def test_missing_approval_record_rejected(db, data):
     """A matching source target alone is insufficient."""
@@ -1064,10 +965,8 @@ def test_valid_approval_id_returned(db, data):
     source_id, source_set_id = make_source(db, data)
 
     audit = db.scalar(
-        select(AdaptationApproval)
-        .where(
-            AdaptationApproval.prescription_set_id
-            == source_set_id
+        select(AdaptationApproval).where(
+            AdaptationApproval.prescription_set_id == source_set_id
         )
     )
 
@@ -1169,9 +1068,7 @@ def test_different_source_set_approval_rejected(db, data):
         preview(db, data, source_id, source_set_id)
 
 
-def test_different_adjustment_type_approval_rejected(
-    db, data
-):
+def test_different_adjustment_type_approval_rejected(db, data):
     """An approved duration change cannot authorize reps."""
 
     source_id, source_set_id = make_prescription(
@@ -1227,9 +1124,7 @@ def test_changed_source_target_rejected(db, data):
         )
 
 
-def test_valid_approval_preview_remains_read_only(
-    db, data
-):
+def test_valid_approval_preview_remains_read_only(db, data):
     """Approval evidence does not itself modify future sets."""
 
     source_id, source_set_id = make_source(db, data)
@@ -1241,9 +1136,7 @@ def test_valid_approval_preview_remains_read_only(
         reps=18,
     )
 
-    before_audits = db.scalars(
-        select(AdaptationApproval)
-    ).all()
+    before_audits = db.scalars(select(AdaptationApproval)).all()
 
     result = preview(
         db,
@@ -1254,16 +1147,17 @@ def test_valid_approval_preview_remains_read_only(
 
     db.expire_all()
 
-    after_audits = db.scalars(
-        select(AdaptationApproval)
-    ).all()
+    after_audits = db.scalars(select(AdaptationApproval)).all()
 
     assert result["database_modified"] is False
     assert result["candidates"][0]["proposed_value"] == 19
 
-    assert db.get(
-        PrescriptionSet,
-        future_set_id,
-    ).target_reps == 18
+    assert (
+        db.get(
+            PrescriptionSet,
+            future_set_id,
+        ).target_reps
+        == 18
+    )
 
     assert len(before_audits) == len(after_audits)

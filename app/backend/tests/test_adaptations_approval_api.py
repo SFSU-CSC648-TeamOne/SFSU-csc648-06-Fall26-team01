@@ -1,4 +1,3 @@
-
 """HTTP integration tests for adaptation approvals.
 
 Run from app/backend:
@@ -33,7 +32,6 @@ from app.models import (
 from app.services import approve_adaptation as service
 from app.services.prescription_adaptation import ENGINE_VERSION
 
-
 API = "/api/adaptations/prescriptions"
 
 
@@ -64,9 +62,7 @@ def data(db):
         email="approval-api-other@example.com",
         password_hash="test-hash",
     )
-    exercise = Exercise(
-        name="Approval API Push-Up"
-    )
+    exercise = Exercise(name="Approval API Push-Up")
 
     db.add_all([owner, other, exercise])
     db.commit()
@@ -93,9 +89,7 @@ def client(db):
 
 
 def authenticate(user):
-    app.dependency_overrides[get_current_user] = (
-        lambda: user
-    )
+    app.dependency_overrides[get_current_user] = lambda: user
 
 
 def create_prescription(
@@ -122,11 +116,7 @@ def create_prescription(
             exercise_id=exercise.id,
             set_number=1,
             target_reps=reps,
-            target_weight_kg=(
-                Decimal(str(weight))
-                if weight is not None
-                else None
-            ),
+            target_weight_kg=(Decimal(str(weight)) if weight is not None else None),
             load_basis=load_basis,
         )
     )
@@ -153,7 +143,7 @@ def mock_recommendation(
             "prescription_id": prescription_id,
             "user_id": user_id,
             "status": "proposed",
-            "proposal_engine_version":ENGINE_VERSION,
+            "proposal_engine_version": ENGINE_VERSION,
             "sets": [
                 {
                     "prescription_set_id": set_id,
@@ -207,16 +197,11 @@ def post_approval(client, prescription_id, body):
 # Route and authentication
 # --------------------------------------------------
 
-def test_approval_route_registered():
-    routes = {
-        route.path: route.methods
-        for route in app.routes
-    }
 
-    path = (
-        "/api/adaptations/prescriptions/"
-        "{prescription_id}/approve"
-    )
+def test_approval_route_registered():
+    routes = {route.path: route.methods for route in app.routes}
+
+    path = "/api/adaptations/prescriptions/" "{prescription_id}/approve"
 
     assert path in routes
     assert "POST" in routes[path]
@@ -260,9 +245,8 @@ def test_non_numeric_prescription_id(client, data):
 # Successful approval
 # --------------------------------------------------
 
-def test_valid_approval_updates_prescription(
-    client, db, data, monkeypatch
-):
+
+def test_valid_approval_updates_prescription(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -307,9 +291,7 @@ def test_valid_approval_updates_prescription(
     assert stored.target_reps == 16
 
 
-def test_weight_approval_updates_resistance(
-    client, db, data, monkeypatch
-):
+def test_weight_approval_updates_resistance(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -355,9 +337,8 @@ def test_weight_approval_updates_resistance(
 # Ownership and prescription status
 # --------------------------------------------------
 
-def test_other_user_cannot_approve(
-    client, db, data, monkeypatch
-):
+
+def test_other_user_cannot_approve(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -383,15 +364,16 @@ def test_other_user_cannot_approve(
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet,
-        set_id,
-    ).target_reps == 15
+    assert (
+        db.get(
+            PrescriptionSet,
+            set_id,
+        ).target_reps
+        == 15
+    )
 
 
-def test_unknown_prescription_returns_404(
-    client, data
-):
+def test_unknown_prescription_returns_404(client, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -407,9 +389,7 @@ def test_unknown_prescription_returns_404(
     "status",
     ["completed", "skipped"],
 )
-def test_non_planned_prescription_returns_409(
-    client, db, data, status
-):
+def test_non_planned_prescription_returns_409(client, db, data, status):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -422,9 +402,7 @@ def test_non_planned_prescription_returns_409(
     response = post_approval(
         client,
         prescription.id,
-        approval_body(
-            prescription.sets[0].id
-        ),
+        approval_body(prescription.sets[0].id),
     )
 
     assert response.status_code == 409
@@ -434,9 +412,8 @@ def test_non_planned_prescription_returns_409(
 # Input validation
 # --------------------------------------------------
 
-def test_empty_approvals_rejected(
-    client, data
-):
+
+def test_empty_approvals_rejected(client, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -448,9 +425,7 @@ def test_empty_approvals_rejected(
     assert response.status_code == 422
 
 
-def test_missing_approvals_rejected(
-    client, data
-):
+def test_missing_approvals_rejected(client, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -462,9 +437,7 @@ def test_missing_approvals_rejected(
     assert response.status_code == 422
 
 
-def test_invalid_adjustment_type_rejected(
-    client, data
-):
+def test_invalid_adjustment_type_rejected(client, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -479,9 +452,7 @@ def test_invalid_adjustment_type_rejected(
     assert response.status_code == 422
 
 
-def test_negative_set_id_rejected(
-    client, data
-):
+def test_negative_set_id_rejected(client, data):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -497,9 +468,7 @@ def test_negative_set_id_rejected(
     "invalid_value",
     ["NaN", "Infinity", "-Infinity"],
 )
-def test_non_finite_values_rejected(
-    client, data, invalid_value
-):
+def test_non_finite_values_rejected(client, data, invalid_value):
     authenticate(data["owner"])
 
     response = post_approval(
@@ -514,9 +483,7 @@ def test_non_finite_values_rejected(
     assert response.status_code == 422
 
 
-def test_duplicate_set_approvals_rejected(
-    client, db, data
-):
+def test_duplicate_set_approvals_rejected(client, db, data):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -547,9 +514,8 @@ def test_duplicate_set_approvals_rejected(
 # Stale proposals
 # --------------------------------------------------
 
-def test_stale_proposal_returns_409(
-    client, db, data, monkeypatch
-):
+
+def test_stale_proposal_returns_409(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -581,15 +547,16 @@ def test_stale_proposal_returns_409(
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet,
-        set_id,
-    ).target_reps == 15
+    assert (
+        db.get(
+            PrescriptionSet,
+            set_id,
+        ).target_reps
+        == 15
+    )
 
 
-def test_repeated_approval_returns_409(
-    client, db, data, monkeypatch
-):
+def test_repeated_approval_returns_409(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -624,19 +591,21 @@ def test_repeated_approval_returns_409(
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet,
-        set_id,
-    ).target_reps == 16
+    assert (
+        db.get(
+            PrescriptionSet,
+            set_id,
+        ).target_reps
+        == 16
+    )
 
 
 # --------------------------------------------------
 # Recorded workout protection
 # --------------------------------------------------
 
-def test_existing_workout_blocks_approval(
-    client, db, data, monkeypatch
-):
+
+def test_existing_workout_blocks_approval(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -672,19 +641,21 @@ def test_existing_workout_blocks_approval(
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet,
-        set_id,
-    ).target_reps == 15
+    assert (
+        db.get(
+            PrescriptionSet,
+            set_id,
+        ).target_reps
+        == 15
+    )
 
 
 # --------------------------------------------------
 # Persistence and metadata integrity
 # --------------------------------------------------
 
-def test_approval_preserves_program_metadata(
-    client, db, data, monkeypatch
-):
+
+def test_approval_preserves_program_metadata(client, db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -722,9 +693,7 @@ def test_approval_preserves_program_metadata(
     assert stored.engine_version == "baseline-v1"
 
 
-def test_approval_does_not_change_other_prescriptions(
-    client, db, data, monkeypatch
-):
+def test_approval_does_not_change_other_prescriptions(client, db, data, monkeypatch):
     first = create_prescription(
         db,
         data["owner"],
@@ -757,12 +726,18 @@ def test_approval_does_not_change_other_prescriptions(
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet,
-        first_set_id,
-    ).target_reps == 16
+    assert (
+        db.get(
+            PrescriptionSet,
+            first_set_id,
+        ).target_reps
+        == 16
+    )
 
-    assert db.get(
-        PrescriptionSet,
-        second_set_id,
-    ).target_reps == 15
+    assert (
+        db.get(
+            PrescriptionSet,
+            second_set_id,
+        ).target_reps
+        == 15
+    )

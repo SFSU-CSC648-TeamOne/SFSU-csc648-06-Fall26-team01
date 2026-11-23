@@ -1,10 +1,20 @@
-# Class searches for exercise catalog tables (equpment, muscle_groups, exercises) 
+# Class searches for exercise catalog tables (equpment, muscle_groups, exercises)
 # and links them with program tables (training_prgrams, workout_sessions, and session_exercises)
 
 from typing import List, Optional
 
-from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, String, Table,
-                        Text, UniqueConstraint, Boolean, Float)
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+    Boolean,
+    Float,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -13,9 +23,14 @@ from app.models.enums import ExerciseRole, ExperienceLevel, sql_in, MovementRela
 exercise_equipment = Table(
     "exercise_equipment",
     Base.metadata,
-    Column("exercise_id", ForeignKey("exercises.id", ondelete="CASCADE"), primary_key=True),
-    Column("equipment_id", ForeignKey("equipment.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "exercise_id", ForeignKey("exercises.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column(
+        "equipment_id", ForeignKey("equipment.id", ondelete="CASCADE"), primary_key=True
+    ),
 )
+
 
 class Equipment(Base):
     __tablename__ = "equipment"
@@ -24,6 +39,7 @@ class Equipment(Base):
     wger_id: Mapped[Optional[int]] = mapped_column(Integer, unique=True)
     name: Mapped[str] = mapped_column(String(100), unique=True)
 
+
 class MuscleGroup(Base):
     __tablename__ = "muscle_groups"
 
@@ -31,14 +47,20 @@ class MuscleGroup(Base):
     wger_id: Mapped[Optional[int]] = mapped_column(Integer, unique=True)
     name: Mapped[str] = mapped_column(String(100), unique=True)
 
+
 class ExerciseMuscle(Base):
     __tablename__ = "exercise_muscles"
 
-    exercise_id: Mapped[int] = mapped_column(ForeignKey("exercises.id", ondelete="CASCADE"), primary_key=True)
-    muscle_group_id: Mapped[int] = mapped_column(ForeignKey("muscle_groups.id", ondelete="CASCADE"), primary_key=True)
+    exercise_id: Mapped[int] = mapped_column(
+        ForeignKey("exercises.id", ondelete="CASCADE"), primary_key=True
+    )
+    muscle_group_id: Mapped[int] = mapped_column(
+        ForeignKey("muscle_groups.id", ondelete="CASCADE"), primary_key=True
+    )
     is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     muscle: Mapped[MuscleGroup] = relationship()
+
 
 # new added classes 11-16-26
 class MovementGroup(Base):
@@ -47,27 +69,50 @@ class MovementGroup(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), unique=True)
     parent_group_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("movement_groups.id", ondelete="SET NULL"), index=True)
+        ForeignKey("movement_groups.id", ondelete="SET NULL"), index=True
+    )
+
 
 class ExerciseMovementGroup(Base):
     __tablename__ = "exercise_movement_groups"
     __table_args__ = (
-        CheckConstraint(f"relationship_type IN ({sql_in(MovementRelationship)})", name="ck_emg_relationship"),
-        CheckConstraint("relevance_weight >= 0 AND relevance_weight <= 1", name="ck_emg_weight"),
+        CheckConstraint(
+            f"relationship_type IN ({sql_in(MovementRelationship)})",
+            name="ck_emg_relationship",
+        ),
+        CheckConstraint(
+            "relevance_weight >= 0 AND relevance_weight <= 1", name="ck_emg_weight"
+        ),
     )
 
-    exercise_id: Mapped[int] = mapped_column(ForeignKey("exercises.id", ondelete="CASCADE"), primary_key=True)
-    movement_group_id: Mapped[int] = mapped_column(ForeignKey("movement_groups.id", ondelete="CASCADE"), primary_key=True)
-    relationship_type: Mapped[str] = mapped_column(String(20), default=MovementRelationship.primary.value,
-                                                   server_default=MovementRelationship.primary.value)
-    relevance_weight: Mapped[float] = mapped_column(Float, default=1.0, server_default="1.0")
+    exercise_id: Mapped[int] = mapped_column(
+        ForeignKey("exercises.id", ondelete="CASCADE"), primary_key=True
+    )
+    movement_group_id: Mapped[int] = mapped_column(
+        ForeignKey("movement_groups.id", ondelete="CASCADE"), primary_key=True
+    )
+    relationship_type: Mapped[str] = mapped_column(
+        String(20),
+        default=MovementRelationship.primary.value,
+        server_default=MovementRelationship.primary.value,
+    )
+    relevance_weight: Mapped[float] = mapped_column(
+        Float, default=1.0, server_default="1.0"
+    )
     movement_group: Mapped[MovementGroup] = relationship()
+
 
 class Exercise(Base):
     __tablename__ = "exercises"
     __table_args__ = (
-        CheckConstraint(f"difficulty IS NULL OR difficulty IN ({sql_in(ExperienceLevel)})", name="ck_exercises_difficulty"),
-        CheckConstraint(f"default_role IS NULL OR default_role IN ({sql_in(ExerciseRole)})", name="ck_exercises_role"),
+        CheckConstraint(
+            f"difficulty IS NULL OR difficulty IN ({sql_in(ExperienceLevel)})",
+            name="ck_exercises_difficulty",
+        ),
+        CheckConstraint(
+            f"default_role IS NULL OR default_role IN ({sql_in(ExerciseRole)})",
+            name="ck_exercises_role",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -78,18 +123,25 @@ class Exercise(Base):
     difficulty: Mapped[Optional[str]] = mapped_column(String(20))
     default_role: Mapped[Optional[str]] = mapped_column(String(20))
     default_minutes: Mapped[int] = mapped_column(Integer, default=5, server_default="5")
-    source: Mapped[str] = mapped_column(String(20), default="manual", server_default="manual")
+    source: Mapped[str] = mapped_column(
+        String(20), default="manual", server_default="manual"
+    )
     license_name: Mapped[Optional[str]] = mapped_column(String(100))
     license_author: Mapped[Optional[str]] = mapped_column(String(255))
 
     equipment: Mapped[List[Equipment]] = relationship(secondary=exercise_equipment)
-    muscle_links: Mapped[List[ExerciseMuscle]] = relationship(cascade="all, delete-orphan")
+    muscle_links: Mapped[List[ExerciseMuscle]] = relationship(
+        cascade="all, delete-orphan"
+    )
+
 
 class TrainingProgram(Base):
     __tablename__ = "training_programs"
     __table_args__ = (
-    CheckConstraint(f"experience_level IN ({sql_in(ExperienceLevel)})", name="ck_programs_level"),   
-    )   
+        CheckConstraint(
+            f"experience_level IN ({sql_in(ExperienceLevel)})", name="ck_programs_level"
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200))
@@ -99,31 +151,46 @@ class TrainingProgram(Base):
     description: Mapped[Optional[str]] = mapped_column(Text)
 
     sessions: Mapped[List["WorkoutSession"]] = relationship(
-        back_populates="program", cascade="all, delete-orphan", order_by="WorkoutSession.position")
-    
+        back_populates="program",
+        cascade="all, delete-orphan",
+        order_by="WorkoutSession.position",
+    )
+
+
 class WorkoutSession(Base):
     __tablename__ = "workout_sessions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    program_id: Mapped[int] = mapped_column(ForeignKey("training_programs.id", ondelete="CASCADE"), index=True)
+    program_id: Mapped[int] = mapped_column(
+        ForeignKey("training_programs.id", ondelete="CASCADE"), index=True
+    )
     name: Mapped[str] = mapped_column(String(200))
     position: Mapped[int] = mapped_column(Integer)
     guidance: Mapped[Optional[str]] = mapped_column(Text)
 
     program: Mapped[TrainingProgram] = relationship(back_populates="sessions")
     items: Mapped[List["SessionExercise"]] = relationship(
-        back_populates="session", cascade="all, delete-orphan", order_by="SessionExercise.position")
+        back_populates="session",
+        cascade="all, delete-orphan",
+        order_by="SessionExercise.position",
+    )
 
 
 class SessionExercise(Base):
     __tablename__ = "session_exercises"
     __table_args__ = (
-        UniqueConstraint("workout_session_id", "position", name="uq_session_exercises_position"),
-        CheckConstraint(f"role IN ({sql_in(ExerciseRole)})", name="ck_session_exercises_role"),
+        UniqueConstraint(
+            "workout_session_id", "position", name="uq_session_exercises_position"
+        ),
+        CheckConstraint(
+            f"role IN ({sql_in(ExerciseRole)})", name="ck_session_exercises_role"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    workout_session_id: Mapped[int] = mapped_column(ForeignKey("workout_sessions.id", ondelete="CASCADE"), index=True)
+    workout_session_id: Mapped[int] = mapped_column(
+        ForeignKey("workout_sessions.id", ondelete="CASCADE"), index=True
+    )
     exercise_id: Mapped[int] = mapped_column(ForeignKey("exercises.id"))
     position: Mapped[int] = mapped_column(Integer)
     role: Mapped[str] = mapped_column(String(20))

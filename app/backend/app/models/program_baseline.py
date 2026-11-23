@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 
+
 class ProgramBaseline(Base):
     __tablename__ = "program_baselines"
 
@@ -23,8 +24,9 @@ class ProgramBaseline(Base):
 
     # newly added on 11-16-26
     schema_version: Mapped[int] = mapped_column(Integer, default=2, server_default="1")
-    bodyweight_kg: Mapped[Optional[Decimal]] = mapped_column(Numeric(6,2))
+    bodyweight_kg: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(),
+        DateTime(timezone=True),
+        server_default=func.now(),
     )

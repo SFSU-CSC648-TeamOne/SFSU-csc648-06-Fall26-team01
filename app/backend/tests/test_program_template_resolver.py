@@ -1,4 +1,3 @@
-
 """Tests for resolving program templates into enrollment schedules.
 
 Run from app/backend:
@@ -62,9 +61,7 @@ def setup(db, request):
 
     exercise_ids = {}
 
-    for exercise_slug in sorted(
-        required_exercise_slugs(program)
-    ):
+    for exercise_slug in sorted(required_exercise_slugs(program)):
         exercise = Exercise(name=exercise_slug)
         db.add(exercise)
         db.flush()
@@ -72,18 +69,12 @@ def setup(db, request):
 
     db.commit()
 
-    phases = {
-        (week, day): "training"
-        for week in range(1, 5)
-        for day in range(1, 6)
-    }
+    phases = {(week, day): "training" for week in range(1, 5) for day in range(1, 6)}
 
     targets = {}
 
     for week in range(1, 5):
-        for day, template in enumerate(
-            program.days, start=1
-        ):
+        for day, template in enumerate(program.days, start=1):
             for item in template.exercises:
                 key = (week, day, item.slug)
 
@@ -126,27 +117,21 @@ def resolve(db, setup, **changes):
 
 
 def row_count(db, model):
-    return db.scalar(
-        select(func.count()).select_from(model)
-    )
+    return db.scalar(select(func.count()).select_from(model))
 
 
 # --------------------------------------------------
 # Successful resolution
 # --------------------------------------------------
 
+
 def test_resolves_complete_four_week_schedule(db, setup):
     result = resolve(db, setup)
 
     assert len(result) == 20
 
-    assert {
-        (workout.program_week, workout.program_day)
-        for workout in result
-    } == {
-        (week, day)
-        for week in range(1, 5)
-        for day in range(1, 6)
+    assert {(workout.program_week, workout.program_day) for workout in result} == {
+        (week, day) for week in range(1, 5) for day in range(1, 6)
     }
 
 
@@ -170,9 +155,8 @@ def test_expands_weekly_set_counts(db, setup):
         week = workout.program_week
         day = workout.program_day
 
-        expected_count = (
-            program.weeks[week - 1].sets
-            * len(program.days[day - 1].exercises)
+        expected_count = program.weeks[week - 1].sets * len(
+            program.days[day - 1].exercises
         )
 
         assert len(workout.sets) == expected_count
@@ -192,10 +176,7 @@ def test_preserves_accessory_flags(db, setup):
         for _ in range(sets_per_exercise)
     ]
 
-    actual = [
-        item.is_optional
-        for item in first_workout.sets
-    ]
+    actual = [item.is_optional for item in first_workout.sets]
 
     assert actual == expected
 
@@ -208,8 +189,7 @@ def test_preserves_explicit_phase_classifications(db, setup):
     result = resolve(db, setup, phases=phases)
 
     resolved = {
-        (workout.program_week, workout.program_day):
-            workout.phase_type
+        (workout.program_week, workout.program_day): workout.phase_type
         for workout in result
     }
 
@@ -228,9 +208,7 @@ def test_preserves_explicit_targets(db, setup):
                 assert item.target_weight_kg == Decimal("40.00")
                 assert item.load_basis == "external"
 
-            elif item.exercise_id == setup["exercise_ids"].get(
-                "plank"
-            ):
+            elif item.exercise_id == setup["exercise_ids"].get("plank"):
                 assert item.target_reps is None
                 assert item.target_duration_seconds == 30
 
@@ -244,9 +222,7 @@ def test_explicit_set_count_overrides_week_scheme(db, setup):
     targets[key] = ExerciseTarget(
         load_basis=original.load_basis,
         target_reps=original.target_reps,
-        target_duration_seconds=(
-            original.target_duration_seconds
-        ),
+        target_duration_seconds=(original.target_duration_seconds),
         target_weight_kg=original.target_weight_kg,
         set_count=2,
     )
@@ -255,9 +231,7 @@ def test_explicit_set_count_overrides_week_scheme(db, setup):
 
     expected = (
         2
-        + (
-            len(setup["program"].days[0].exercises) - 1
-        ) * setup["program"].weeks[0].sets
+        + (len(setup["program"].days[0].exercises) - 1) * setup["program"].weeks[0].sets
     )
 
     assert len(result[0].sets) == expected
@@ -266,6 +240,7 @@ def test_explicit_set_count_overrides_week_scheme(db, setup):
 # --------------------------------------------------
 # Exercise mapping safeguards
 # --------------------------------------------------
+
 
 def test_rejects_missing_exercise_mapping(db, setup):
     mappings = dict(setup["exercise_ids"])
@@ -306,6 +281,7 @@ def test_rejects_duplicate_database_exercise_ids(db, setup):
 # Phase safeguards
 # --------------------------------------------------
 
+
 def test_rejects_missing_phase(db, setup):
     phases = dict(setup["phases"])
     phases.pop((2, 3))
@@ -333,6 +309,7 @@ def test_rejects_extra_phase(db, setup):
 # --------------------------------------------------
 # Prescription target safeguards
 # --------------------------------------------------
+
 
 def test_rejects_missing_target(db, setup):
     targets = dict(setup["targets"])
@@ -363,9 +340,7 @@ def test_rejects_invalid_set_count(db, setup):
     targets[key] = ExerciseTarget(
         load_basis=original.load_basis,
         target_reps=original.target_reps,
-        target_duration_seconds=(
-            original.target_duration_seconds
-        ),
+        target_duration_seconds=(original.target_duration_seconds),
         target_weight_kg=original.target_weight_kg,
         set_count=0,
     )
@@ -396,6 +371,7 @@ def test_rejects_unknown_program(db, setup):
 # Read-only guarantee
 # --------------------------------------------------
 
+
 def test_resolver_does_not_write_database(db, setup):
     before = {
         model: row_count(db, model)
@@ -409,10 +385,7 @@ def test_resolver_does_not_write_database(db, setup):
 
     resolve(db, setup)
 
-    after = {
-        model: row_count(db, model)
-        for model in before
-    }
+    after = {model: row_count(db, model) for model in before}
 
     assert after == before
 

@@ -1,4 +1,3 @@
-
 """Build enrollment schedules from explicit program metadata.
 
 This module does not:
@@ -71,33 +70,22 @@ def build_enrollment_schedule(
         ValidationFailed if required metadata is missing or invalid.
     """
 
-    if (
-        not program.program_slug
-        or len(program.program_slug) > 20
-    ):
+    if not program.program_slug or len(program.program_slug) > 20:
         raise ValidationFailed("Invalid program slug.")
 
     if not program.workouts:
-        raise ValidationFailed(
-            "Program schedule contains no workouts."
-        )
+        raise ValidationFailed("Program schedule contains no workouts.")
 
-    valid_phases = {
-        phase.value for phase in ProgramPhaseType
-    }
+    valid_phases = {phase.value for phase in ProgramPhaseType}
 
     generated = []
 
     for workout in program.workouts:
         if workout.phase_type not in valid_phases:
-            raise ValidationFailed(
-                "Workout phase must be explicitly classified."
-            )
+            raise ValidationFailed("Workout phase must be explicitly classified.")
 
         if not workout.exercises:
-            raise ValidationFailed(
-                "Workout contains no exercises."
-            )
+            raise ValidationFailed("Workout contains no exercises.")
 
         prescribed_sets = []
 
@@ -107,9 +95,7 @@ def build_enrollment_schedule(
                 or not isinstance(exercise.set_count, int)
                 or exercise.set_count <= 0
             ):
-                raise ValidationFailed(
-                    "Exercise set count must be a positive integer."
-                )
+                raise ValidationFailed("Exercise set count must be a positive integer.")
 
             for set_number in range(
                 1,
@@ -121,12 +107,8 @@ def build_enrollment_schedule(
                         set_number=set_number,
                         load_basis=exercise.load_basis,
                         target_reps=exercise.target_reps,
-                        target_duration_seconds=(
-                            exercise.target_duration_seconds
-                        ),
-                        target_weight_kg=(
-                            exercise.target_weight_kg
-                        ),
+                        target_duration_seconds=(exercise.target_duration_seconds),
+                        target_weight_kg=(exercise.target_weight_kg),
                         is_optional=exercise.is_optional,
                     )
                 )
@@ -137,9 +119,7 @@ def build_enrollment_schedule(
                 program_day=workout.day,
                 phase_type=workout.phase_type,
                 sets=tuple(prescribed_sets),
-                workout_session_id=(
-                    workout.workout_session_id
-                ),
+                workout_session_id=(workout.workout_session_id),
                 phase_reason=workout.phase_reason,
             )
         )
