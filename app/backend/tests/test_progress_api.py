@@ -1,4 +1,3 @@
-
 """Integration tests for the authenticated progress API.
 
 Run independently:
@@ -53,9 +52,7 @@ def register_user():
 
 def create_exercise():
     with SessionLocal() as db:
-        exercise = Exercise(
-            name=f"Progress Test {uuid4().hex[:8]}"
-        )
+        exercise = Exercise(name=f"Progress Test {uuid4().hex[:8]}")
 
         db.add(exercise)
         db.commit()
@@ -79,8 +76,7 @@ def add_workout(
         record = WorkoutRecord(
             user_id=user_id,
             performed_at=(
-                datetime(2026, 1, 1, tzinfo=timezone.utc)
-                + timedelta(days=day)
+                datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(days=day)
             ),
         )
 
@@ -88,9 +84,7 @@ def add_workout(
             exercise_id=exercise_id,
             set_number=set_number,
             reps=reps if status == "completed" else None,
-            weight_kg=(
-                weight_kg if status == "completed" else None
-            ),
+            weight_kg=(weight_kg if status == "completed" else None),
             status=status,
             observation_type=observation_type,
             load_basis=load_basis,
@@ -112,18 +106,13 @@ def get_progress(headers, exercise_id, **params):
 def test_route_registered():
     paths = {route.path for route in app.routes}
 
-    assert (
-        "/api/progress/exercises/{exercise_id}"
-        in paths
-    )
+    assert "/api/progress/exercises/{exercise_id}" in paths
 
 
 def test_authentication_required():
     exercise_id = create_exercise()
 
-    response = client.get(
-        f"{ENDPOINT}/{exercise_id}"
-    )
+    response = client.get(f"{ENDPOINT}/{exercise_id}")
 
     assert response.status_code == 401
 
@@ -204,10 +193,7 @@ def test_preliminary_progress_response():
     assert trend["load_basis"] == "bodyweight"
     assert trend["change_pct"] == 50.0
 
-    assert [
-        point["actual"]
-        for point in trend["points"]
-    ] == [8, 10, 12]
+    assert [point["actual"] for point in trend["points"]] == [8, 10, 12]
 
 
 def test_robust_progress_response():
@@ -273,10 +259,7 @@ def test_user_isolation():
     assert owner_trend["observation_count"] == 3
     assert other_trend["observation_count"] == 1
 
-    assert [
-        point["actual"]
-        for point in owner_trend["points"]
-    ] == [8, 10, 12]
+    assert [point["actual"] for point in owner_trend["points"]] == [8, 10, 12]
 
     assert other_trend["points"][0]["actual"] == 100
 
@@ -330,18 +313,24 @@ def test_skipped_sets_excluded():
     exercise_id = create_exercise()
 
     add_workout(
-        user_id, exercise_id,
-        day=0, reps=8,
+        user_id,
+        exercise_id,
+        day=0,
+        reps=8,
     )
 
     add_workout(
-        user_id, exercise_id,
-        day=1, reps=10,
+        user_id,
+        exercise_id,
+        day=1,
+        reps=10,
     )
 
     add_workout(
-        user_id, exercise_id,
-        day=2, status="skipped",
+        user_id,
+        exercise_id,
+        day=2,
+        status="skipped",
     )
 
     response = get_progress(headers, exercise_id)
@@ -385,10 +374,7 @@ def test_external_loads_remain_separate():
 
     assert len(trends) == 2
 
-    by_weight = {
-        trend["weight_kg"]: trend
-        for trend in trends
-    }
+    by_weight = {trend["weight_kg"]: trend for trend in trends}
 
     assert by_weight[20]["observation_count"] == 3
     assert by_weight[40]["observation_count"] == 1

@@ -1,4 +1,3 @@
-
 """Individual user enrollments in training programs.
 
 A ProgramInstance represents one distinct run of a training
@@ -68,8 +67,8 @@ class ProgramInstance(Base):
     )
 
     prescriptions: Mapped[list["WorkoutPrescription"]] = relationship(
-    "WorkoutPrescription",
-    back_populates="program_instance",
+        "WorkoutPrescription",
+        back_populates="program_instance",
     )
 
     source_baseline_id: Mapped[int | None] = mapped_column(

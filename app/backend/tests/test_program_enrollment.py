@@ -1,4 +1,3 @@
-
 """Tests for transactional program enrollment creation.
 
 Run from app/backend:
@@ -141,9 +140,7 @@ def enroll(db, data, **changes):
 
 
 def count(db, model):
-    return db.scalar(
-        select(func.count()).select_from(model)
-    )
+    return db.scalar(select(func.count()).select_from(model))
 
 
 def test_creates_instance_and_all_prescriptions(db, data):
@@ -157,9 +154,7 @@ def test_creates_instance_and_all_prescriptions(db, data):
 
     prescriptions = db.scalars(
         select(WorkoutPrescription)
-        .where(
-            WorkoutPrescription.program_instance_id == instance.id
-        )
+        .where(WorkoutPrescription.program_instance_id == instance.id)
         .order_by(WorkoutPrescription.program_week)
     ).all()
 
@@ -174,9 +169,7 @@ def test_creates_instance_and_all_prescriptions(db, data):
         assert prescription.engine_version == "adaptive-v1"
         assert len(prescription.sets) == 1
 
-    assert [
-        p.sets[0].target_reps for p in prescriptions
-    ] == [10, 7, 12]
+    assert [p.sets[0].target_reps for p in prescriptions] == [10, 7, 12]
 
 
 def test_persists_explicit_program_phases(db, data):
@@ -189,12 +182,9 @@ def test_persists_explicit_program_phases(db, data):
         )
         .join(
             ProgramPhase,
-            ProgramPhase.workout_prescription_id
-            == WorkoutPrescription.id,
+            ProgramPhase.workout_prescription_id == WorkoutPrescription.id,
         )
-        .where(
-            WorkoutPrescription.program_instance_id == instance.id
-        )
+        .where(WorkoutPrescription.program_instance_id == instance.id)
         .order_by(WorkoutPrescription.program_week)
     ).all()
 
@@ -212,17 +202,21 @@ def test_repeat_enrollment_creates_distinct_instances(db, data):
     assert first.id != second.id
     assert first.source_baseline_id == second.source_baseline_id
 
-    first_ids = set(db.scalars(
-        select(WorkoutPrescription.id).where(
-            WorkoutPrescription.program_instance_id == first.id
+    first_ids = set(
+        db.scalars(
+            select(WorkoutPrescription.id).where(
+                WorkoutPrescription.program_instance_id == first.id
+            )
         )
-    ))
+    )
 
-    second_ids = set(db.scalars(
-        select(WorkoutPrescription.id).where(
-            WorkoutPrescription.program_instance_id == second.id
+    second_ids = set(
+        db.scalars(
+            select(WorkoutPrescription.id).where(
+                WorkoutPrescription.program_instance_id == second.id
+            )
         )
-    ))
+    )
 
     assert len(first_ids) == 3
     assert len(second_ids) == 3

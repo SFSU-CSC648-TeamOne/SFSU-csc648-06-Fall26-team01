@@ -1,4 +1,3 @@
-
 """Read-only planning for program-wide adaptive progression.
 
 Only explicitly classified training workouts are eligible.
@@ -41,7 +40,6 @@ from app.models.tracking import (
 from app.models.adaptation_approval import AdaptationApproval
 from app.models.program_instance import ProgramInstance
 
-
 AdjustmentType = Literal["reps", "duration", "weight"]
 
 TARGET_FIELDS = {
@@ -59,14 +57,10 @@ def _decimal(value: object) -> Decimal:
         ValueError,
         TypeError,
     ) as exc:
-        raise ValidationFailed(
-            "Invalid numeric adjustment."
-        ) from exc
+        raise ValidationFailed("Invalid numeric adjustment.") from exc
 
     if not result.is_finite():
-        raise ValidationFailed(
-            "Adjustment values must be finite."
-        )
+        raise ValidationFailed("Adjustment values must be finite.")
 
     return result
 
@@ -79,15 +73,9 @@ def _valid_target(
         return False
 
     if adjustment_type in {"reps", "duration"}:
-        return (
-            value == value.to_integral_value()
-            and value <= Decimal("2147483647")
-        )
+        return value == value.to_integral_value() and value <= Decimal("2147483647")
 
-    return (
-        value <= Decimal("9999.99")
-        and value.as_tuple().exponent >= -2
-    )
+    return value <= Decimal("9999.99") and value.as_tuple().exponent >= -2
 
 
 def _target_value(
@@ -129,7 +117,7 @@ def preview_program_propagation(
     previous_value: Decimal,
     approved_value: Decimal,
     *,
-    program_instance_id: int | None = None
+    program_instance_id: int | None = None,
 ) -> dict:
     """Preview approved progression across future training workouts.
 
@@ -144,9 +132,7 @@ def preview_program_propagation(
     """
 
     if adjustment_type not in TARGET_FIELDS:
-        raise ValidationFailed(
-            "Unsupported adjustment type."
-        )
+        raise ValidationFailed("Unsupported adjustment type.")
 
     previous = _decimal(previous_value)
     approved = _decimal(approved_value)
@@ -156,9 +142,7 @@ def preview_program_propagation(
         or not _valid_target(approved, adjustment_type)
         or approved <= previous
     ):
-        raise ValidationFailed(
-            "A valid positive progression is required."
-        )
+        raise ValidationFailed("A valid positive progression is required.")
 
     # --------------------------------------------------
     # Validate the requested program enrollment
@@ -175,14 +159,10 @@ def preview_program_propagation(
         )
 
         if instance is None:
-            raise NotFoundError(
-                "Program enrollment not found."
-            )
+            raise NotFoundError("Program enrollment not found.")
 
         if instance.status != "active":
-            raise ConflictError(
-                "Program enrollment must be active."
-            )
+            raise ConflictError("Program enrollment must be active.")
 
     # --------------------------------------------------
     # Validate the source prescription
@@ -190,9 +170,7 @@ def preview_program_propagation(
 
     source = db.scalar(
         select(WorkoutPrescription)
-        .options(
-            selectinload(WorkoutPrescription.sets)
-        )
+        .options(selectinload(WorkoutPrescription.sets))
         .where(
             WorkoutPrescription.id == prescription_id,
             WorkoutPrescription.user_id == user_id,
@@ -200,9 +178,7 @@ def preview_program_propagation(
     )
 
     if source is None:
-        raise NotFoundError(
-            "Source workout prescription not found."
-        )
+        raise NotFoundError("Source workout prescription not found.")
 
     if instance is not None:
         if (
@@ -211,71 +187,45 @@ def preview_program_propagation(
             or source.user_id != instance.user_id
         ):
             raise NotFoundError(
-                "Source prescription does not belong "
-                "to this program enrollment."
+                "Source prescription does not belong " "to this program enrollment."
             )
 
-        if (
-            source.source_baseline_id
-            != instance.source_baseline_id
-        ):
+        if source.source_baseline_id != instance.source_baseline_id:
             raise ConflictError(
-                "Source prescription baseline does not "
-                "match its program enrollment."
+                "Source prescription baseline does not " "match its program enrollment."
             )
 
     if source.status != PrescriptionStatus.planned.value:
-        raise ConflictError(
-            "Source prescription must still be planned."
-        )
+        raise ConflictError("Source prescription must still be planned.")
 
     if source.source_baseline_id is None:
-        raise ConflictError(
-            "Source prescription has no program baseline."
-        )
+        raise ConflictError("Source prescription has no program baseline.")
 
     source_phase = db.scalar(
-        select(ProgramPhase).where(
-            ProgramPhase.workout_prescription_id
-            == source.id
-        )
+        select(ProgramPhase).where(ProgramPhase.workout_prescription_id == source.id)
     )
 
-    if (
-        source_phase is None
-        or not source_phase.allows_automatic_progression
-    ):
+    if source_phase is None or not source_phase.allows_automatic_progression:
         raise ConflictError(
-            "Source prescription must be explicitly "
-            "classified as training."
+            "Source prescription must be explicitly " "classified as training."
         )
 
     source_set = next(
-        (
-            item
-            for item in source.sets
-            if item.id == prescription_set_id
-        ),
+        (item for item in source.sets if item.id == prescription_set_id),
         None,
     )
 
     if source_set is None:
-        raise NotFoundError(
-            "Source prescription set not found."
-        )
+        raise NotFoundError("Source prescription set not found.")
 
     stored_value = _target_value(
         source_set,
         adjustment_type,
     )
 
-    if (
-        stored_value is None
-        or _decimal(stored_value) != approved
-    ):
+    if stored_value is None or _decimal(stored_value) != approved:
         raise ConflictError(
-            "Source target no longer matches "
-            "the approved adjustment."
+            "Source target no longer matches " "the approved adjustment."
         )
 
     # --------------------------------------------------
@@ -286,20 +236,13 @@ def preview_program_propagation(
         select(AdaptationApproval)
         .where(
             AdaptationApproval.user_id == user_id,
-            AdaptationApproval.workout_prescription_id
-            == source.id,
-            AdaptationApproval.prescription_set_id
-            == source_set.id,
-            AdaptationApproval.adjustment_type
-            == adjustment_type,
-            AdaptationApproval.previous_value
-            == previous,
-            AdaptationApproval.approved_value
-            == approved,
+            AdaptationApproval.workout_prescription_id == source.id,
+            AdaptationApproval.prescription_set_id == source_set.id,
+            AdaptationApproval.adjustment_type == adjustment_type,
+            AdaptationApproval.previous_value == previous,
+            AdaptationApproval.approved_value == approved,
         )
-        .order_by(
-            AdaptationApproval.id.desc()
-        )
+        .order_by(AdaptationApproval.id.desc())
         .limit(1)
     )
 
@@ -318,24 +261,18 @@ def preview_program_propagation(
 
     prescription_query = (
         select(WorkoutPrescription)
-        .options(
-            selectinload(WorkoutPrescription.sets)
-        )
+        .options(selectinload(WorkoutPrescription.sets))
         .where(
             WorkoutPrescription.user_id == user_id,
-            WorkoutPrescription.program_slug
-            == source.program_slug,
-            WorkoutPrescription.source_baseline_id
-            == source.source_baseline_id,
-            WorkoutPrescription.status
-            == PrescriptionStatus.planned.value,
+            WorkoutPrescription.program_slug == source.program_slug,
+            WorkoutPrescription.source_baseline_id == source.source_baseline_id,
+            WorkoutPrescription.status == PrescriptionStatus.planned.value,
         )
     )
 
     if instance is not None:
         prescription_query = prescription_query.where(
-            WorkoutPrescription.program_instance_id
-            == instance.id
+            WorkoutPrescription.program_instance_id == instance.id
         )
 
     prescriptions = db.scalars(
@@ -357,13 +294,11 @@ def preview_program_propagation(
         if (
             prescription.program_week,
             prescription.program_day,
-        ) > source_position
+        )
+        > source_position
     ]
 
-    future_ids = [
-        prescription.id
-        for prescription in future
-    ]
+    future_ids = [prescription.id for prescription in future]
 
     # --------------------------------------------------
     # Load phase classifications
@@ -374,15 +309,12 @@ def preview_program_propagation(
     if future_ids:
         phases = db.scalars(
             select(ProgramPhase).where(
-                ProgramPhase.workout_prescription_id.in_(
-                    future_ids
-                )
+                ProgramPhase.workout_prescription_id.in_(future_ids)
             )
         ).all()
 
         phases_by_prescription = {
-            phase.workout_prescription_id: phase
-            for phase in phases
+            phase.workout_prescription_id: phase for phase in phases
         }
 
     # --------------------------------------------------
@@ -395,8 +327,7 @@ def preview_program_propagation(
         records = db.scalars(
             select(WorkoutRecord).where(
                 WorkoutRecord.user_id == user_id,
-                WorkoutRecord.program_slug
-                == source.program_slug,
+                WorkoutRecord.program_slug == source.program_slug,
             )
         ).all()
 
@@ -407,8 +338,7 @@ def preview_program_propagation(
                 record.program_day,
             )
             for record in records
-            if record.program_week is not None
-            and record.program_day is not None
+            if record.program_week is not None and record.program_day is not None
         }
 
     # --------------------------------------------------
@@ -426,12 +356,8 @@ def preview_program_propagation(
     if candidate_set_ids:
         referenced_set_ids = set(
             db.scalars(
-                select(
-                    PerformanceEntry.prescription_set_id
-                ).where(
-                    PerformanceEntry.prescription_set_id.in_(
-                        candidate_set_ids
-                    )
+                select(PerformanceEntry.prescription_set_id).where(
+                    PerformanceEntry.prescription_set_id.in_(candidate_set_ids)
                 )
             ).all()
         )
@@ -451,44 +377,52 @@ def preview_program_propagation(
         }
 
         # Phase classification must be explicit.
-        phase = phases_by_prescription.get(
-            prescription.id
-        )
+        phase = phases_by_prescription.get(prescription.id)
 
         if phase is None:
-            excluded.append({
-                **position,
-                "reason": "phase_unclassified",
-            })
+            excluded.append(
+                {
+                    **position,
+                    "reason": "phase_unclassified",
+                }
+            )
             continue
 
         if phase.phase_type == ProgramPhaseType.deload.value:
-            excluded.append({
-                **position,
-                "reason": "deload_protected",
-            })
+            excluded.append(
+                {
+                    **position,
+                    "reason": "deload_protected",
+                }
+            )
             continue
 
         if phase.phase_type == ProgramPhaseType.assessment.value:
-            excluded.append({
-                **position,
-                "reason": "assessment_protected",
-            })
+            excluded.append(
+                {
+                    **position,
+                    "reason": "assessment_protected",
+                }
+            )
             continue
 
         if not phase.allows_automatic_progression:
-            excluded.append({
-                **position,
-                "reason": "phase_not_eligible",
-            })
+            excluded.append(
+                {
+                    **position,
+                    "reason": "phase_not_eligible",
+                }
+            )
             continue
 
         # Never modify a workout with recorded history.
         if _workout_key(prescription) in historical_keys:
-            excluded.append({
-                **position,
-                "reason": "workout_history_exists",
-            })
+            excluded.append(
+                {
+                    **position,
+                    "reason": "workout_history_exists",
+                }
+            )
             continue
 
         # Match the original prescription-set structure.
@@ -504,23 +438,27 @@ def preview_program_propagation(
         ]
 
         if len(matching_sets) != 1:
-            excluded.append({
-                **position,
-                "reason": (
-                    "missing_matching_set"
-                    if not matching_sets
-                    else "ambiguous_matching_sets"
-                ),
-            })
+            excluded.append(
+                {
+                    **position,
+                    "reason": (
+                        "missing_matching_set"
+                        if not matching_sets
+                        else "ambiguous_matching_sets"
+                    ),
+                }
+            )
             continue
 
         target_set = matching_sets[0]
 
         if target_set.id in referenced_set_ids:
-            excluded.append({
-                **position,
-                "reason": "set_has_recorded_performance",
-            })
+            excluded.append(
+                {
+                    **position,
+                    "reason": "set_has_recorded_performance",
+                }
+            )
             continue
 
         current_raw = _target_value(
@@ -529,40 +467,46 @@ def preview_program_propagation(
         )
 
         if current_raw is None:
-            excluded.append({
-                **position,
-                "reason": "target_metric_missing",
-            })
+            excluded.append(
+                {
+                    **position,
+                    "reason": "target_metric_missing",
+                }
+            )
             continue
 
         current = _decimal(current_raw)
         proposed = current + delta
 
         if not _valid_target(proposed, adjustment_type):
-            excluded.append({
-                **position,
-                "reason": "proposed_target_invalid",
-            })
+            excluded.append(
+                {
+                    **position,
+                    "reason": "proposed_target_invalid",
+                }
+            )
             continue
 
-        candidates.append({
-            **position,
-            "prescription_set_id": target_set.id,
-            "exercise_id": target_set.exercise_id,
-            "set_number": target_set.set_number,
-            "adjustment_type": adjustment_type,
-            "phase_type": phase.phase_type,
-            "current_value": _format_value(
-                current,
-                adjustment_type,
-            ),
-            "proposed_value": _format_value(
-                proposed,
-                adjustment_type,
-            ),
-            "requires_program_phase_review": True,
-            "status": "review_required",
-        })
+        candidates.append(
+            {
+                **position,
+                "prescription_set_id": target_set.id,
+                "exercise_id": target_set.exercise_id,
+                "set_number": target_set.set_number,
+                "adjustment_type": adjustment_type,
+                "phase_type": phase.phase_type,
+                "current_value": _format_value(
+                    current,
+                    adjustment_type,
+                ),
+                "proposed_value": _format_value(
+                    proposed,
+                    adjustment_type,
+                ),
+                "requires_program_phase_review": True,
+                "status": "review_required",
+            }
+        )
 
     return {
         "user_id": user_id,

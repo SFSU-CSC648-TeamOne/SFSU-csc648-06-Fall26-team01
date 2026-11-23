@@ -1,4 +1,3 @@
-
 """PostgreSQL tests for program-wide adaptation audit models.
 
 Run from app/backend:
@@ -42,7 +41,6 @@ from app.models.program_adaptation_approval import (
 )
 from app.models.users import User
 
-
 REQUIRED_TABLES = {
     "users",
     "exercises",
@@ -57,14 +55,10 @@ REQUIRED_TABLES = {
 
 @pytest.fixture
 def db():
-    raw_url = os.environ.get(
-        "ASCENDA_TEST_DATABASE_URL"
-    )
+    raw_url = os.environ.get("ASCENDA_TEST_DATABASE_URL")
 
     if not raw_url:
-        pytest.fail(
-            "ASCENDA_TEST_DATABASE_URL is required."
-        )
+        pytest.fail("ASCENDA_TEST_DATABASE_URL is required.")
 
     url = make_url(raw_url)
 
@@ -92,16 +86,12 @@ def db():
             if database_name != "ascenda_test":
                 pytest.fail("Unexpected database.")
 
-            available = set(
-                inspect(connection).get_table_names()
-            )
+            available = set(inspect(connection).get_table_names())
 
             missing = REQUIRED_TABLES - available
 
             if missing:
-                pytest.fail(
-                    f"Missing audit tables: {sorted(missing)}"
-                )
+                pytest.fail(f"Missing audit tables: {sorted(missing)}")
 
             # Inspection triggered SQLAlchemy autobegin.
             # Close that transaction before beginning
@@ -130,9 +120,7 @@ def data(db):
         password_hash="test-hash",
     )
 
-    exercise = Exercise(
-        name=f"Audit Exercise {uuid4().hex[:8]}"
-    )
+    exercise = Exercise(name=f"Audit Exercise {uuid4().hex[:8]}")
 
     db.add_all([user, exercise])
     db.flush()
@@ -261,6 +249,7 @@ def make_item(
 # Successful persistence and relationships
 # --------------------------------------------------
 
+
 def test_audit_event_and_item_persist(db, data):
     approval = make_approval(db, data)
     item = make_item(db, data, approval)
@@ -292,14 +281,10 @@ def test_audit_relationships(db, data):
     item = make_item(db, data, approval)
 
     assert approval.program_instance.id == data["instance_id"]
-    assert approval.source_approval.id == (
-        data["source_approval_id"]
-    )
+    assert approval.source_approval.id == (data["source_approval_id"])
     assert item.approval.id == approval.id
     assert item.prescription_set.id == data["future_set_id"]
-    assert item.prescription.id == (
-        data["future_prescription_id"]
-    )
+    assert item.prescription.id == (data["future_prescription_id"])
 
 
 def test_audit_creation_does_not_change_target(db, data):
@@ -320,6 +305,7 @@ def test_audit_creation_does_not_change_target(db, data):
 # --------------------------------------------------
 # Uniqueness constraints
 # --------------------------------------------------
+
 
 def test_duplicate_idempotency_key_rejected(db, data):
     key = uuid4().hex
@@ -357,6 +343,7 @@ def test_duplicate_selected_set_rejected(db, data):
 # CHECK constraints
 # --------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "previous,approved",
     [
@@ -366,9 +353,7 @@ def test_duplicate_selected_set_rejected(db, data):
         (Decimal("19"), Decimal("18")),
     ],
 )
-def test_invalid_progression_rejected(
-    db, data, previous, approved
-):
+def test_invalid_progression_rejected(db, data, previous, approved):
     approval = make_approval(db, data)
 
     with pytest.raises(IntegrityError):
@@ -399,6 +384,7 @@ def test_invalid_adjustment_type_rejected(db, data):
 # Foreign-key enforcement
 # --------------------------------------------------
 
+
 def test_invalid_enrollment_reference_rejected(db, data):
     with pytest.raises(IntegrityError):
         with db.begin_nested():
@@ -413,9 +399,7 @@ def test_invalid_enrollment_reference_rejected(db, data):
             db.flush()
 
 
-def test_invalid_prescription_set_reference_rejected(
-    db, data
-):
+def test_invalid_prescription_set_reference_rejected(db, data):
     approval = make_approval(db, data)
 
     with pytest.raises(IntegrityError):
@@ -432,6 +416,7 @@ def test_invalid_prescription_set_reference_rejected(
 # Historical audit protection
 # --------------------------------------------------
 
+
 def test_source_approval_cannot_be_deleted(db, data):
     approval = make_approval(db, data)
     make_item(db, data, approval)
@@ -440,15 +425,12 @@ def test_source_approval_cannot_be_deleted(db, data):
         with db.begin_nested():
             db.execute(
                 delete(AdaptationApproval).where(
-                    AdaptationApproval.id
-                    == data["source_approval_id"]
+                    AdaptationApproval.id == data["source_approval_id"]
                 )
             )
 
 
-def test_approval_with_items_cannot_be_deleted(
-    db, data
-):
+def test_approval_with_items_cannot_be_deleted(db, data):
     approval = make_approval(db, data)
     make_item(db, data, approval)
 
@@ -456,7 +438,6 @@ def test_approval_with_items_cannot_be_deleted(
         with db.begin_nested():
             db.execute(
                 delete(ProgramAdaptationApproval).where(
-                    ProgramAdaptationApproval.id
-                    == approval.id
+                    ProgramAdaptationApproval.id == approval.id
                 )
             )

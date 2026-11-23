@@ -1,4 +1,3 @@
-
 """Authenticated adaptive training endpoints.
 
 Supports:
@@ -30,7 +29,6 @@ from app.services.prescription_adaptation import (
     analyze_prescription_adaptations,
 )
 
-
 router = APIRouter(
     prefix="/adaptations",
     tags=["adaptations"],
@@ -40,6 +38,7 @@ router = APIRouter(
 # --------------------------------------------------
 # Response models
 # --------------------------------------------------
+
 
 class PlannedPrescriptionOut(BaseModel):
     id: int
@@ -113,6 +112,7 @@ class PrescriptionAdaptationResponse(BaseModel):
 # Approval request and response models
 # --------------------------------------------------
 
+
 class ApprovedAdjustmentIn(BaseModel):
     prescription_set_id: int = Field(gt=0)
 
@@ -135,9 +135,7 @@ class ApprovedAdjustmentIn(BaseModel):
         value: Decimal,
     ) -> Decimal:
         if not value.is_finite():
-            raise ValueError(
-                "Adjustment values must be finite numbers."
-            )
+            raise ValueError("Adjustment values must be finite numbers.")
 
         return value
 
@@ -170,6 +168,7 @@ class ApproveAdaptationsOut(BaseModel):
 # Planned prescription discovery
 # --------------------------------------------------
 
+
 @router.get(
     "/planned-prescriptions",
     response_model=list[PlannedPrescriptionOut],
@@ -186,20 +185,15 @@ def get_planned_prescriptions(
 
     statement = (
         select(WorkoutPrescription)
-        .options(
-            selectinload(WorkoutPrescription.sets)
-        )
+        .options(selectinload(WorkoutPrescription.sets))
         .where(
             WorkoutPrescription.user_id == user.id,
-            WorkoutPrescription.status
-            == PrescriptionStatus.planned.value,
+            WorkoutPrescription.status == PrescriptionStatus.planned.value,
         )
     )
 
     if program is not None:
-        statement = statement.where(
-            WorkoutPrescription.program_slug == program
-        )
+        statement = statement.where(WorkoutPrescription.program_slug == program)
 
     statement = statement.order_by(
         WorkoutPrescription.program_slug,
@@ -227,6 +221,7 @@ def get_planned_prescriptions(
 # Read-only recommendations
 # --------------------------------------------------
 
+
 @router.get(
     "/prescriptions/{prescription_id}",
     response_model=PrescriptionAdaptationResponse,
@@ -246,9 +241,7 @@ def get_prescription_adaptations(
         )
 
     except LookupError as exc:
-        raise NotFoundError(
-            "Workout prescription not found."
-        ) from exc
+        raise NotFoundError("Workout prescription not found.") from exc
 
     except ValueError as exc:
         raise ConflictError(str(exc)) from exc
@@ -257,6 +250,7 @@ def get_prescription_adaptations(
 # --------------------------------------------------
 # Apply approved adaptations
 # --------------------------------------------------
+
 
 @router.post(
     "/prescriptions/{prescription_id}/approve",
@@ -282,12 +276,8 @@ def approve_prescription_adaptations(
         ApprovedAdjustment(
             prescription_set_id=item.prescription_set_id,
             adjustment_type=item.adjustment_type,
-            expected_previous_value=(
-                item.expected_previous_value
-            ),
-            expected_proposed_value=(
-                item.expected_proposed_value
-            ),
+            expected_previous_value=(item.expected_previous_value),
+            expected_proposed_value=(item.expected_proposed_value),
         )
         for item in body.approvals
     ]

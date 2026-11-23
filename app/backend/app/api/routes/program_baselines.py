@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from typing import Literal, Optional
 from uuid import uuid4
@@ -126,22 +125,16 @@ def create_baseline(
     received = [result.exercise_id for result in body.results]
 
     if len(received) != len(expected) or set(received) != set(expected):
-        raise ValidationFailed(
-            "Submit exactly one result for each required exercise."
-        )
+        raise ValidationFailed("Submit exactly one result for each required exercise.")
 
     for result in body.results:
         test = expected[result.exercise_id]
 
         if test["weighted"]:
             if result.load_kg is None:
-                raise ValidationFailed(
-                    f"{test['name']} requires a recorded load."
-                )
+                raise ValidationFailed(f"{test['name']} requires a recorded load.")
         elif result.load_kg is not None:
-            raise ValidationFailed(
-                f"{test['name']} does not require a load."
-            )
+            raise ValidationFailed(f"{test['name']} does not require a load.")
 
     record = ProgramBaseline(
         user_id=user.id,

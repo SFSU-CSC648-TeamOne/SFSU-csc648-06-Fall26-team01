@@ -1,4 +1,3 @@
-
 """Verify Ascenda Alembic upgrade 04 -> 05.
 
 From app/backend:
@@ -28,6 +27,7 @@ from sqlalchemy import (
     inspect,
     text,
 )
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import app.models
@@ -41,9 +41,7 @@ def database_url() -> URL:
     url = URL.create(
         "postgresql+psycopg",
         username="devuser",
-        password=getpass(
-            "Local PostgreSQL password: "
-        ),
+        password=getpass("Local PostgreSQL password: "),
         host="127.0.0.1",
         port=5433,
         database="ascenda_test",
@@ -55,12 +53,9 @@ def database_url() -> URL:
         or url.database != "ascenda_test"
         or url.username != "devuser"
     ):
-        raise RuntimeError(
-            "Refusing non-test database."
-        )
+        raise RuntimeError("Refusing non-test database.")
 
     return url
-
 
 
 def run_alembic(
@@ -76,9 +71,7 @@ def run_alembic(
 
     env = os.environ.copy()
 
-    env["DATABASE_URL"] = url.render_as_string(
-        hide_password=False
-    )
+    env["DATABASE_URL"] = url.render_as_string(hide_password=False)
 
     print(
         f"\nAlembic {operation} {revision}",
@@ -98,18 +91,13 @@ def run_alembic(
         check=True,
     )
 
+
 def check_revision(engine, expected: str) -> None:
     with engine.connect() as connection:
-        actual = connection.scalar(
-            text(
-                "SELECT version_num FROM alembic_version"
-            )
-        )
+        actual = connection.scalar(text("SELECT version_num FROM alembic_version"))
 
     if actual != expected:
-        raise AssertionError(
-            f"Expected revision {expected}; found {actual}"
-        )
+        raise AssertionError(f"Expected revision {expected}; found {actual}")
 
 
 def insert_legacy_records(engine) -> dict:
@@ -117,36 +105,28 @@ def insert_legacy_records(engine) -> dict:
 
     with engine.begin() as connection:
         user_id = connection.scalar(
-            text(
-                """
+            text("""
                 INSERT INTO users (email, password_hash)
                 VALUES (:email, 'migration-test')
                 RETURNING id
-                """
-            ),
+                """),
             {"email": f"migration-{uuid4().hex}@example.com"},
         )
 
-        exercise_id = connection.scalar(
-            text(
-                """
+        exercise_id = connection.scalar(text("""
                 INSERT INTO exercises (name)
                 VALUES ('Migration Test Push-Up')
                 RETURNING id
-                """
-            )
-        )
+                """))
 
         baseline_id = connection.scalar(
-            text(
-                """
+            text("""
                 INSERT INTO program_baselines
                     (user_id, program_slug, attempt_id, results)
                 VALUES
                     (:user_id, 'bw', :attempt_id, '[]'::json)
                 RETURNING id
-                """
-            ),
+                """),
             {
                 "user_id": user_id,
                 "attempt_id": str(uuid4()),
@@ -154,15 +134,13 @@ def insert_legacy_records(engine) -> dict:
         )
 
         instance_id = connection.scalar(
-            text(
-                """
+            text("""
                 INSERT INTO program_instances
                     (user_id, program_slug, source_baseline_id)
                 VALUES
                     (:user_id, 'bw', :baseline_id)
                 RETURNING id
-                """
-            ),
+                """),
             {
                 "user_id": user_id,
                 "baseline_id": baseline_id,
@@ -170,8 +148,7 @@ def insert_legacy_records(engine) -> dict:
         )
 
         prescription_id = connection.scalar(
-            text(
-                """
+            text("""
                 INSERT INTO workout_prescriptions
                     (
                         user_id,
@@ -195,8 +172,7 @@ def insert_legacy_records(engine) -> dict:
                         :baseline_id
                     )
                 RETURNING id
-                """
-            ),
+                """),
             {
                 "user_id": user_id,
                 "instance_id": instance_id,
@@ -205,8 +181,7 @@ def insert_legacy_records(engine) -> dict:
         )
 
         set_id = connection.scalar(
-            text(
-                """
+            text("""
                 INSERT INTO prescription_sets
                     (
                         workout_prescription_id,
@@ -226,8 +201,7 @@ def insert_legacy_records(engine) -> dict:
                         false
                     )
                 RETURNING id
-                """
-            ),
+                """),
             {
                 "prescription_id": prescription_id,
                 "exercise_id": exercise_id,
@@ -235,8 +209,7 @@ def insert_legacy_records(engine) -> dict:
         )
 
         approval_id = connection.scalar(
-            text(
-                """
+            text("""
                 INSERT INTO adaptation_approvals
                     (
                         user_id,
@@ -258,8 +231,7 @@ def insert_legacy_records(engine) -> dict:
                         'migration-test-v1'
                     )
                 RETURNING id
-                """
-            ),
+                """),
             {
                 "user_id": user_id,
                 "prescription_id": prescription_id,
@@ -268,8 +240,7 @@ def insert_legacy_records(engine) -> dict:
         )
 
         workout_id = connection.scalar(
-            text(
-                """
+            text("""
                 INSERT INTO workout_records
                     (
                         user_id,
@@ -280,14 +251,12 @@ def insert_legacy_records(engine) -> dict:
                 VALUES
                     (:user_id, 'bw', 1, 1)
                 RETURNING id
-                """
-            ),
+                """),
             {"user_id": user_id},
         )
 
         entry_id = connection.scalar(
-            text(
-                """
+            text("""
                 INSERT INTO performance_entries
                     (
                         workout_record_id,
@@ -305,8 +274,7 @@ def insert_legacy_records(engine) -> dict:
                         'completed'
                     )
                 RETURNING id
-                """
-            ),
+                """),
             {
                 "workout_id": workout_id,
                 "exercise_id": exercise_id,
@@ -405,9 +373,7 @@ def snapshot_legacy_data(engine, ids: dict) -> dict:
             ).first()
 
             if row is None:
-                raise AssertionError(
-                    f"Legacy record missing: {name}"
-                )
+                raise AssertionError(f"Legacy record missing: {name}")
 
             result[name] = tuple(row)
 
@@ -428,28 +394,19 @@ def verify_new_tables(engine) -> None:
         available = set(inspector.get_table_names())
 
         if not expected.issubset(available):
-            raise AssertionError(
-                f"Missing audit tables: {expected - available}"
-            )
+            raise AssertionError(f"Missing audit tables: {expected - available}")
 
         for table_name in expected:
-            count = connection.scalar(
-                text(
-                    f"SELECT COUNT(*) FROM {table_name}"
-                )
-            )
+            count = connection.scalar(text(f"SELECT COUNT(*) FROM {table_name}"))
 
             if count != 0:
                 raise AssertionError(
-                    f"Unexpected pre-existing audit data: "
-                    f"{table_name}"
+                    f"Unexpected pre-existing audit data: " f"{table_name}"
                 )
 
         approval_constraints = {
             item["name"]
-            for item in inspector.get_unique_constraints(
-                "program_adaptation_approvals"
-            )
+            for item in inspector.get_unique_constraints("program_adaptation_approvals")
         }
 
         item_constraints = {
@@ -459,21 +416,12 @@ def verify_new_tables(engine) -> None:
             )
         }
 
-        if (
-            "uq_program_adaptation_request"
-            not in approval_constraints
-        ):
-            raise AssertionError(
-                "Missing approval idempotency constraint."
-            )
+        if "uq_program_adaptation_request" not in approval_constraints:
+            raise AssertionError("Missing approval idempotency constraint.")
 
-        if (
-            "uq_program_adaptation_item_set"
-            not in item_constraints
-        ):
-            raise AssertionError(
-                "Missing selected-set uniqueness constraint."
-            )
+        if "uq_program_adaptation_item_set" not in item_constraints:
+            raise AssertionError("Missing selected-set uniqueness constraint.")
+
 
 def bootstrap_revision_04(engine) -> None:
     """Build an isolated approximation of revision 04.
@@ -504,14 +452,11 @@ def bootstrap_revision_04(engine) -> None:
 
     with engine.connect() as connection:
         inspector = inspect(connection)
-        available = set(
-            inspector.get_table_names()
-        )
+        available = set(inspector.get_table_names())
 
         if not revision_05_tables.isdisjoint(available):
             raise AssertionError(
-                "Revision 05 tables must not exist "
-                "before the upgrade."
+                "Revision 05 tables must not exist " "before the upgrade."
             )
 
         required = {
@@ -528,9 +473,8 @@ def bootstrap_revision_04(engine) -> None:
         missing = required - available
 
         if missing:
-            raise AssertionError(
-                f"Missing prerequisite tables: {missing}"
-            )
+            raise AssertionError(f"Missing prerequisite tables: {missing}")
+
 
 def main() -> int:
     url = database_url()
@@ -547,39 +491,31 @@ def main() -> int:
 
     try:
         with admin.connect() as connection:
-            actual_database = connection.scalar(
-                text("SELECT current_database()")
-            )
+            actual_database = connection.scalar(text("SELECT current_database()"))
 
             if actual_database != "ascenda_test":
-                raise RuntimeError(
-                    "Unexpected database."
-                )
+                raise RuntimeError("Unexpected database.")
 
-            connection.execute(
-                text(f'CREATE SCHEMA "{schema}"')
-            )
+            connection.execute(text(f'CREATE SCHEMA "{schema}"'))
 
             created = True
 
         # Search only this schema, not public.
         # Alembic will create its version table and
         # application tables inside this schema.
-        isolated_url = url.update_query_dict({
-            "options": f"-csearch_path={schema}",
-        })
+        isolated_url = url.update_query_dict(
+            {
+                "options": f"-csearch_path={schema}",
+            }
+        )
 
         engine = create_engine(isolated_url)
 
         with engine.connect() as connection:
-            active_schema = connection.scalar(
-                text("SELECT current_schema()")
-            )
+            active_schema = connection.scalar(text("SELECT current_schema()"))
 
             if active_schema != schema:
-                raise RuntimeError(
-                    "Schema isolation failed."
-                )
+                raise RuntimeError("Schema isolation failed.")
 
         print(f"Using disposable schema: {schema}")
 
@@ -598,19 +534,13 @@ def main() -> int:
 
         # 2. Existing records must predate revision 05.
         with engine.connect() as connection:
-            available = set(
-                inspect(connection).get_table_names()
-            )
+            available = set(inspect(connection).get_table_names())
 
             if (
-                "program_adaptation_approvals"
-                in available
-                or "program_adaptation_approval_items"
-                in available
+                "program_adaptation_approvals" in available
+                or "program_adaptation_approval_items" in available
             ):
-                raise AssertionError(
-                    "Revision 05 tables already exist at 04."
-                )
+                raise AssertionError("Revision 05 tables already exist at 04.")
 
         # 3. Seed realistic historical data.
         ids = insert_legacy_records(engine)
@@ -625,15 +555,10 @@ def main() -> int:
         after = snapshot_legacy_data(engine, ids)
 
         if before != after:
-            differing = [
-                name
-                for name in before
-                if before[name] != after[name]
-            ]
+            differing = [name for name in before if before[name] != after[name]]
 
             raise AssertionError(
-                "Migration modified legacy records: "
-                + ", ".join(differing)
+                "Migration modified legacy records: " + ", ".join(differing)
             )
 
         # 6. Verify new schema objects.
@@ -656,11 +581,7 @@ def main() -> int:
 
         if created:
             with admin.connect() as connection:
-                connection.execute(
-                    text(
-                        f'DROP SCHEMA "{schema}" CASCADE'
-                    )
-                )
+                connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
 
         admin.dispose()
 

@@ -1,4 +1,3 @@
-
 """Persisted workout prescriptions and their exercise-set targets.
 
 WorkoutPrescription stores the user's planned workout.
@@ -108,11 +107,9 @@ class WorkoutPrescription(Base):
 
     # The relationship does not require an enrollment for
     # legacy prescriptions.
-    program_instance: Mapped[Optional["ProgramInstance"]] = (
-        relationship(
-            "ProgramInstance",
-            back_populates="prescriptions",
-        )
+    program_instance: Mapped[Optional["ProgramInstance"]] = relationship(
+        "ProgramInstance",
+        back_populates="prescriptions",
     )
 
     sets: Mapped[List["PrescriptionSet"]] = relationship(
@@ -146,21 +143,15 @@ class PrescriptionSet(Base):
         index=True,
     )
 
-    exercise_id: Mapped[int] = mapped_column(
-        ForeignKey("exercises.id")
-    )
+    exercise_id: Mapped[int] = mapped_column(ForeignKey("exercises.id"))
 
     set_number: Mapped[int] = mapped_column(Integer)
 
     target_reps: Mapped[Optional[int]] = mapped_column(Integer)
 
-    target_duration_seconds: Mapped[Optional[int]] = (
-        mapped_column(Integer)
-    )
+    target_duration_seconds: Mapped[Optional[int]] = mapped_column(Integer)
 
-    target_weight_kg: Mapped[Optional[Decimal]] = mapped_column(
-        Numeric(6, 2)
-    )
+    target_weight_kg: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
 
     load_basis: Mapped[str] = mapped_column(
         String(30),
@@ -174,6 +165,4 @@ class PrescriptionSet(Base):
         server_default=false(),
     )
 
-    prescription: Mapped[WorkoutPrescription] = relationship(
-        back_populates="sets"
-    )
+    prescription: Mapped[WorkoutPrescription] = relationship(back_populates="sets")

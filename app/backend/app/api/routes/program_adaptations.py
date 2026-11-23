@@ -1,4 +1,3 @@
-
 """Authenticated program-wide adaptation endpoints.
 
 Endpoints:
@@ -37,7 +36,6 @@ from app.services.apply_program_adaptations import (
     apply_program_adaptations,
 )
 
-
 router = APIRouter(
     prefix="/adaptations",
     tags=["adaptations"],
@@ -47,6 +45,7 @@ router = APIRouter(
 # --------------------------------------------------
 # Read-only program-wide adaptation preview
 # --------------------------------------------------
+
 
 @router.post(
     "/program-instances/{program_instance_id}/preview",
@@ -85,6 +84,7 @@ def preview_program_adaptations(
 # Atomic program-wide adaptation approval
 # --------------------------------------------------
 
+
 @router.post(
     "/program-instances/{program_instance_id}/approve",
     response_model=ApplyProgramAdaptationsOut,
@@ -118,12 +118,8 @@ def approve_program_adaptations(
     selections = [
         SelectedProgramAdjustment(
             prescription_set_id=item.prescription_set_id,
-            expected_previous_value=(
-                item.expected_previous_value
-            ),
-            expected_proposed_value=(
-                item.expected_proposed_value
-            ),
+            expected_previous_value=(item.expected_previous_value),
+            expected_proposed_value=(item.expected_proposed_value),
         )
         for item in body.selections
     ]

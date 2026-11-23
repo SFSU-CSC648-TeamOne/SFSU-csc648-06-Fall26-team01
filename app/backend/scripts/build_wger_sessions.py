@@ -10,8 +10,13 @@ from sqlalchemy.orm import selectinload
 
 import app.models
 from app.db.session import SessionLocal
-from app.models import (Exercise, ExerciseMuscle, SessionExercise, TrainingProgram,
-                        WorkoutSession)
+from app.models import (
+    Exercise,
+    ExerciseMuscle,
+    SessionExercise,
+    TrainingProgram,
+    WorkoutSession,
+)
 
 # Difficulty levels that get sessions. wger data is only rated beginner/intermediate by
 # our import rules, I don't see advanced rules yet
@@ -32,26 +37,34 @@ PRESCRIPTION = {
 PROGRAM_GOAL = "general fitness"
 PROGRAM_WEEKS = 4
 
+
 # choosing the exercise (no database required)
 def eligible(difficulty: Optional[str], level: str) -> bool:
     if level == "beginner":
         return difficulty == "beginner"
     return difficulty in ("beginner", "intermediate")
 
+
 def choose(exercises: list, level: str, size: str) -> list:
     """Returns [(exercise, role)] with core exercises first, or [] if there are too few."""
     core_wanted, accessory_wanted, minimum = SIZES[size]
 
     pool = [e for e in exercises if eligible(e.difficulty, level)]
-    # prefer exercises rated exactly at this level, then alphabetical 
+    # prefer exercises rated exactly at this level, then alphabetical
     pool.sort(key=lambda e: (0 if e.difficulty == level else 1, e.name.lower()))
 
     core = [e for e in pool if e.default_role == "core"]
     accessory = [e for e in pool if e.default_role != "core"]
 
     picked = core[:core_wanted] + accessory[:accessory_wanted]
-    if len(picked) < core_wanted + accessory_wanted:  # one group ran short, fill from the other
-        leftovers = [e for e in core[core_wanted:] + accessory[accessory_wanted:] if e not in picked]
+    if (
+        len(picked) < core_wanted + accessory_wanted
+    ):  # one group ran short, fill from the other
+        leftovers = [
+            e
+            for e in core[core_wanted:] + accessory[accessory_wanted:]
+            if e not in picked
+        ]
         picked += leftovers[: core_wanted + accessory_wanted - len(picked)]
 
     if len(picked) < minimum:
@@ -71,15 +84,20 @@ def plan_sessions(by_muscle: dict) -> list:
                     plan.append((level, f"{muscle} Focus - {size}", items))
     return plan
 
+
 def minutes_of(items: list) -> int:
     return sum(e.default_minutes for e, _ in items)
+
 
 # database
 def load_by_muscle(db) -> dict:
     """wger exercises grouped by their primary muscle group's name."""
     exercises = db.scalars(
-        select(Exercise).where(Exercise.source == "wger")
-        .options(selectinload(Exercise.muscle_links).selectinload(ExerciseMuscle.muscle))
+        select(Exercise)
+        .where(Exercise.source == "wger")
+        .options(
+            selectinload(Exercise.muscle_links).selectinload(ExerciseMuscle.muscle)
+        )
     ).all()
     by_muscle: dict = {}
     for exercise in exercises:
@@ -88,16 +106,22 @@ def load_by_muscle(db) -> dict:
                 by_muscle.setdefault(link.muscle.name, []).append(exercise)
     return by_muscle
 
+
 def get_or_create_program(db, level: str) -> TrainingProgram:
     name = f"wger {level.title()} Sessions"
     program = db.scalar(select(TrainingProgram).where(TrainingProgram.name == name))
     if program is None:
         program = TrainingProgram(
-            name=name, goal=PROGRAM_GOAL, experience_level=level, length_weeks=PROGRAM_WEEKS,
-            description="Sessions generated from wger exercises, one set per muscle group.")
+            name=name,
+            goal=PROGRAM_GOAL,
+            experience_level=level,
+            length_weeks=PROGRAM_WEEKS,
+            description="Sessions generated from wger exercises, one set per muscle group.",
+        )
         db.add(program)
         db.flush()
     return program
+
 
 def write_plan(db, plan: list) -> dict:
     counts = {"created": 0, "existing": 0}
@@ -113,20 +137,32 @@ def write_plan(db, plan: list) -> dict:
 
         position = max([s.position for s in program.sessions], default=0) + 1
         session = WorkoutSession(
-            name=name, position=position,
-            guidance="Generated from wger exercises. Rest 60-90 seconds between sets.")
+            name=name,
+            position=position,
+            guidance="Generated from wger exercises. Rest 60-90 seconds between sets.",
+        )
         session.items = [
-            SessionExercise(exercise=exercise, position=i, role=role,
-                            sets=PRESCRIPTION[level][role][0], reps=PRESCRIPTION[level][role][1])
+            SessionExercise(
+                exercise=exercise,
+                position=i,
+                role=role,
+                sets=PRESCRIPTION[level][role][0],
+                reps=PRESCRIPTION[level][role][1],
+            )
             for i, (exercise, role) in enumerate(items, start=1)
         ]
         program.sessions.append(session)
         counts["created"] += 1
     return counts
 
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build workout sessions from wger exercises.")
-    parser.add_argument("--dry-run", action="store_true", help="print the plan, write nothing")
+    parser = argparse.ArgumentParser(
+        description="Build workout sessions from wger exercises."
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="print the plan, write nothing"
+    )
     args = parser.parse_args()
 
     with SessionLocal() as db:
@@ -137,7 +173,9 @@ def main() -> None:
 
         plan = plan_sessions(by_muscle)
         for level, name, items in plan:
-            print(f"  {level:<12} {name:<28} {len(items)} exercises  ~{minutes_of(items)} min")
+            print(
+                f"  {level:<12} {name:<28} {len(items)} exercises  ~{minutes_of(items)} min"
+            )
         print(f"{len(plan)} sessions possible from {len(by_muscle)} muscle groups.")
 
         if args.dry_run:
@@ -152,6 +190,7 @@ def main() -> None:
             raise
 
     print(f"Done. created={counts['created']} already_existed={counts['existing']}")
+
 
 if __name__ == "__main__":
     main()

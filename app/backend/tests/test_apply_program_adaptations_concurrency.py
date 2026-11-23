@@ -1,4 +1,3 @@
-
 """PostgreSQL concurrency tests for program-wide adaptations.
 
 Run from app/backend using ASCENDA_TEST_DATABASE_URL.
@@ -56,9 +55,7 @@ def validated_database_url():
     raw = os.environ.get("ASCENDA_TEST_DATABASE_URL")
 
     if not raw:
-        pytest.fail(
-            "ASCENDA_TEST_DATABASE_URL is required."
-        )
+        pytest.fail("ASCENDA_TEST_DATABASE_URL is required.")
 
     url = make_url(raw)
 
@@ -70,12 +67,9 @@ def validated_database_url():
         or url.database != "ascenda_test"
         or url.username != "devuser"
     ):
-        pytest.fail(
-            "Refusing to use a non-test database."
-        )
+        pytest.fail("Refusing to use a non-test database.")
 
     return url
-
 
 
 @pytest.fixture
@@ -96,16 +90,12 @@ def engine():
 
     try:
         with admin.connect() as connection:
-            database_name = connection.scalar(
-                text("SELECT current_database()")
-            )
+            database_name = connection.scalar(text("SELECT current_database()"))
 
             if database_name != "ascenda_test":
                 pytest.fail("Unexpected database.")
 
-            connection.execute(
-                text(f'CREATE SCHEMA "{schema}"')
-            )
+            connection.execute(text(f'CREATE SCHEMA "{schema}"'))
             created = True
 
         # Translate all unqualified SQLAlchemy model
@@ -117,12 +107,8 @@ def engine():
             url,
             pool_size=5,
             max_overflow=2,
-            connect_args={
-                "options": "-cstatement_timeout=10000"
-            },
-        ).execution_options(
-            schema_translate_map={None: schema}
-        )
+            connect_args={"options": "-cstatement_timeout=10000"},
+        ).execution_options(schema_translate_map={None: schema})
 
         # Create every registered model table inside
         # our isolated test schema.
@@ -149,20 +135,14 @@ def engine():
                     table_name,
                     schema=schema,
                 ):
-                    pytest.fail(
-                        f"Missing isolated table: {table_name}"
-                    )
+                    pytest.fail(f"Missing isolated table: {table_name}")
 
             approval_count = connection.scalar(
-                select(func.count()).select_from(
-                    ProgramAdaptationApproval
-                )
+                select(func.count()).select_from(ProgramAdaptationApproval)
             )
 
             item_count = connection.scalar(
-                select(func.count()).select_from(
-                    ProgramAdaptationApprovalItem
-                )
+                select(func.count()).select_from(ProgramAdaptationApprovalItem)
             )
 
             assert approval_count == 0
@@ -176,14 +156,9 @@ def engine():
 
         if created:
             with admin.connect() as connection:
-                connection.execute(
-                    text(
-                        f'DROP SCHEMA "{schema}" CASCADE'
-                    )
-                )
+                connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
 
         admin.dispose()
-
 
 
 def add_workout(
@@ -239,9 +214,7 @@ def data(engine):
             email=f"concurrency-{uuid4().hex}@example.com",
             password_hash="test-hash",
         )
-        exercise = Exercise(
-            name="Concurrency Test Push-Up"
-        )
+        exercise = Exercise(name="Concurrency Test Push-Up")
 
         db.add_all([user, exercise])
         db.flush()
@@ -337,15 +310,11 @@ def stored_state(engine, data):
         ).target_reps
 
         approvals = db.scalar(
-            select(func.count()).select_from(
-                ProgramAdaptationApproval
-            )
+            select(func.count()).select_from(ProgramAdaptationApproval)
         )
 
         items = db.scalar(
-            select(func.count()).select_from(
-                ProgramAdaptationApprovalItem
-            )
+            select(func.count()).select_from(ProgramAdaptationApprovalItem)
         )
 
         return current, approvals, items
@@ -355,9 +324,8 @@ def stored_state(engine, data):
 # Competing requests with the same idempotency key
 # --------------------------------------------------
 
-def test_concurrent_identical_requests_apply_once(
-    engine, data
-):
+
+def test_concurrent_identical_requests_apply_once(engine, data):
     key = uuid4().hex
     barrier = Barrier(2)
 
@@ -374,9 +342,7 @@ def test_concurrent_identical_requests_apply_once(
             second.result(timeout=15),
         ]
 
-    statuses = sorted(
-        result["status"] for result in results
-    )
+    statuses = sorted(result["status"] for result in results)
 
     assert statuses == [
         "already_applied",
@@ -395,9 +361,8 @@ def test_concurrent_identical_requests_apply_once(
 # Competing requests with different idempotency keys
 # --------------------------------------------------
 
-def test_concurrent_distinct_requests_cannot_apply_twice(
-    engine, data
-):
+
+def test_concurrent_distinct_requests_cannot_apply_twice(engine, data):
     barrier = Barrier(2)
 
     def worker(key):
@@ -418,15 +383,12 @@ def test_concurrent_distinct_requests_cannot_apply_twice(
         ]
 
     successful = [
-        item for item in results
-        if isinstance(item, dict)
-        and item.get("status") == "updated"
+        item
+        for item in results
+        if isinstance(item, dict) and item.get("status") == "updated"
     ]
 
-    failed = [
-        item for item in results
-        if isinstance(item, Exception)
-    ]
+    failed = [item for item in results if isinstance(item, Exception)]
 
     assert len(successful) == 1
     assert len(failed) == 1
@@ -440,9 +402,8 @@ def test_concurrent_distinct_requests_cannot_apply_twice(
 # Verify PostgreSQL row-lock protection
 # --------------------------------------------------
 
-def test_enrollment_row_lock_blocks_competing_approval(
-    engine, data
-):
+
+def test_enrollment_row_lock_blocks_competing_approval(engine, data):
     # Lock the enrollment in one transaction.
     with engine.connect() as connection:
         transaction = connection.begin()
@@ -450,28 +411,19 @@ def test_enrollment_row_lock_blocks_competing_approval(
         try:
             connection.execute(
                 select(ProgramInstance.id)
-                .where(
-                    ProgramInstance.id == data["instance_id"]
-                )
+                .where(ProgramInstance.id == data["instance_id"])
                 .with_for_update()
             ).scalar_one()
 
             # A second connection must not bypass
             # the locked enrollment row.
             with engine.connect() as second:
-                second.execute(
-                    text("SET LOCAL lock_timeout = '250ms'")
-                )
+                second.execute(text("SET LOCAL lock_timeout = '250ms'"))
 
-                with pytest.raises(
-                    OperationalError
-                ):
+                with pytest.raises(OperationalError):
                     second.execute(
                         select(ProgramInstance.id)
-                        .where(
-                            ProgramInstance.id
-                            == data["instance_id"]
-                        )
+                        .where(ProgramInstance.id == data["instance_id"])
                         .with_for_update()
                     ).scalar_one()
 

@@ -1,4 +1,3 @@
-
 """Step 8: Ascenda adaptive backend verification.
 
 Run from app/backend:
@@ -19,7 +18,6 @@ from pathlib import Path
 
 from sqlalchemy import URL, create_engine, text
 
-
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 
 SQLITE_TESTS = [
@@ -33,7 +31,6 @@ SQLITE_TESTS = [
     "test_adaptation_workflow.py",
     "test_program_adaptation.py",
     "test_adaptations_api.py",
-
     # Enrollment and program-wide adaptation
     "test_program_enrollment.py",
     "test_program_schedule.py",
@@ -48,20 +45,14 @@ POSTGRES_TESTS = [
     "test_program_adaptation_approval_models.py",
     "test_apply_program_adaptations.py",
     "test_apply_program_adaptations_concurrency.py",
-    "test_workout_adaptation_concurrency.py"
+    "test_workout_adaptation_concurrency.py",
 ]
 
 EXPECTED_REVISION = "05"
 
-PREVIEW_PATH = (
-    "/api/adaptations/program-instances/"
-    "{program_instance_id}/preview"
-)
+PREVIEW_PATH = "/api/adaptations/program-instances/" "{program_instance_id}/preview"
 
-APPROVAL_PATH = (
-    "/api/adaptations/program-instances/"
-    "{program_instance_id}/approve"
-)
+APPROVAL_PATH = "/api/adaptations/program-instances/" "{program_instance_id}/approve"
 
 
 def local_database_url() -> URL:
@@ -70,9 +61,7 @@ def local_database_url() -> URL:
     return URL.create(
         "postgresql+psycopg",
         username="devuser",
-        password=getpass(
-            "Local PostgreSQL password: "
-        ),
+        password=getpass("Local PostgreSQL password: "),
         host="127.0.0.1",
         port=5433,
         database="ascenda_test",
@@ -90,35 +79,21 @@ def verify_database(url: URL) -> None:
         or url.database != "ascenda_test"
         or url.username != "devuser"
     ):
-        raise RuntimeError(
-            "Refusing to use a non-test database."
-        )
+        raise RuntimeError("Refusing to use a non-test database.")
 
     engine = create_engine(url)
 
     try:
         with engine.connect() as connection:
-            database = connection.scalar(
-                text("SELECT current_database()")
-            )
+            database = connection.scalar(text("SELECT current_database()"))
 
-            user = connection.scalar(
-                text("SELECT current_user")
-            )
+            user = connection.scalar(text("SELECT current_user"))
 
-            if (
-                database != "ascenda_test"
-                or user != "devuser"
-            ):
-                raise RuntimeError(
-                    "Database identity verification failed."
-                )
+            if database != "ascenda_test" or user != "devuser":
+                raise RuntimeError("Database identity verification failed.")
 
             revision = connection.scalar(
-                text(
-                    "SELECT version_num "
-                    "FROM public.alembic_version"
-                )
+                text("SELECT version_num " "FROM public.alembic_version")
             )
 
             if revision != EXPECTED_REVISION:
@@ -127,10 +102,7 @@ def verify_database(url: URL) -> None:
                     f"{EXPECTED_REVISION}, found {revision}."
                 )
 
-            print(
-                f"Database verified: "
-                f"{database}, revision {revision}"
-            )
+            print(f"Database verified: " f"{database}, revision {revision}")
 
     finally:
         engine.dispose()
@@ -140,23 +112,13 @@ def test_paths(filenames: list[str]) -> list[str]:
     """Require every expected test file to exist."""
 
     missing = [
-        name
-        for name in filenames
-        if not (
-            BACKEND_ROOT / "tests" / name
-        ).is_file()
+        name for name in filenames if not (BACKEND_ROOT / "tests" / name).is_file()
     ]
 
     if missing:
-        raise RuntimeError(
-            "Expected test files are missing:\n"
-            + "\n".join(missing)
-        )
+        raise RuntimeError("Expected test files are missing:\n" + "\n".join(missing))
 
-    return [
-        str(Path("tests") / name)
-        for name in filenames
-    ]
+    return [str(Path("tests") / name) for name in filenames]
 
 
 def run_command(
@@ -178,8 +140,7 @@ def run_command(
     passed = result.returncode == 0
 
     print(
-        f"\n{label}: "
-        f"{'PASSED' if passed else 'FAILED'}",
+        f"\n{label}: " f"{'PASSED' if passed else 'FAILED'}",
         flush=True,
     )
 
@@ -238,14 +199,10 @@ def main() -> int:
     # processes, preventing accidental Supabase access.
     environment = os.environ.copy()
 
-    connection_url = url.render_as_string(
-        hide_password=False
-    )
+    connection_url = url.render_as_string(hide_password=False)
 
     environment["DATABASE_URL"] = connection_url
-    environment["ASCENDA_TEST_DATABASE_URL"] = (
-        connection_url
-    )
+    environment["ASCENDA_TEST_DATABASE_URL"] = connection_url
 
     results = {}
 
@@ -273,9 +230,7 @@ def main() -> int:
         environment,
     )
 
-    results["FastAPI registration"] = verify_routes(
-        environment
-    )
+    results["FastAPI registration"] = verify_routes(environment)
 
     print(f"\n{'=' * 60}")
     print("ASCENDA BACKEND VERIFICATION SUMMARY")
@@ -286,16 +241,10 @@ def main() -> int:
         print(f"{name}: {status}")
 
     if all(results.values()):
-        print(
-            "\nAll selected backend verification "
-            "checks passed."
-        )
+        print("\nAll selected backend verification " "checks passed.")
         return 0
 
-    print(
-        "\nOne or more verification checks failed. "
-        "Review the test output above."
-    )
+    print("\nOne or more verification checks failed. " "Review the test output above.")
     return 1
 
 

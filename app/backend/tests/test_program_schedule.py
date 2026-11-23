@@ -1,4 +1,3 @@
-
 """Tests for program schedule generation.
 
 Run from app/backend:
@@ -53,11 +52,7 @@ def workout(
         week=week,
         day=day,
         phase_type=phase,
-        exercises=(
-            tuple(exercises)
-            if exercises is not None
-            else (exercise(),)
-        ),
+        exercises=(tuple(exercises) if exercises is not None else (exercise(),)),
         workout_session_id=session_id,
     )
 
@@ -74,6 +69,7 @@ def build(*workouts, slug="bw"):
 # --------------------------------------------------
 # Successful schedule generation
 # --------------------------------------------------
+
 
 def test_generates_enrollment_workout():
     result = build(workout())
@@ -102,10 +98,7 @@ def test_expands_exercise_into_numbered_sets():
 
     assert len(prescribed_sets) == 5
 
-    assert [
-        (item.exercise_id, item.set_number)
-        for item in prescribed_sets
-    ] == [
+    assert [(item.exercise_id, item.set_number) for item in prescribed_sets] == [
         (1, 1),
         (1, 2),
         (1, 3),
@@ -179,9 +172,7 @@ def test_preserves_explicit_phases():
         workout(week=3, phase="assessment"),
     )
 
-    assert [
-        item.phase_type for item in result
-    ] == [
+    assert [item.phase_type for item in result] == [
         "training",
         "deload",
         "assessment",
@@ -189,9 +180,7 @@ def test_preserves_explicit_phases():
 
 
 def test_preserves_workout_session_reference():
-    result = build(
-        workout(session_id=42)
-    )
+    result = build(workout(session_id=42))
 
     assert result[0].workout_session_id == 42
 
@@ -199,6 +188,7 @@ def test_preserves_workout_session_reference():
 # --------------------------------------------------
 # Schedule validation
 # --------------------------------------------------
+
 
 def test_rejects_empty_schedule():
     with pytest.raises(ValidationFailed):
@@ -221,13 +211,7 @@ def test_rejects_empty_workout():
 )
 def test_rejects_invalid_set_count(set_count):
     with pytest.raises(ValidationFailed):
-        build(
-            workout(
-                exercises=[
-                    exercise(sets=set_count)
-                ]
-            )
-        )
+        build(workout(exercises=[exercise(sets=set_count)]))
 
 
 def test_rejects_duplicate_program_day():
@@ -252,13 +236,7 @@ def test_rejects_duplicate_exercise_sets():
 
 def test_rejects_invalid_repetition_target():
     with pytest.raises(ValidationFailed):
-        build(
-            workout(
-                exercises=[
-                    exercise(reps=0)
-                ]
-            )
-        )
+        build(workout(exercises=[exercise(reps=0)]))
 
 
 def test_rejects_invalid_weight_target():

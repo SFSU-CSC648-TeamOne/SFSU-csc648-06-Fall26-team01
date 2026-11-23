@@ -1,4 +1,3 @@
-
 """Conservative adaptive training decision engine.
 
 Consumes exercise-progress analysis results and produces
@@ -12,7 +11,6 @@ from sqlalchemy.orm import Session
 from app.services.progress_analysis import (
     analyze_exercise_progress,
 )
-
 
 Action = Literal[
     "insufficient_data",
@@ -97,20 +95,12 @@ def decide_adaptation(trend: dict) -> AdaptationDecision:
     # context for assessing whether training is manageable.
     recent = points[-3:]
 
-    known_targets = [
-        point
-        for point in recent
-        if point["prescribed"] is not None
-    ]
+    known_targets = [point for point in recent if point["prescribed"] is not None]
 
     # Only compare actual and prescribed values when
     # every recent observation has a known target.
-    targets_met = (
-        len(known_targets) == len(recent)
-        and all(
-            point["actual"] >= point["prescribed"]
-            for point in recent
-        )
+    targets_met = len(known_targets) == len(recent) and all(
+        point["actual"] >= point["prescribed"] for point in recent
     )
 
     if change >= PROGRESS_THRESHOLD_PCT:
@@ -137,8 +127,7 @@ def decide_adaptation(trend: dict) -> AdaptationDecision:
 
     return result(
         "maintain",
-        "Performance is relatively stable within the "
-        "current comparison conditions.",
+        "Performance is relatively stable within the " "current comparison conditions.",
     )
 
 
@@ -156,7 +145,4 @@ def recommend_exercise_adaptations(
         observation_type="training",
     )
 
-    return [
-        decide_adaptation(trend)
-        for trend in trends
-    ]
+    return [decide_adaptation(trend) for trend in trends]

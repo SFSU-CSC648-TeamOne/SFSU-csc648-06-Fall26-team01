@@ -1,4 +1,3 @@
-
 """Request and response schemas for program-wide adaptation previews.
 
 These schemas describe read-only proposals. They do not
@@ -15,7 +14,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-
 
 AdjustmentType = Literal[
     "reps",
@@ -57,29 +55,21 @@ class ProgramAdaptationPreviewIn(BaseModel):
     @classmethod
     def validate_number(cls, value: Decimal) -> Decimal:
         if not value.is_finite() or value <= 0:
-            raise ValueError(
-                "Adjustment values must be positive "
-                "and finite."
-            )
+            raise ValueError("Adjustment values must be positive " "and finite.")
 
         return value
 
     @model_validator(mode="after")
     def validate_progression(self):
         if self.approved_value <= self.previous_value:
-            raise ValueError(
-                "Approved value must exceed previous value."
-            )
+            raise ValueError("Approved value must exceed previous value.")
 
         if self.adjustment_type in {"reps", "duration"}:
             for value in (
                 self.previous_value,
                 self.approved_value,
             ):
-                if (
-                    value != value.to_integral_value()
-                    or value > Decimal("2147483647")
-                ):
+                if value != value.to_integral_value() or value > Decimal("2147483647"):
                     raise ValueError(
                         "Repetition and duration targets "
                         "must be valid positive integers."
@@ -90,13 +80,8 @@ class ProgramAdaptationPreviewIn(BaseModel):
                 self.previous_value,
                 self.approved_value,
             ):
-                if (
-                    value > Decimal("9999.99")
-                    or value.as_tuple().exponent < -2
-                ):
-                    raise ValueError(
-                        "Weight targets must fit Numeric(6,2)."
-                    )
+                if value > Decimal("9999.99") or value.as_tuple().exponent < -2:
+                    raise ValueError("Weight targets must fit Numeric(6,2).")
 
         return self
 

@@ -1,4 +1,3 @@
-
 """End-to-end service tests for adaptive training.
 
 Uses real workout records, performance analysis,
@@ -68,9 +67,7 @@ def data(db):
         password_hash="test-hash",
     )
 
-    exercise = Exercise(
-        name="Workflow Test Push-Up"
-    )
+    exercise = Exercise(name="Workflow Test Push-Up")
 
     db.add_all([owner, other, exercise])
     db.commit()
@@ -132,15 +129,13 @@ def add_history(
     adaptations to a planned week 3 workout.
     """
 
-    historical_prescription_id, historical_set_id = (
-        create_prescription(
-            db,
-            user_id,
-            exercise_id,
-            week=1,
-            reps=prescribed,
-            status="completed",
-        )
+    historical_prescription_id, historical_set_id = create_prescription(
+        db,
+        user_id,
+        exercise_id,
+        week=1,
+        reps=prescribed,
+        status="completed",
     )
 
     entry_ids = []
@@ -153,7 +148,11 @@ def add_history(
             program_day=1,
             performed_at=(
                 datetime(
-                    2026, 10, 1, 12, 0,
+                    2026,
+                    10,
+                    1,
+                    12,
+                    0,
                     tzinfo=timezone.utc,
                 )
                 + timedelta(days=index)
@@ -167,11 +166,7 @@ def add_history(
             status="completed",
             observation_type="training",
             load_basis=load_basis,
-            prescription_set_id=(
-                historical_set_id
-                if link_targets
-                else None
-            ),
+            prescription_set_id=(historical_set_id if link_targets else None),
         )
 
         record.entries.append(entry)
@@ -215,18 +210,10 @@ def approve_recommendation(
         prescription_id=prescription_id,
         approvals=[
             ApprovedAdjustment(
-                prescription_set_id=item[
-                    "prescription_set_id"
-                ],
-                adjustment_type=proposal[
-                    "adjustment_type"
-                ],
-                expected_previous_value=Decimal(
-                    str(proposal["previous_value"])
-                ),
-                expected_proposed_value=Decimal(
-                    str(proposal["proposed_value"])
-                ),
+                prescription_set_id=item["prescription_set_id"],
+                adjustment_type=proposal["adjustment_type"],
+                expected_previous_value=Decimal(str(proposal["previous_value"])),
+                expected_proposed_value=Decimal(str(proposal["proposed_value"])),
             )
         ],
     )
@@ -236,9 +223,8 @@ def approve_recommendation(
 # Complete progression workflow
 # --------------------------------------------------
 
-def test_real_history_generates_progression(
-    db, data
-):
+
+def test_real_history_generates_progression(db, data):
     add_history(
         db,
         data["owner_id"],
@@ -276,9 +262,7 @@ def test_real_history_generates_progression(
     assert item["proposal"]["requires_approval"] is True
 
 
-def test_approval_updates_future_prescription_only(
-    db, data
-):
+def test_approval_updates_future_prescription_only(db, data):
     history = add_history(
         db,
         data["owner_id"],
@@ -325,31 +309,21 @@ def test_approval_updates_future_prescription_only(
     # Completed workout values remain unchanged.
     entries = db.scalars(
         select(PerformanceEntry)
-        .where(
-            PerformanceEntry.id.in_(
-                history["entry_ids"]
-            )
-        )
+        .where(PerformanceEntry.id.in_(history["entry_ids"]))
         .order_by(PerformanceEntry.id)
     ).all()
 
-    assert [entry.reps for entry in entries] == [
-        15, 16, 17, 18, 19
-    ]
+    assert [entry.reps for entry in entries] == [15, 16, 17, 18, 19]
 
-    assert all(
-        entry.prescription_set_id == history["set_id"]
-        for entry in entries
-    )
+    assert all(entry.prescription_set_id == history["set_id"] for entry in entries)
 
 
 # --------------------------------------------------
 # Evidence requirements
 # --------------------------------------------------
 
-def test_preliminary_history_maintains(
-    db, data
-):
+
+def test_preliminary_history_maintains(db, data):
     add_history(
         db,
         data["owner_id"],
@@ -372,16 +346,12 @@ def test_preliminary_history_maintains(
 
     item = result["sets"][0]
 
-    assert item["decision"]["confidence"] == (
-        "preliminary"
-    )
+    assert item["decision"]["confidence"] == ("preliminary")
     assert item["decision"]["action"] == "maintain"
     assert item["proposal"]["adjustment_type"] == "none"
 
 
-def test_insufficient_history_does_not_progress(
-    db, data
-):
+def test_insufficient_history_does_not_progress(db, data):
     add_history(
         db,
         data["owner_id"],
@@ -404,16 +374,12 @@ def test_insufficient_history_does_not_progress(
 
     item = result["sets"][0]
 
-    assert item["decision"]["action"] == (
-        "insufficient_data"
-    )
+    assert item["decision"]["action"] == ("insufficient_data")
 
     assert item["proposal"]["adjustment_type"] == "none"
 
 
-def test_positive_trend_with_missed_targets_maintains(
-    db, data
-):
+def test_positive_trend_with_missed_targets_maintains(db, data):
     add_history(
         db,
         data["owner_id"],
@@ -442,9 +408,7 @@ def test_positive_trend_with_missed_targets_maintains(
     assert item["proposal"]["adjustment_type"] == "none"
 
 
-def test_missing_prescribed_targets_blocks_progression(
-    db, data
-):
+def test_missing_prescribed_targets_blocks_progression(db, data):
     add_history(
         db,
         data["owner_id"],
@@ -473,9 +437,7 @@ def test_missing_prescribed_targets_blocks_progression(
     assert item["proposal"]["adjustment_type"] == "none"
 
 
-def test_negative_trend_requests_review(
-    db, data
-):
+def test_negative_trend_requests_review(db, data):
     add_history(
         db,
         data["owner_id"],
@@ -498,9 +460,7 @@ def test_negative_trend_requests_review(
 
     item = result["sets"][0]
 
-    assert item["decision"]["action"] == (
-        "review_regression"
-    )
+    assert item["decision"]["action"] == ("review_regression")
     assert item["proposal"]["adjustment_type"] == "none"
 
 
@@ -508,9 +468,8 @@ def test_negative_trend_requests_review(
 # Ownership and matching
 # --------------------------------------------------
 
-def test_other_users_history_does_not_contribute(
-    db, data
-):
+
+def test_other_users_history_does_not_contribute(db, data):
     add_history(
         db,
         data["other_id"],
@@ -533,15 +492,11 @@ def test_other_users_history_does_not_contribute(
 
     item = result["sets"][0]
 
-    assert item["decision"]["action"] == (
-        "insufficient_data"
-    )
+    assert item["decision"]["action"] == ("insufficient_data")
     assert item["proposal"]["adjustment_type"] == "none"
 
 
-def test_incompatible_loading_excluded(
-    db, data
-):
+def test_incompatible_loading_excluded(db, data):
     add_history(
         db,
         data["owner_id"],
@@ -565,9 +520,7 @@ def test_incompatible_loading_excluded(
 
     item = result["sets"][0]
 
-    assert item["decision"]["action"] == (
-        "insufficient_data"
-    )
+    assert item["decision"]["action"] == ("insufficient_data")
     assert item["proposal"]["adjustment_type"] == "none"
 
 
@@ -575,9 +528,8 @@ def test_incompatible_loading_excluded(
 # Approval safeguards
 # --------------------------------------------------
 
-def test_stale_approval_is_rejected(
-    db, data
-):
+
+def test_stale_approval_is_rejected(db, data):
     add_history(
         db,
         data["owner_id"],
@@ -618,9 +570,7 @@ def test_stale_approval_is_rejected(
     assert db.get(PrescriptionSet, set_id).target_reps == 17
 
 
-def test_recorded_upcoming_workout_blocks_approval(
-    db, data
-):
+def test_recorded_upcoming_workout_blocks_approval(db, data):
     add_history(
         db,
         data["owner_id"],

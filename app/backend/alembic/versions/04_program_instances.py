@@ -1,4 +1,3 @@
-
 """Add program instances and prescription enrollment links.
 
 Revision ID: 04
@@ -18,7 +17,6 @@ or automatically assigned to an enrollment.
 from alembic import op
 import sqlalchemy as sa
 
-
 revision = "04"
 down_revision = "0198097820da"
 branch_labels = None
@@ -32,7 +30,6 @@ def upgrade() -> None:
 
     op.create_table(
         "program_instances",
-
         sa.Column(
             "id",
             sa.BigInteger(),
@@ -40,59 +37,50 @@ def upgrade() -> None:
             autoincrement=True,
             nullable=False,
         ),
-
         sa.Column(
             "user_id",
             sa.Integer(),
             nullable=False,
         ),
-
         sa.Column(
             "program_slug",
             sa.String(length=20),
             nullable=False,
         ),
-
         sa.Column(
             "source_baseline_id",
             sa.Integer(),
             nullable=True,
         ),
-
         sa.Column(
             "status",
             sa.String(length=20),
             server_default="active",
             nullable=False,
         ),
-
         sa.Column(
             "started_at",
             sa.DateTime(timezone=True),
             server_default=sa.func.now(),
             nullable=False,
         ),
-
         sa.Column(
             "completed_at",
             sa.DateTime(timezone=True),
             nullable=True,
         ),
-
         sa.ForeignKeyConstraint(
             ["user_id"],
             ["users.id"],
             name="fk_program_instances_user",
             ondelete="RESTRICT",
         ),
-
         sa.ForeignKeyConstraint(
             ["source_baseline_id"],
             ["program_baselines.id"],
             name="fk_program_instances_baseline",
             ondelete="RESTRICT",
         ),
-
         sa.CheckConstraint(
             "status IN ('active', 'completed', 'abandoned')",
             name="ck_program_instance_status",

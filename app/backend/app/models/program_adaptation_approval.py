@@ -1,4 +1,3 @@
-
 """Audit models for explicitly approved program-wide adaptations.
 
 A ProgramAdaptationApproval represents one user-authorized
@@ -121,13 +120,11 @@ class ProgramAdaptationApproval(Base):
         "AdaptationApproval",
     )
 
-    items: Mapped[list["ProgramAdaptationApprovalItem"]] = (
-        relationship(
-            "ProgramAdaptationApprovalItem",
-            back_populates="approval",
-            cascade="save-update, merge",
-            order_by="ProgramAdaptationApprovalItem.id",
-        )
+    items: Mapped[list["ProgramAdaptationApprovalItem"]] = relationship(
+        "ProgramAdaptationApprovalItem",
+        back_populates="approval",
+        cascade="save-update, merge",
+        order_by="ProgramAdaptationApprovalItem.id",
     )
 
 
@@ -143,8 +140,7 @@ class ProgramAdaptationApprovalItem(Base):
             name="uq_program_adaptation_item_set",
         ),
         CheckConstraint(
-            "adjustment_type IN "
-            "('reps', 'duration', 'weight')",
+            "adjustment_type IN " "('reps', 'duration', 'weight')",
             name="ck_program_adaptation_item_type",
         ),
         CheckConstraint(
@@ -166,14 +162,12 @@ class ProgramAdaptationApprovalItem(Base):
         primary_key=True,
     )
 
-    program_adaptation_approval_id: Mapped[int] = (
-        mapped_column(
-            ForeignKey(
-                "program_adaptation_approvals.id",
-                ondelete="RESTRICT",
-            ),
-            nullable=False,
-        )
+    program_adaptation_approval_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "program_adaptation_approvals.id",
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
     )
 
     workout_prescription_id: Mapped[int] = mapped_column(
@@ -207,11 +201,9 @@ class ProgramAdaptationApprovalItem(Base):
         nullable=False,
     )
 
-    approval: Mapped["ProgramAdaptationApproval"] = (
-        relationship(
-            "ProgramAdaptationApproval",
-            back_populates="items",
-        )
+    approval: Mapped["ProgramAdaptationApproval"] = relationship(
+        "ProgramAdaptationApproval",
+        back_populates="items",
     )
 
     prescription = relationship(

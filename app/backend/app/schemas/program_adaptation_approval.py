@@ -1,4 +1,3 @@
-
 """Request and response schemas for program-wide adaptations.
 
 The client explicitly selects future prescription sets.
@@ -46,23 +45,14 @@ class SelectedProgramAdjustmentIn(BaseModel):
         value: Decimal,
     ) -> Decimal:
         if not value.is_finite() or value <= 0:
-            raise ValueError(
-                "Adjustment values must be positive "
-                "and finite."
-            )
+            raise ValueError("Adjustment values must be positive " "and finite.")
 
         return value
 
     @model_validator(mode="after")
     def validate_progression(self):
-        if (
-            self.expected_proposed_value
-            <= self.expected_previous_value
-        ):
-            raise ValueError(
-                "Proposed value must exceed "
-                "the previous value."
-            )
+        if self.expected_proposed_value <= self.expected_previous_value:
+            raise ValueError("Proposed value must exceed " "the previous value.")
 
         return self
 
@@ -90,24 +80,16 @@ class ApplyProgramAdaptationsIn(BaseModel):
     @classmethod
     def validate_request_key(cls, value: str) -> str:
         if not value.strip():
-            raise ValueError(
-                "Idempotency key cannot be blank."
-            )
+            raise ValueError("Idempotency key cannot be blank.")
 
         return value
 
     @model_validator(mode="after")
     def validate_unique_selections(self):
-        ids = [
-            item.prescription_set_id
-            for item in self.selections
-        ]
+        ids = [item.prescription_set_id for item in self.selections]
 
         if len(ids) != len(set(ids)):
-            raise ValueError(
-                "Each prescription set may only "
-                "be selected once."
-            )
+            raise ValueError("Each prescription set may only " "be selected once.")
 
         return self
 

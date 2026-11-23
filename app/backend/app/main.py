@@ -12,8 +12,10 @@ from app.core.errors import register_error_handlers
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="Ascenda API", version="0.1.0",
-        docs_url=f"{settings.api_prefix}/docs", openapi_url=f"{settings.api_prefix}/openapi.json",
+        title="Ascenda API",
+        version="0.1.0",
+        docs_url=f"{settings.api_prefix}/docs",
+        openapi_url=f"{settings.api_prefix}/openapi.json",
     )
 
     app.add_middleware(
@@ -29,7 +31,10 @@ def create_app() -> FastAPI:
 
     @app.get("/", include_in_schema=False)
     def root():
-        return {"message": "Ascenda API is running", "docs": f"{settings.api_prefix}/docs"}
+        return {
+            "message": "Ascenda API is running",
+            "docs": f"{settings.api_prefix}/docs",
+        }
 
     return app
 

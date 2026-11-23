@@ -1,4 +1,3 @@
-
 """Tests for approving adaptive prescription adjustments.
 
 Run from app/backend:
@@ -98,11 +97,7 @@ def create_prescription(
             exercise_id=exercise.id,
             set_number=1,
             target_reps=reps,
-            target_weight_kg=(
-                Decimal(str(weight))
-                if weight is not None
-                else None
-            ),
+            target_weight_kg=(Decimal(str(weight)) if weight is not None else None),
             load_basis=load_basis,
         )
     )
@@ -143,24 +138,18 @@ def mock_recommendations(
             "prescription_id": prescription_id,
             "user_id": user_id,
             "status": "proposed",
-            "proposal_engine_version":ENGINE_VERSION,
+            "proposal_engine_version": ENGINE_VERSION,
             "sets": [
                 {
                     "prescription_set_id": item["set_id"],
                     "decision": {
-                        "action": item.get(
-                            "action", "progress"
-                        ),
+                        "action": item.get("action", "progress"),
                     },
                     "proposal": {
-                        "adjustment_type": item.get(
-                            "type", "reps"
-                        ),
+                        "adjustment_type": item.get("type", "reps"),
                         "previous_value": item["previous"],
                         "proposed_value": item["proposed"],
-                        "requires_approval": item.get(
-                            "requires_approval", True
-                        ),
+                        "requires_approval": item.get("requires_approval", True),
                     },
                 }
                 for item in proposals
@@ -195,12 +184,9 @@ def apply(db, user_id, prescription_id, approvals):
 # Successful approvals
 # --------------------------------------------------
 
-def test_valid_approval_updates_reps(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+
+def test_valid_approval_updates_reps(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
     mock_recommendations(
@@ -224,9 +210,7 @@ def test_valid_approval_updates_reps(
     assert result["updated_sets"][0]["applied_value"] == 16
 
 
-def test_weight_approval_updates_resistance(
-    db, data, monkeypatch
-):
+def test_weight_approval_updates_resistance(db, data, monkeypatch):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -237,12 +221,17 @@ def test_weight_approval_updates_resistance(
     )
     set_id = prescription.sets[0].id
 
-    mock_recommendations(monkeypatch, [{
-        "set_id": set_id,
-        "type": "weight",
-        "previous": 60,
-        "proposed": 61.5,
-    }])
+    mock_recommendations(
+        monkeypatch,
+        [
+            {
+                "set_id": set_id,
+                "type": "weight",
+                "previous": 60,
+                "proposed": 61.5,
+            }
+        ],
+    )
 
     apply(
         db,
@@ -260,17 +249,11 @@ def test_weight_approval_updates_resistance(
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet, set_id
-    ).target_weight_kg == Decimal("61.50")
+    assert db.get(PrescriptionSet, set_id).target_weight_kg == Decimal("61.50")
 
 
-def test_multiple_sets_update_together(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+def test_multiple_sets_update_together(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     first_id = prescription.sets[0].id
 
     second = PrescriptionSet(
@@ -283,14 +266,17 @@ def test_multiple_sets_update_together(
     db.add(second)
     db.commit()
 
-    mock_recommendations(monkeypatch, [
-        standard_proposal(first_id),
-        {
-            "set_id": second.id,
-            "previous": 12,
-            "proposed": 13,
-        },
-    ])
+    mock_recommendations(
+        monkeypatch,
+        [
+            standard_proposal(first_id),
+            {
+                "set_id": second.id,
+                "previous": 12,
+                "proposed": 13,
+            },
+        ],
+    )
 
     result = apply(
         db,
@@ -308,13 +294,9 @@ def test_multiple_sets_update_together(
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet, first_id
-    ).target_reps == 16
+    assert db.get(PrescriptionSet, first_id).target_reps == 16
 
-    assert db.get(
-        PrescriptionSet, second.id
-    ).target_reps == 13
+    assert db.get(PrescriptionSet, second.id).target_reps == 13
 
     assert result["updated_set_count"] == 2
 
@@ -323,12 +305,9 @@ def test_multiple_sets_update_together(
 # Authentication and ownership safeguards
 # --------------------------------------------------
 
-def test_other_user_cannot_approve(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+
+def test_other_user_cannot_approve(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
     mock_recommendations(
@@ -345,9 +324,7 @@ def test_other_user_cannot_approve(
         )
 
     db.expire_all()
-    assert db.get(
-        PrescriptionSet, set_id
-    ).target_reps == 15
+    assert db.get(PrescriptionSet, set_id).target_reps == 15
 
 
 def test_unknown_prescription_rejected(db, data):
@@ -364,9 +341,7 @@ def test_unknown_prescription_rejected(db, data):
     "status",
     ["completed", "skipped"],
 )
-def test_non_planned_prescription_rejected(
-    db, data, status
-):
+def test_non_planned_prescription_rejected(db, data, status):
     prescription = create_prescription(
         db,
         data["owner"],
@@ -387,12 +362,9 @@ def test_non_planned_prescription_rejected(
 # Request validation
 # --------------------------------------------------
 
-def test_empty_approval_list_rejected(
-    db, data
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+
+def test_empty_approval_list_rejected(db, data):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
 
     with pytest.raises(ValidationFailed):
         apply(
@@ -403,12 +375,8 @@ def test_empty_approval_list_rejected(
         )
 
 
-def test_duplicate_set_approval_rejected(
-    db, data
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+def test_duplicate_set_approval_rejected(db, data):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
     with pytest.raises(ValidationFailed):
@@ -423,15 +391,9 @@ def test_duplicate_set_approval_rejected(
         )
 
 
-def test_set_from_another_prescription_rejected(
-    db, data
-):
-    first = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
-    second = create_prescription(
-        db, data["other"], data["exercise"]
-    )
+def test_set_from_another_prescription_rejected(db, data):
+    first = create_prescription(db, data["owner"], data["exercise"])
+    second = create_prescription(db, data["other"], data["exercise"])
 
     with pytest.raises(ValidationFailed):
         apply(
@@ -446,12 +408,9 @@ def test_set_from_another_prescription_rejected(
 # Stale and invalid recommendations
 # --------------------------------------------------
 
-def test_stale_previous_value_rejected(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+
+def test_stale_previous_value_rejected(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
     mock_recommendations(
@@ -474,17 +433,11 @@ def test_stale_previous_value_rejected(
         )
 
     db.expire_all()
-    assert db.get(
-        PrescriptionSet, set_id
-    ).target_reps == 15
+    assert db.get(PrescriptionSet, set_id).target_reps == 15
 
 
-def test_altered_proposed_value_rejected(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+def test_altered_proposed_value_rejected(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
     mock_recommendations(
@@ -507,18 +460,19 @@ def test_altered_proposed_value_rejected(
         )
 
 
-def test_non_progress_decision_rejected(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+def test_non_progress_decision_rejected(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
-    mock_recommendations(monkeypatch, [{
-        **standard_proposal(set_id),
-        "action": "maintain",
-    }])
+    mock_recommendations(
+        monkeypatch,
+        [
+            {
+                **standard_proposal(set_id),
+                "action": "maintain",
+            }
+        ],
+    )
 
     with pytest.raises(ConflictError):
         apply(
@@ -529,18 +483,19 @@ def test_non_progress_decision_rejected(
         )
 
 
-def test_non_approvable_proposal_rejected(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+def test_non_approvable_proposal_rejected(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
-    mock_recommendations(monkeypatch, [{
-        **standard_proposal(set_id),
-        "requires_approval": False,
-    }])
+    mock_recommendations(
+        monkeypatch,
+        [
+            {
+                **standard_proposal(set_id),
+                "requires_approval": False,
+            }
+        ],
+    )
 
     with pytest.raises(ConflictError):
         apply(
@@ -551,20 +506,21 @@ def test_non_approvable_proposal_rejected(
         )
 
 
-def test_assistance_adjustment_rejected(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+def test_assistance_adjustment_rejected(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
-    mock_recommendations(monkeypatch, [{
-        "set_id": set_id,
-        "type": "assistance",
-        "previous": 20,
-        "proposed": 19,
-    }])
+    mock_recommendations(
+        monkeypatch,
+        [
+            {
+                "set_id": set_id,
+                "type": "assistance",
+                "previous": 20,
+                "proposed": 19,
+            }
+        ],
+    )
 
     with pytest.raises(ValidationFailed):
         apply(
@@ -582,12 +538,8 @@ def test_assistance_adjustment_rejected(
         )
 
 
-def test_repeated_approval_rejected(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+def test_repeated_approval_rejected(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
     mock_recommendations(
@@ -615,21 +567,16 @@ def test_repeated_approval_rejected(
         )
 
     db.expire_all()
-    assert db.get(
-        PrescriptionSet, set_id
-    ).target_reps == 16
+    assert db.get(PrescriptionSet, set_id).target_reps == 16
 
 
 # --------------------------------------------------
 # Historical data protection
 # --------------------------------------------------
 
-def test_workout_history_prevents_approval(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+
+def test_workout_history_prevents_approval(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
     # Same user, program, week and day.
@@ -656,17 +603,11 @@ def test_workout_history_prevents_approval(
         )
 
     db.expire_all()
-    assert db.get(
-        PrescriptionSet, set_id
-    ).target_reps == 15
+    assert db.get(PrescriptionSet, set_id).target_reps == 15
 
 
-def test_linked_performance_entry_prevents_approval(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+def test_linked_performance_entry_prevents_approval(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
     # Different workout date, but a performance
@@ -707,12 +648,8 @@ def test_linked_performance_entry_prevents_approval(
         )
 
 
-def test_unrelated_workout_does_not_block_approval(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+def test_unrelated_workout_does_not_block_approval(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
     db.add(
@@ -744,12 +681,9 @@ def test_unrelated_workout_does_not_block_approval(
 # Atomicity and data integrity
 # --------------------------------------------------
 
-def test_invalid_second_adjustment_changes_nothing(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+
+def test_invalid_second_adjustment_changes_nothing(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     first_id = prescription.sets[0].id
 
     second = PrescriptionSet(
@@ -763,14 +697,17 @@ def test_invalid_second_adjustment_changes_nothing(
     db.commit()
     second_id = second.id
 
-    mock_recommendations(monkeypatch, [
-        standard_proposal(first_id),
-        {
-            "set_id": second_id,
-            "previous": 12,
-            "proposed": 13,
-        },
-    ])
+    mock_recommendations(
+        monkeypatch,
+        [
+            standard_proposal(first_id),
+            {
+                "set_id": second_id,
+                "previous": 12,
+                "proposed": 13,
+            },
+        ],
+    )
 
     with pytest.raises(ConflictError):
         apply(
@@ -789,21 +726,13 @@ def test_invalid_second_adjustment_changes_nothing(
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet, first_id
-    ).target_reps == 15
+    assert db.get(PrescriptionSet, first_id).target_reps == 15
 
-    assert db.get(
-        PrescriptionSet, second_id
-    ).target_reps == 12
+    assert db.get(PrescriptionSet, second_id).target_reps == 12
 
 
-def test_approval_preserves_workout_metadata(
-    db, data, monkeypatch
-):
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+def test_approval_preserves_workout_metadata(db, data, monkeypatch):
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     set_id = prescription.sets[0].id
 
     mock_recommendations(
@@ -831,18 +760,16 @@ def test_approval_preserves_workout_metadata(
     assert stored.status == "planned"
     assert stored.engine_version == "baseline-v1"
 
+
 # --------------------------------------------------
 # Approval audit persistence
 # --------------------------------------------------
 
-def test_approval_creates_audit_record(
-    db, data, monkeypatch
-):
+
+def test_approval_creates_audit_record(db, data, monkeypatch):
     """Successful approval records the original and new targets."""
 
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     prescription_id = prescription.id
     set_id = prescription.sets[0].id
     user_id = data["owner"].id
@@ -862,8 +789,7 @@ def test_approval_creates_audit_record(
     db.expire_all()
 
     records = db.scalars(
-        select(AdaptationApproval)
-        .where(
+        select(AdaptationApproval).where(
             AdaptationApproval.prescription_set_id == set_id
         )
     ).all()
@@ -881,19 +807,13 @@ def test_approval_creates_audit_record(
     assert audit.proposal_engine_version == ENGINE_VERSION
     assert audit.approved_at is not None
 
-    assert db.get(
-        PrescriptionSet, set_id
-    ).target_reps == 16
+    assert db.get(PrescriptionSet, set_id).target_reps == 16
 
 
-def test_multiple_approvals_create_distinct_audit_records(
-    db, data, monkeypatch
-):
+def test_multiple_approvals_create_distinct_audit_records(db, data, monkeypatch):
     """Each approved adjustment produces its own audit entry."""
 
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     prescription_id = prescription.id
     first_id = prescription.sets[0].id
 
@@ -909,14 +829,17 @@ def test_multiple_approvals_create_distinct_audit_records(
 
     second_id = second.id
 
-    mock_recommendations(monkeypatch, [
-        standard_proposal(first_id),
-        {
-            "set_id": second_id,
-            "previous": 12,
-            "proposed": 13,
-        },
-    ])
+    mock_recommendations(
+        monkeypatch,
+        [
+            standard_proposal(first_id),
+            {
+                "set_id": second_id,
+                "previous": 12,
+                "proposed": 13,
+            },
+        ],
+    )
 
     apply(
         db,
@@ -935,19 +858,14 @@ def test_multiple_approvals_create_distinct_audit_records(
     db.expire_all()
 
     records = db.scalars(
-        select(AdaptationApproval)
-        .where(
-            AdaptationApproval.workout_prescription_id
-            == prescription_id
+        select(AdaptationApproval).where(
+            AdaptationApproval.workout_prescription_id == prescription_id
         )
     ).all()
 
     assert len(records) == 2
 
-    audits = {
-        record.prescription_set_id: record
-        for record in records
-    }
+    audits = {record.prescription_set_id: record for record in records}
 
     assert set(audits) == {first_id, second_id}
 
@@ -957,27 +875,20 @@ def test_multiple_approvals_create_distinct_audit_records(
     assert audits[second_id].previous_value == Decimal("12.00")
     assert audits[second_id].approved_value == Decimal("13.00")
 
-    assert db.get(
-        PrescriptionSet, first_id
-    ).target_reps == 16
+    assert db.get(PrescriptionSet, first_id).target_reps == 16
 
-    assert db.get(
-        PrescriptionSet, second_id
-    ).target_reps == 13
+    assert db.get(PrescriptionSet, second_id).target_reps == 13
 
 
 # --------------------------------------------------
 # Transaction rollback
 # --------------------------------------------------
 
-def test_audit_insert_failure_rolls_back_all_changes(
-    db, data, monkeypatch
-):
+
+def test_audit_insert_failure_rolls_back_all_changes(db, data, monkeypatch):
     """Audit persistence failure must undo prescription changes."""
 
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     prescription_id = prescription.id
     first_id = prescription.sets[0].id
 
@@ -994,14 +905,17 @@ def test_audit_insert_failure_rolls_back_all_changes(
 
     second_id = second.id
 
-    mock_recommendations(monkeypatch, [
-        standard_proposal(first_id),
-        {
-            "set_id": second_id,
-            "previous": 12,
-            "proposed": 13,
-        },
-    ])
+    mock_recommendations(
+        monkeypatch,
+        [
+            standard_proposal(first_id),
+            {
+                "set_id": second_id,
+                "previous": 12,
+                "proposed": 13,
+            },
+        ],
+    )
 
     def reject_audit_insert(mapper, connection, target):
         raise RuntimeError("Simulated audit insert failure")
@@ -1040,34 +954,24 @@ def test_audit_insert_failure_rolls_back_all_changes(
     db.expire_all()
 
     # Neither target update may survive.
-    assert db.get(
-        PrescriptionSet, first_id
-    ).target_reps == 15
+    assert db.get(PrescriptionSet, first_id).target_reps == 15
 
-    assert db.get(
-        PrescriptionSet, second_id
-    ).target_reps == 12
+    assert db.get(PrescriptionSet, second_id).target_reps == 12
 
     # Neither approval record may survive.
     records = db.scalars(
-        select(AdaptationApproval)
-        .where(
-            AdaptationApproval.workout_prescription_id
-            == prescription_id
+        select(AdaptationApproval).where(
+            AdaptationApproval.workout_prescription_id == prescription_id
         )
     ).all()
 
     assert records == []
 
 
-def test_rejected_approval_creates_no_audit_record(
-    db, data, monkeypatch
-):
+def test_rejected_approval_creates_no_audit_record(db, data, monkeypatch):
     """A stale recommendation must not create approval history."""
 
-    prescription = create_prescription(
-        db, data["owner"], data["exercise"]
-    )
+    prescription = create_prescription(db, data["owner"], data["exercise"])
     prescription_id = prescription.id
     set_id = prescription.sets[0].id
 
@@ -1092,15 +996,11 @@ def test_rejected_approval_creates_no_audit_record(
 
     db.expire_all()
 
-    assert db.get(
-        PrescriptionSet, set_id
-    ).target_reps == 15
+    assert db.get(PrescriptionSet, set_id).target_reps == 15
 
     records = db.scalars(
-        select(AdaptationApproval)
-        .where(
-            AdaptationApproval.workout_prescription_id
-            == prescription_id
+        select(AdaptationApproval).where(
+            AdaptationApproval.workout_prescription_id == prescription_id
         )
     ).all()
 

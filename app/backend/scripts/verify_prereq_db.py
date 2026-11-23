@@ -1,4 +1,3 @@
-
 """Read-only database verification for adaptive-engine prerequisites.
 
 Run from app/backend:
@@ -16,7 +15,6 @@ from alembic.script import ScriptDirectory
 from sqlalchemy import inspect
 
 from app.db.session import engine
-
 
 REQUIRED_COLUMNS = {
     "users": {
@@ -100,24 +98,15 @@ REQUIRED_COLUMNS = {
 
 
 REQUIRED_FOREIGN_KEYS = {
-    ("performance_entries", "workout_record_id"):
-        "workout_records",
-    ("performance_entries", "exercise_id"):
-        "exercises",
-    ("performance_entries", "prescription_set_id"):
-        "prescription_sets",
-    ("workout_prescriptions", "user_id"):
-        "users",
-    ("prescription_sets", "workout_prescription_id"):
-        "workout_prescriptions",
-    ("bodyweight_measurements", "user_id"):
-        "users",
-    ("exercise_movement_groups", "exercise_id"):
-        "exercises",
-    ("exercise_movement_groups", "movement_group_id"):
-        "movement_groups",
-    ("progress_checkpoints", "user_id"):
-        "users",
+    ("performance_entries", "workout_record_id"): "workout_records",
+    ("performance_entries", "exercise_id"): "exercises",
+    ("performance_entries", "prescription_set_id"): "prescription_sets",
+    ("workout_prescriptions", "user_id"): "users",
+    ("prescription_sets", "workout_prescription_id"): "workout_prescriptions",
+    ("bodyweight_measurements", "user_id"): "users",
+    ("exercise_movement_groups", "exercise_id"): "exercises",
+    ("exercise_movement_groups", "movement_group_id"): "movement_groups",
+    ("progress_checkpoints", "user_id"): "users",
 }
 
 
@@ -135,21 +124,13 @@ def verify_schema(connection):
             problems.append(f"Missing table: {table}")
             continue
 
-        columns = {
-            column["name"]
-            for column in inspector.get_columns(table)
-        }
+        columns = {column["name"] for column in inspector.get_columns(table)}
 
         missing = sorted(required - columns)
 
         if missing:
-            print(
-                f"[FAIL] {table}: missing columns "
-                + ", ".join(missing)
-            )
-            problems.append(
-                f"{table}: missing {', '.join(missing)}"
-            )
+            print(f"[FAIL] {table}: missing columns " + ", ".join(missing))
+            problems.append(f"{table}: missing {', '.join(missing)}")
         else:
             print(f"[PASS] {table}")
 
@@ -172,9 +153,7 @@ def verify_schema(connection):
             print(f"[PASS] {table}.{column} -> {target}")
         else:
             print(f"[FAIL] {table}.{column} -> {target}")
-            problems.append(
-                f"Missing foreign key: {table}.{column}"
-            )
+            problems.append(f"Missing foreign key: {table}.{column}")
 
     return problems
 
@@ -187,10 +166,7 @@ def verify_migrations(connection):
     scripts = ScriptDirectory.from_config(config)
 
     expected = set(scripts.get_heads())
-    current = set(
-        MigrationContext.configure(connection)
-        .get_current_heads()
-    )
+    current = set(MigrationContext.configure(connection).get_current_heads())
 
     print("Expected heads:", sorted(expected))
     print("Database heads:", sorted(current))
@@ -222,13 +198,9 @@ def main():
                     "for final verification."
                 )
 
-            problems.extend(
-                verify_schema(connection)
-            )
+            problems.extend(verify_schema(connection))
 
-            problems.extend(
-                verify_migrations(connection)
-            )
+            problems.extend(verify_migrations(connection))
         finally:
             transaction.rollback()
 
@@ -251,8 +223,5 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except Exception as exc:
-        print(
-            f"Verification could not complete: "
-            f"{type(exc).__name__}: {exc}"
-        )
+        print(f"Verification could not complete: " f"{type(exc).__name__}: {exc}")
         sys.exit(1)

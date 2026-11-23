@@ -1,4 +1,3 @@
-
 """Training-phase metadata for workout prescriptions.
 
 Classifies a prescribed workout as:
@@ -42,8 +41,7 @@ class ProgramPhase(Base):
             name="uq_program_phase_prescription",
         ),
         CheckConstraint(
-            "phase_type IN "
-            "('training', 'deload', 'assessment')",
+            "phase_type IN " "('training', 'deload', 'assessment')",
             name="ck_program_phase_type",
         ),
     )
@@ -85,7 +83,4 @@ class ProgramPhase(Base):
     @property
     def allows_automatic_progression(self) -> bool:
         """Only explicitly classified training can progress."""
-        return (
-            self.phase_type
-            == ProgramPhaseType.training.value
-        )
+        return self.phase_type == ProgramPhaseType.training.value

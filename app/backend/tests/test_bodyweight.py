@@ -1,4 +1,3 @@
-
 """Tests for authenticated bodyweight measurements.
 
 Run independently:
@@ -14,9 +13,7 @@ from zoneinfo import ZoneInfo
 # Configure an isolated test database before importing the app.
 _test_dir = tempfile.mkdtemp(prefix="ascenda_bodyweight_")
 
-os.environ["DATABASE_URL"] = (
-    f"sqlite:///{_test_dir}/test.db"
-)
+os.environ["DATABASE_URL"] = f"sqlite:///{_test_dir}/test.db"
 os.environ["JWT_SECRET"] = "test-secret-" + ("x" * 40)
 
 from fastapi.testclient import TestClient
@@ -25,7 +22,6 @@ import app.models
 from app.db.base import Base
 from app.db.session import engine
 from app.main import app
-
 
 Base.metadata.create_all(engine)
 
@@ -85,9 +81,7 @@ def test_create_current_measurement():
 def test_historical_measurement_without_time():
     headers = register_user()
 
-    historical_date = (
-        datetime.now(LA).date() - timedelta(days=7)
-    ).isoformat()
+    historical_date = (datetime.now(LA).date() - timedelta(days=7)).isoformat()
 
     response = client.post(
         ENDPOINT,
@@ -136,9 +130,7 @@ def test_reject_invalid_timezone():
         headers=headers,
         json={
             "weight_kg": 80,
-            "measurement_date": (
-                datetime.now(LA).date().isoformat()
-            ),
+            "measurement_date": (datetime.now(LA).date().isoformat()),
             "timezone": "Not/A_Timezone",
             "measured_at": None,
         },
@@ -150,9 +142,7 @@ def test_reject_invalid_timezone():
 def test_reject_future_date():
     headers = register_user()
 
-    tomorrow = (
-        datetime.now(LA).date() + timedelta(days=1)
-    ).isoformat()
+    tomorrow = (datetime.now(LA).date() + timedelta(days=1)).isoformat()
 
     response = client.post(
         ENDPOINT,
@@ -172,9 +162,7 @@ def test_reject_timestamp_date_mismatch():
     headers = register_user()
 
     now = datetime.now(timezone.utc)
-    wrong_date = (
-        now.astimezone(LA).date() - timedelta(days=1)
-    ).isoformat()
+    wrong_date = (now.astimezone(LA).date() - timedelta(days=1)).isoformat()
 
     response = client.post(
         ENDPOINT,
@@ -217,13 +205,9 @@ def test_user_isolation():
     assert history_a.status_code == 200
     assert history_b.status_code == 200
 
-    assert measurement_id in [
-        item["id"] for item in history_a.json()
-    ]
+    assert measurement_id in [item["id"] for item in history_a.json()]
 
-    assert measurement_id not in [
-        item["id"] for item in history_b.json()
-    ]
+    assert measurement_id not in [item["id"] for item in history_b.json()]
 
 
 def test_authentication_required():
@@ -231,9 +215,7 @@ def test_authentication_required():
         ENDPOINT,
         json={
             "weight_kg": 80,
-            "measurement_date": (
-                datetime.now(LA).date().isoformat()
-            ),
+            "measurement_date": (datetime.now(LA).date().isoformat()),
             "timezone": "America/Los_Angeles",
             "measured_at": None,
         },

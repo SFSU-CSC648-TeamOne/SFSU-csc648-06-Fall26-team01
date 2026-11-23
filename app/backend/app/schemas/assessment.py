@@ -3,6 +3,7 @@
 from typing import List, Optional
 from pydantic import BaseModel
 
+
 class ExerciseAdvice(BaseModel):
     exercise_id: int
     name: str
@@ -14,6 +15,7 @@ class ExerciseAdvice(BaseModel):
     add_sets: int
     suggested_sets: int
     advice: str
+
 
 class ProgramAssessmentOut(BaseModel):
     program: Optional[str]

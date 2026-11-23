@@ -5,6 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 
+
 class ExerciseModel(Base):
     __tablename__ = "exercise_models"
 
@@ -14,5 +15,7 @@ class ExerciseModel(Base):
     )
     model_url: Mapped[str] = mapped_column(String(500))
     video_url: Mapped[Optional[str]] = mapped_column(String(500))
-    animation_name: Mapped[Optional[str]] = mapped_column(String(100))  # clip inside the .glb
-    credit: Mapped[Optional[str]] = mapped_column(String(255))          # model owner / license
+    animation_name: Mapped[Optional[str]] = mapped_column(
+        String(100)
+    )  # clip inside the .glb
+    credit: Mapped[Optional[str]] = mapped_column(String(255))  # model owner / license

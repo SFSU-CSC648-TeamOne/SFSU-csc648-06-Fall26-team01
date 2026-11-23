@@ -1,4 +1,3 @@
-
 """Tests for movement-group progress aggregation.
 
 Run independently:
@@ -68,33 +67,41 @@ def data(db):
     pushing = MovementGroup(name="Horizontal Push")
     squatting = MovementGroup(name="Squat Pattern")
 
-    db.add_all([
-        user, other,
-        pushup, bench, squat,
-        pushing, squatting,
-    ])
+    db.add_all(
+        [
+            user,
+            other,
+            pushup,
+            bench,
+            squat,
+            pushing,
+            squatting,
+        ]
+    )
     db.flush()
 
-    db.add_all([
-        ExerciseMovementGroup(
-            exercise_id=pushup.id,
-            movement_group_id=pushing.id,
-            relationship_type="primary",
-            relevance_weight=1.0,
-        ),
-        ExerciseMovementGroup(
-            exercise_id=bench.id,
-            movement_group_id=pushing.id,
-            relationship_type="primary",
-            relevance_weight=0.5,
-        ),
-        ExerciseMovementGroup(
-            exercise_id=squat.id,
-            movement_group_id=squatting.id,
-            relationship_type="primary",
-            relevance_weight=1.0,
-        ),
-    ])
+    db.add_all(
+        [
+            ExerciseMovementGroup(
+                exercise_id=pushup.id,
+                movement_group_id=pushing.id,
+                relationship_type="primary",
+                relevance_weight=1.0,
+            ),
+            ExerciseMovementGroup(
+                exercise_id=bench.id,
+                movement_group_id=pushing.id,
+                relationship_type="primary",
+                relevance_weight=0.5,
+            ),
+            ExerciseMovementGroup(
+                exercise_id=squat.id,
+                movement_group_id=squatting.id,
+                relationship_type="primary",
+                relevance_weight=1.0,
+            ),
+        ]
+    )
 
     db.commit()
 
@@ -265,9 +272,7 @@ def test_mixed_confidence_is_preliminary(db, data):
     assert group["confidence"] == "preliminary"
 
 
-def test_all_robust_exercises_make_robust_group(
-    db, data
-):
+def test_all_robust_exercises_make_robust_group(db, data):
     add_history(
         db,
         data["user"],
@@ -291,9 +296,7 @@ def test_all_robust_exercises_make_robust_group(
     assert group["confidence"] == "robust"
 
 
-def test_unrelated_movements_remain_separate(
-    db, data
-):
+def test_unrelated_movements_remain_separate(db, data):
     add_history(
         db,
         data["user"],
@@ -312,10 +315,7 @@ def test_unrelated_movements_remain_separate(
 
     assert len(results) == 2
 
-    by_name = {
-        group["name"]: group
-        for group in results
-    }
+    by_name = {group["name"]: group for group in results}
 
     assert by_name["Horizontal Push"]["change_pct"] == 40
     assert by_name["Squat Pattern"]["change_pct"] == 20
@@ -390,9 +390,7 @@ def test_user_isolation(db, data):
     assert group["confidence"] == "preliminary"
 
 
-def test_benchmarks_do_not_enter_training_group(
-    db, data
-):
+def test_benchmarks_do_not_enter_training_group(db, data):
     add_history(
         db,
         data["user"],

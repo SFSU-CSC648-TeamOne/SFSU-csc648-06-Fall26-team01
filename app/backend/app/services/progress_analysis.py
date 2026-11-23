@@ -1,4 +1,3 @@
-
 """Exercise performance analysis for the adaptive engine.
 
 This service describes observed performance.
@@ -13,10 +12,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.enums import EntryStatus, ObservationType
-from app.models.catalog import (Exercise, ExerciseMovementGroup, MovementGroup)
+from app.models.catalog import Exercise, ExerciseMovementGroup, MovementGroup
 from app.models.prescription import PrescriptionSet
 from app.models.tracking import PerformanceEntry, WorkoutRecord
-
 
 PRELIMINARY_MIN = 3
 ROBUST_MIN = 5
@@ -95,13 +93,11 @@ def analyze_exercise_progress(
         )
         .join(
             WorkoutRecord,
-            PerformanceEntry.workout_record_id
-            == WorkoutRecord.id,
+            PerformanceEntry.workout_record_id == WorkoutRecord.id,
         )
         .outerjoin(
             PrescriptionSet,
-            PerformanceEntry.prescription_set_id
-            == PrescriptionSet.id,
+            PerformanceEntry.prescription_set_id == PrescriptionSet.id,
         )
         .where(
             WorkoutRecord.user_id == user_id,
@@ -138,15 +134,9 @@ def analyze_exercise_progress(
         load_basis = entry.load_basis or "unknown"
 
         # Don't mix different external loads or assistance.
-        load_kg = (
-            round(entry.weight_kg, 2)
-            if entry.weight_kg is not None
-            else None
-        )
+        load_kg = round(entry.weight_kg, 2) if entry.weight_kg is not None else None
         assistance_kg = (
-            round(entry.assistance_kg, 2)
-            if entry.assistance_kg is not None
-            else None
+            round(entry.assistance_kg, 2) if entry.assistance_kg is not None else None
         )
 
         key = (
@@ -242,17 +232,14 @@ def analyze_exercise_progress(
             item["set_number"],
             item["metric"],
             item["load_basis"],
-            item["weight_kg"]
-            if item["weight_kg"] is not None
-            else -1,
-            item["assistance_kg"]
-            if item["assistance_kg"] is not None
-            else -1,
+            item["weight_kg"] if item["weight_kg"] is not None else -1,
+            item["assistance_kg"] if item["assistance_kg"] is not None else -1,
         ),
     )
 
+
 # Creates a relevance-weighted percentage to determine progress in a movement group.
-# Exercises are given a relevance weight which are totally not based on science and 
+# Exercises are given a relevance weight which are totally not based on science and
 # and could be adjusted much later. But much of effective training is bro science anyway sooo...
 def analyze_movement_group_progress(
     db: Session,
@@ -275,17 +262,14 @@ def analyze_movement_group_progress(
         )
         .join(
             ExerciseMovementGroup,
-            ExerciseMovementGroup.movement_group_id
-            == MovementGroup.id,
+            ExerciseMovementGroup.movement_group_id == MovementGroup.id,
         )
         .join(
             Exercise,
-            Exercise.id
-            == ExerciseMovementGroup.exercise_id,
+            Exercise.id == ExerciseMovementGroup.exercise_id,
         )
         .where(
-            ExerciseMovementGroup.relationship_type
-            == "primary",
+            ExerciseMovementGroup.relationship_type == "primary",
             ExerciseMovementGroup.relevance_weight > 0,
         )
         .order_by(
@@ -303,13 +287,11 @@ def analyze_movement_group_progress(
 
     for group, relationship, exercise in rows:
         if exercise.id not in exercise_cache:
-            exercise_cache[exercise.id] = (
-                analyze_exercise_progress(
-                    db=db,
-                    user_id=user_id,
-                    exercise_id=exercise.id,
-                    observation_type="training",
-                )
+            exercise_cache[exercise.id] = analyze_exercise_progress(
+                db=db,
+                user_id=user_id,
+                exercise_id=exercise.id,
+                observation_type="training",
             )
 
         trends = exercise_cache[exercise.id]
@@ -353,13 +335,9 @@ def analyze_movement_group_progress(
                 "exercise_id": exercise.id,
                 "exercise_name": exercise.name,
                 "change_pct": selected["change_pct"],
-                "observation_count": selected[
-                    "observation_count"
-                ],
+                "observation_count": selected["observation_count"],
                 "confidence": selected["confidence"],
-                "weight": float(
-                    relationship.relevance_weight
-                ),
+                "weight": float(relationship.relevance_weight),
             }
         )
 
@@ -368,10 +346,7 @@ def analyze_movement_group_progress(
     for bucket in groups.values():
         contributions = bucket["contributions"]
 
-        total_weight = sum(
-            item["weight"]
-            for item in contributions
-        )
+        total_weight = sum(item["weight"] for item in contributions)
 
         if total_weight <= 0:
             continue
@@ -379,27 +354,19 @@ def analyze_movement_group_progress(
         # Percentages are dimensionless, allowing
         # exercise-specific changes to be summarized
         # without combining raw reps, seconds, or kg.
-        change_pct = sum(
-            item["change_pct"] * item["weight"]
-            for item in contributions
-        ) / total_weight
-
-        observation_count = sum(
-            item["observation_count"]
-            for item in contributions
+        change_pct = (
+            sum(item["change_pct"] * item["weight"] for item in contributions)
+            / total_weight
         )
+
+        observation_count = sum(item["observation_count"] for item in contributions)
 
         # Conservative confidence:
         # every contributing exercise must have robust
         # evidence before the group is called robust.
-        robust = all(
-            item["confidence"] == "robust"
-            for item in contributions
-        )
+        robust = all(item["confidence"] == "robust" for item in contributions)
 
-        confidence = (
-            "robust" if robust else "preliminary"
-        )
+        confidence = "robust" if robust else "preliminary"
 
         results.append(
             {

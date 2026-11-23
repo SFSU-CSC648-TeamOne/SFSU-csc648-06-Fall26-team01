@@ -1,4 +1,3 @@
-
 """Create an enrollment and its persisted training schedule.
 
 The caller must supply a trusted, explicitly classified
@@ -23,7 +22,6 @@ from app.models.program_instance import ProgramInstance
 from app.models.program_phase import ProgramPhase, ProgramPhaseType
 from app.models.prescription import PrescriptionSet, WorkoutPrescription
 from app.models.users import User
-
 
 ENGINE_VERSION = "adaptive-v1"
 
@@ -51,9 +49,7 @@ class EnrollmentWorkout:
 
 def _validate_set(item: EnrollmentSet) -> None:
     if item.exercise_id <= 0 or item.set_number <= 0:
-        raise ValidationFailed(
-            "Exercise IDs and set numbers must be positive."
-        )
+        raise ValidationFailed("Exercise IDs and set numbers must be positive.")
 
     allowed = {basis.value for basis in LoadBasis}
     if item.load_basis not in allowed:
@@ -70,21 +66,11 @@ def _validate_set(item: EnrollmentSet) -> None:
         ):
             raise ValidationFailed("Target duration must be positive.")
 
-    if (
-        item.target_reps is not None
-        and item.target_duration_seconds is not None
-    ):
-        raise ValidationFailed(
-            "A set cannot prescribe both repetitions and duration."
-        )
+    if item.target_reps is not None and item.target_duration_seconds is not None:
+        raise ValidationFailed("A set cannot prescribe both repetitions and duration.")
 
-    if (
-        item.target_reps is None
-        and item.target_duration_seconds is None
-    ):
-        raise ValidationFailed(
-            "Each set requires repetitions or duration."
-        )
+    if item.target_reps is None and item.target_duration_seconds is None:
+        raise ValidationFailed("Each set requires repetitions or duration.")
 
     if item.target_weight_kg is not None:
         try:
@@ -110,39 +96,32 @@ def _validate_set(item: EnrollmentSet) -> None:
                 "Only external or added loading may have a weight target."
             )
 
-    if item.load_basis in {
-        LoadBasis.external.value,
-        LoadBasis.added.value,
-    } and item.target_weight_kg is None:
-        raise ValidationFailed(
-            "External and added loading require a weight target."
-        )
+    if (
+        item.load_basis
+        in {
+            LoadBasis.external.value,
+            LoadBasis.added.value,
+        }
+        and item.target_weight_kg is None
+    ):
+        raise ValidationFailed("External and added loading require a weight target.")
 
     if item.load_basis == LoadBasis.assisted.value:
-        raise ValidationFailed(
-            "Assisted targets are deferred in the current schema."
-        )
+        raise ValidationFailed("Assisted targets are deferred in the current schema.")
 
 
 def _validate_schedule(
     workouts: tuple[EnrollmentWorkout, ...],
 ) -> None:
     if not workouts:
-        raise ValidationFailed(
-            "An enrollment requires at least one workout."
-        )
+        raise ValidationFailed("An enrollment requires at least one workout.")
 
     valid_phases = {phase.value for phase in ProgramPhaseType}
     seen_days = set()
 
     for workout in workouts:
-        if (
-            workout.program_week <= 0
-            or workout.program_day <= 0
-        ):
-            raise ValidationFailed(
-                "Program week and day must be positive."
-            )
+        if workout.program_week <= 0 or workout.program_day <= 0:
+            raise ValidationFailed("Program week and day must be positive.")
 
         day_key = (
             workout.program_week,
@@ -150,9 +129,7 @@ def _validate_schedule(
         )
 
         if day_key in seen_days:
-            raise ValidationFailed(
-                "Duplicate program week and day."
-            )
+            raise ValidationFailed("Duplicate program week and day.")
 
         seen_days.add(day_key)
 
@@ -161,18 +138,11 @@ def _validate_schedule(
                 "Every workout requires a valid phase classification."
             )
 
-        if (
-            workout.workout_session_id is not None
-            and workout.workout_session_id <= 0
-        ):
-            raise ValidationFailed(
-                "Workout session ID must be positive."
-            )
+        if workout.workout_session_id is not None and workout.workout_session_id <= 0:
+            raise ValidationFailed("Workout session ID must be positive.")
 
         if not workout.sets:
-            raise ValidationFailed(
-                "Every scheduled workout requires prescribed sets."
-            )
+            raise ValidationFailed("Every scheduled workout requires prescribed sets.")
 
         seen_sets = set()
 
@@ -182,9 +152,7 @@ def _validate_schedule(
             set_key = (item.exercise_id, item.set_number)
 
             if set_key in seen_sets:
-                raise ValidationFailed(
-                    "Duplicate exercise and set number in workout."
-                )
+                raise ValidationFailed("Duplicate exercise and set number in workout.")
 
             seen_sets.add(set_key)
 
@@ -218,11 +186,7 @@ def create_program_enrollment(
 
     _validate_schedule(workouts)
 
-    exercise_ids = {
-        item.exercise_id
-        for workout in workouts
-        for item in workout.sets
-    }
+    exercise_ids = {item.exercise_id for workout in workouts for item in workout.sets}
 
     session_ids = {
         workout.workout_session_id
@@ -243,44 +207,29 @@ def create_program_enrollment(
             )
 
             if baseline is None:
-                raise NotFoundError(
-                    "Program baseline not found."
-                )
+                raise NotFoundError("Program baseline not found.")
 
-            if (
-                baseline.user_id != user_id
-                or baseline.program_slug != program_slug
-            ):
+            if baseline.user_id != user_id or baseline.program_slug != program_slug:
                 raise ValidationFailed(
                     "Baseline does not belong to this user and program."
                 )
 
         found_exercises = set(
-            db.scalars(
-                select(Exercise.id).where(
-                    Exercise.id.in_(exercise_ids)
-                )
-            ).all()
+            db.scalars(select(Exercise.id).where(Exercise.id.in_(exercise_ids))).all()
         )
 
         if found_exercises != exercise_ids:
-            raise ValidationFailed(
-                "Schedule contains unknown exercises."
-            )
+            raise ValidationFailed("Schedule contains unknown exercises.")
 
         if session_ids:
             found_sessions = set(
                 db.scalars(
-                    select(WorkoutSession.id).where(
-                        WorkoutSession.id.in_(session_ids)
-                    )
+                    select(WorkoutSession.id).where(WorkoutSession.id.in_(session_ids))
                 ).all()
             )
 
             if found_sessions != session_ids:
-                raise ValidationFailed(
-                    "Schedule contains unknown workout sessions."
-                )
+                raise ValidationFailed("Schedule contains unknown workout sessions.")
 
         instance = ProgramInstance(
             user_id=user_id,
@@ -322,9 +271,7 @@ def create_program_enrollment(
                         exercise_id=item.exercise_id,
                         set_number=item.set_number,
                         target_reps=item.target_reps,
-                        target_duration_seconds=(
-                            item.target_duration_seconds
-                        ),
+                        target_duration_seconds=(item.target_duration_seconds),
                         target_weight_kg=item.target_weight_kg,
                         load_basis=item.load_basis,
                         is_optional=item.is_optional,

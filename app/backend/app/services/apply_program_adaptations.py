@@ -1,4 +1,3 @@
-
 """Atomically apply selected program-wide adaptation approvals.
 
 Only explicitly selected, currently eligible future sets
@@ -39,7 +38,6 @@ from app.services.program_adaptation import (
     preview_program_propagation,
 )
 
-
 TARGET_FIELDS = {
     "reps": "target_reps",
     "duration": "target_duration_seconds",
@@ -60,14 +58,10 @@ def _number(value: object) -> Decimal:
     try:
         result = Decimal(str(value))
     except (TypeError, ValueError, InvalidOperation) as exc:
-        raise ValidationFailed(
-            "Invalid adjustment value."
-        ) from exc
+        raise ValidationFailed("Invalid adjustment value.") from exc
 
     if not result.is_finite():
-        raise ValidationFailed(
-            "Adjustment values must be finite."
-        )
+        raise ValidationFailed("Adjustment values must be finite.")
 
     return result
 
@@ -76,9 +70,7 @@ def _validate_selection(
     selections: list[SelectedProgramAdjustment],
 ) -> None:
     if not selections or len(selections) > 100:
-        raise ValidationFailed(
-            "Select between 1 and 100 future sets."
-        )
+        raise ValidationFailed("Select between 1 and 100 future sets.")
 
     ids = []
 
@@ -88,29 +80,20 @@ def _validate_selection(
             or isinstance(item.prescription_set_id, bool)
             or item.prescription_set_id <= 0
         ):
-            raise ValidationFailed(
-                "Invalid selected prescription set ID."
-            )
+            raise ValidationFailed("Invalid selected prescription set ID.")
 
-        previous = _number(
-            item.expected_previous_value
-        )
-        proposed = _number(
-            item.expected_proposed_value
-        )
+        previous = _number(item.expected_previous_value)
+        proposed = _number(item.expected_proposed_value)
 
         if previous <= 0 or proposed <= previous:
             raise ValidationFailed(
-                "Selected targets must represent "
-                "positive progression."
+                "Selected targets must represent " "positive progression."
             )
 
         ids.append(item.prescription_set_id)
 
     if len(ids) != len(set(ids)):
-        raise ValidationFailed(
-            "Duplicate prescription set selection."
-        )
+        raise ValidationFailed("Duplicate prescription set selection.")
 
 
 def _serialize(
@@ -137,19 +120,14 @@ def _replay_result(
         existing.program_instance_id != instance_id
         or existing.source_approval_id != source_approval_id
     ):
-        raise ConflictError(
-            "Idempotency key belongs to another request."
-        )
+        raise ConflictError("Idempotency key belongs to another request.")
 
     stored_items = db.scalars(
         select(ProgramAdaptationApprovalItem)
         .where(
-            ProgramAdaptationApprovalItem
-            .program_adaptation_approval_id == existing.id
+            ProgramAdaptationApprovalItem.program_adaptation_approval_id == existing.id
         )
-        .order_by(
-            ProgramAdaptationApprovalItem.prescription_set_id
-        )
+        .order_by(ProgramAdaptationApprovalItem.prescription_set_id)
     ).all()
 
     expected = {
@@ -170,8 +148,7 @@ def _replay_result(
 
     if recorded != expected:
         raise ConflictError(
-            "Idempotency key has different selections "
-            "or target values."
+            "Idempotency key has different selections " "or target values."
         )
 
     return {
@@ -219,9 +196,7 @@ def apply_program_adaptations(
     """
 
     if any(
-        not isinstance(value, int)
-        or isinstance(value, bool)
-        or value <= 0
+        not isinstance(value, int) or isinstance(value, bool) or value <= 0
         for value in (
             user_id,
             program_instance_id,
@@ -235,9 +210,7 @@ def apply_program_adaptations(
         or not 1 <= len(request_key) <= 64
         or not request_key.strip()
     ):
-        raise ValidationFailed(
-            "A valid idempotency key is required."
-        )
+        raise ValidationFailed("A valid idempotency key is required.")
 
     _validate_selection(selections)
 
@@ -256,20 +229,16 @@ def apply_program_adaptations(
         )
 
         if instance is None:
-            raise NotFoundError(
-                "Program enrollment not found."
-            )
+            raise NotFoundError("Program enrollment not found.")
 
         # --------------------------------------------------
         # 2. Handle idempotent retries
         # --------------------------------------------------
 
         existing = db.scalar(
-            select(ProgramAdaptationApproval)
-            .where(
+            select(ProgramAdaptationApproval).where(
                 ProgramAdaptationApproval.user_id == user_id,
-                ProgramAdaptationApproval.request_key
-                == request_key,
+                ProgramAdaptationApproval.request_key == request_key,
             )
         )
 
@@ -285,33 +254,26 @@ def apply_program_adaptations(
             return result
 
         if instance.status != "active":
-            raise ConflictError(
-                "Program enrollment is not active."
-            )
+            raise ConflictError("Program enrollment is not active.")
 
         # --------------------------------------------------
         # 3. Validate original individual approval
         # --------------------------------------------------
 
         source_approval = db.scalar(
-            select(AdaptationApproval)
-            .where(
+            select(AdaptationApproval).where(
                 AdaptationApproval.id == source_approval_id,
                 AdaptationApproval.user_id == user_id,
             )
         )
 
         if source_approval is None:
-            raise NotFoundError(
-                "Individual adaptation approval not found."
-            )
+            raise NotFoundError("Individual adaptation approval not found.")
 
         adjustment_type = source_approval.adjustment_type
 
         if adjustment_type not in TARGET_FIELDS:
-            raise ValidationFailed(
-                "Unsupported adjustment type."
-            )
+            raise ValidationFailed("Unsupported adjustment type.")
 
         # --------------------------------------------------
         # 4. Lock prescriptions and sets consistently
@@ -320,67 +282,44 @@ def apply_program_adaptations(
         prescriptions = db.scalars(
             select(WorkoutPrescription)
             .where(
-                WorkoutPrescription.program_instance_id
-                == program_instance_id,
+                WorkoutPrescription.program_instance_id == program_instance_id,
                 WorkoutPrescription.user_id == user_id,
-                WorkoutPrescription.program_slug
-                == instance.program_slug,
+                WorkoutPrescription.program_slug == instance.program_slug,
             )
             .order_by(WorkoutPrescription.id)
             .with_for_update()
         ).all()
 
-        prescription_ids = [
-            item.id for item in prescriptions
-        ]
+        prescription_ids = [item.id for item in prescriptions]
 
-        if (
-            source_approval.workout_prescription_id
-            not in prescription_ids
-        ):
+        if source_approval.workout_prescription_id not in prescription_ids:
             raise NotFoundError(
-                "Source approval belongs to another "
-                "program enrollment."
+                "Source approval belongs to another " "program enrollment."
             )
 
         if not prescription_ids:
-            raise ConflictError(
-                "Enrollment has no prescriptions."
-            )
+            raise ConflictError("Enrollment has no prescriptions.")
 
         # Lock every set within this enrollment, including
         # the source set and nonselected future sets.
         locked_sets = db.scalars(
             select(PrescriptionSet)
-            .where(
-                PrescriptionSet.workout_prescription_id.in_(
-                    prescription_ids
-                )
-            )
+            .where(PrescriptionSet.workout_prescription_id.in_(prescription_ids))
             .order_by(PrescriptionSet.id)
             .with_for_update()
         ).all()
 
-        sets_by_id = {
-            item.id: item
-            for item in locked_sets
-        }
+        sets_by_id = {item.id: item for item in locked_sets}
 
         # Lock existing phase metadata before revalidation.
         db.scalars(
             select(ProgramPhase)
-            .where(
-                ProgramPhase.workout_prescription_id.in_(
-                    prescription_ids
-                )
-            )
+            .where(ProgramPhase.workout_prescription_id.in_(prescription_ids))
             .order_by(ProgramPhase.id)
             .with_for_update()
         ).all()
 
-        source_set = sets_by_id.get(
-            source_approval.prescription_set_id
-        )
+        source_set = sets_by_id.get(source_approval.prescription_set_id)
 
         if (
             source_set is None
@@ -388,8 +327,7 @@ def apply_program_adaptations(
             != source_approval.workout_prescription_id
         ):
             raise ConflictError(
-                "Source approval no longer matches "
-                "its prescription set."
+                "Source approval no longer matches " "its prescription set."
             )
 
         # Discard previously cached ORM values so the
@@ -403,12 +341,8 @@ def apply_program_adaptations(
         preview = preview_program_propagation(
             db=db,
             user_id=user_id,
-            prescription_id=(
-                source_approval.workout_prescription_id
-            ),
-            prescription_set_id=(
-                source_approval.prescription_set_id
-            ),
+            prescription_id=(source_approval.workout_prescription_id),
+            prescription_set_id=(source_approval.prescription_set_id),
             adjustment_type=adjustment_type,
             previous_value=source_approval.previous_value,
             approved_value=source_approval.approved_value,
@@ -416,19 +350,15 @@ def apply_program_adaptations(
         )
 
         if (
-            preview["source_approval_id"]
-            != source_approval_id
-            or preview["program_instance_id"]
-            != program_instance_id
+            preview["source_approval_id"] != source_approval_id
+            or preview["program_instance_id"] != program_instance_id
         ):
             raise ConflictError(
-                "Source approval or enrollment changed. "
-                "Request a new preview."
+                "Source approval or enrollment changed. " "Request a new preview."
             )
 
         candidates = {
-            item["prescription_set_id"]: item
-            for item in preview["candidates"]
+            item["prescription_set_id"]: item for item in preview["candidates"]
         }
 
         # --------------------------------------------------
@@ -441,9 +371,7 @@ def apply_program_adaptations(
             selections,
             key=lambda item: item.prescription_set_id,
         ):
-            candidate = candidates.get(
-                selection.prescription_set_id
-            )
+            candidate = candidates.get(selection.prescription_set_id)
 
             if candidate is None:
                 raise ConflictError(
@@ -451,41 +379,22 @@ def apply_program_adaptations(
                     "Refresh the program preview."
                 )
 
-            prescribed_set = sets_by_id.get(
-                selection.prescription_set_id
-            )
+            prescribed_set = sets_by_id.get(selection.prescription_set_id)
 
             if prescribed_set is None:
-                raise ConflictError(
-                    "Selected set is not in this enrollment."
-                )
+                raise ConflictError("Selected set is not in this enrollment.")
 
-            if (
-                prescribed_set.workout_prescription_id
-                != candidate["prescription_id"]
-            ):
-                raise ConflictError(
-                    "Selected set changed prescriptions."
-                )
+            if prescribed_set.workout_prescription_id != candidate["prescription_id"]:
+                raise ConflictError("Selected set changed prescriptions.")
 
             if candidate["adjustment_type"] != adjustment_type:
-                raise ConflictError(
-                    "Adjustment type no longer matches."
-                )
+                raise ConflictError("Adjustment type no longer matches.")
 
-            previous = _number(
-                selection.expected_previous_value
-            )
-            proposed = _number(
-                selection.expected_proposed_value
-            )
+            previous = _number(selection.expected_previous_value)
+            proposed = _number(selection.expected_proposed_value)
 
-            server_previous = _number(
-                candidate["current_value"]
-            )
-            server_proposed = _number(
-                candidate["proposed_value"]
-            )
+            server_previous = _number(candidate["current_value"])
+            server_proposed = _number(candidate["proposed_value"])
 
             current = getattr(
                 prescribed_set,
@@ -499,8 +408,7 @@ def apply_program_adaptations(
                 or _number(current) != previous
             ):
                 raise ConflictError(
-                    "Selected target is stale. "
-                    "Refresh the program preview."
+                    "Selected target is stale. " "Refresh the program preview."
                 )
 
             validated.append(
@@ -521,9 +429,7 @@ def apply_program_adaptations(
             program_instance_id=program_instance_id,
             source_approval_id=source_approval_id,
             request_key=request_key,
-            proposal_engine_version=(
-                source_approval.proposal_engine_version
-            ),
+            proposal_engine_version=(source_approval.proposal_engine_version),
         )
 
         db.add(bulk_approval)
@@ -542,18 +448,14 @@ def apply_program_adaptations(
                 prescribed_set.target_reps = int(proposed)
 
             elif adjustment_type == "duration":
-                prescribed_set.target_duration_seconds = int(
-                    proposed
-                )
+                prescribed_set.target_duration_seconds = int(proposed)
 
             elif adjustment_type == "weight":
                 prescribed_set.target_weight_kg = proposed
 
             db.add(
                 ProgramAdaptationApprovalItem(
-                    program_adaptation_approval_id=(
-                        bulk_approval.id
-                    ),
+                    program_adaptation_approval_id=(bulk_approval.id),
                     workout_prescription_id=prescription_id,
                     prescription_set_id=prescribed_set.id,
                     adjustment_type=adjustment_type,
@@ -562,18 +464,20 @@ def apply_program_adaptations(
                 )
             )
 
-            updated_sets.append({
-                "prescription_set_id": prescribed_set.id,
-                "adjustment_type": adjustment_type,
-                "previous_value": _serialize(
-                    adjustment_type,
-                    previous,
-                ),
-                "applied_value": _serialize(
-                    adjustment_type,
-                    proposed,
-                ),
-            })
+            updated_sets.append(
+                {
+                    "prescription_set_id": prescribed_set.id,
+                    "adjustment_type": adjustment_type,
+                    "previous_value": _serialize(
+                        adjustment_type,
+                        previous,
+                    ),
+                    "applied_value": _serialize(
+                        adjustment_type,
+                        proposed,
+                    ),
+                }
+            )
 
         # --------------------------------------------------
         # 8. Commit all updates and audits atomically

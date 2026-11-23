@@ -15,6 +15,7 @@ from app.repositories import users as users_repo
 DbSession = Annotated[Session, Depends(get_db)]
 _bearer = HTTPBearer(auto_error=False)
 
+
 def get_current_user(
     db: DbSession,
     creds: Annotated[Optional[HTTPAuthorizationCredentials], Depends(_bearer)],
@@ -26,5 +27,6 @@ def get_current_user(
     if user is None:
         raise AuthenticationError("Invalid or expired token.")
     return user
+
 
 CurrentUser = Annotated[User, Depends(get_current_user)]

@@ -1,4 +1,3 @@
-
 """Integration tests for the movement-group progress API.
 
 Run independently:
@@ -47,11 +46,7 @@ def register_user():
     )
     assert response.status_code == 201, response.text
 
-    headers = {
-        "Authorization": (
-            f"Bearer {response.json()['access_token']}"
-        )
-    }
+    headers = {"Authorization": (f"Bearer {response.json()['access_token']}")}
 
     me = client.get("/api/auth/me", headers=headers)
     assert me.status_code == 200, me.text
@@ -68,12 +63,8 @@ def create_group(
 ):
     """Create one movement group and linked exercise."""
     with SessionLocal() as db:
-        group = MovementGroup(
-            name=group_name or f"Group {uuid4().hex[:8]}"
-        )
-        exercise = Exercise(
-            name=exercise_name or f"Exercise {uuid4().hex[:8]}"
-        )
+        group = MovementGroup(name=group_name or f"Group {uuid4().hex[:8]}")
+        exercise = Exercise(name=exercise_name or f"Exercise {uuid4().hex[:8]}")
 
         db.add_all([group, exercise])
         db.flush()
@@ -111,7 +102,9 @@ def add_history(
                 user_id=user_id,
                 performed_at=(
                     datetime(
-                        2026, 1, 1,
+                        2026,
+                        1,
+                        1,
                         tzinfo=timezone.utc,
                     )
                     + timedelta(days=start_day + index)
@@ -140,9 +133,7 @@ def get_groups(headers):
 
 
 def test_route_registered():
-    paths = {
-        route.path for route in app.routes
-    }
+    paths = {route.path for route in app.routes}
 
     assert ENDPOINT in paths
 
@@ -154,9 +145,7 @@ def test_authentication_required():
 
 
 def test_invalid_token_rejected():
-    response = get_groups(
-        {"Authorization": "Bearer invalid-token"}
-    )
+    response = get_groups({"Authorization": "Bearer invalid-token"})
 
     assert response.status_code == 401
 
@@ -188,9 +177,7 @@ def test_insufficient_history_excluded():
 
 def test_preliminary_group_response():
     headers, user_id = register_user()
-    group_id, exercise_id = create_group(
-        group_name=f"Push {uuid4().hex[:8]}"
-    )
+    group_id, exercise_id = create_group(group_name=f"Push {uuid4().hex[:8]}")
 
     add_history(
         user_id,
@@ -203,10 +190,7 @@ def test_preliminary_group_response():
     assert response.status_code == 200, response.text
 
     groups = response.json()
-    group = next(
-        item for item in groups
-        if item["id"] == group_id
-    )
+    group = next(item for item in groups if item["id"] == group_id)
 
     assert group["exercise_count"] == 1
     assert group["observation_count"] == 3
@@ -230,10 +214,7 @@ def test_robust_group_response():
 
     assert response.status_code == 200, response.text
 
-    group = next(
-        item for item in response.json()
-        if item["id"] == group_id
-    )
+    group = next(item for item in response.json() if item["id"] == group_id)
 
     assert group["exercise_count"] == 1
     assert group["observation_count"] == 5
@@ -245,9 +226,7 @@ def test_relevance_weighted_aggregation():
     headers, user_id = register_user()
 
     with SessionLocal() as db:
-        group = MovementGroup(
-            name=f"Weighted Group {uuid4().hex[:8]}"
-        )
+        group = MovementGroup(name=f"Weighted Group {uuid4().hex[:8]}")
 
         first = Exercise(name=f"Push-Up {uuid4().hex[:8]}")
         second = Exercise(name=f"Press {uuid4().hex[:8]}")
@@ -255,20 +234,22 @@ def test_relevance_weighted_aggregation():
         db.add_all([group, first, second])
         db.flush()
 
-        db.add_all([
-            ExerciseMovementGroup(
-                exercise_id=first.id,
-                movement_group_id=group.id,
-                relationship_type="primary",
-                relevance_weight=1.0,
-            ),
-            ExerciseMovementGroup(
-                exercise_id=second.id,
-                movement_group_id=group.id,
-                relationship_type="primary",
-                relevance_weight=0.5,
-            ),
-        ])
+        db.add_all(
+            [
+                ExerciseMovementGroup(
+                    exercise_id=first.id,
+                    movement_group_id=group.id,
+                    relationship_type="primary",
+                    relevance_weight=1.0,
+                ),
+                ExerciseMovementGroup(
+                    exercise_id=second.id,
+                    movement_group_id=group.id,
+                    relationship_type="primary",
+                    relevance_weight=0.5,
+                ),
+            ]
+        )
 
         group_id = group.id
         first_id = first.id
@@ -291,10 +272,7 @@ def test_relevance_weighted_aggregation():
 
     assert response.status_code == 200, response.text
 
-    group = next(
-        item for item in response.json()
-        if item["id"] == group_id
-    )
+    group = next(item for item in response.json() if item["id"] == group_id)
 
     # (40 * 1.0 + 20 * 0.5) / 1.5
     assert group["change_pct"] == pytest.approx(
@@ -332,13 +310,11 @@ def test_user_isolation():
     assert other_response.status_code == 200
 
     owner_group = next(
-        group for group in owner_response.json()
-        if group["id"] == group_id
+        group for group in owner_response.json() if group["id"] == group_id
     )
 
     other_group = next(
-        group for group in other_response.json()
-        if group["id"] == group_id
+        group for group in other_response.json() if group["id"] == group_id
     )
 
     assert owner_group["observation_count"] == 3
@@ -410,18 +386,11 @@ def test_unrelated_groups_remain_separate():
 
     assert response.status_code == 200, response.text
 
-    groups = {
-        item["id"]: item
-        for item in response.json()
-    }
+    groups = {item["id"]: item for item in response.json()}
 
     assert first_group_id in groups
     assert second_group_id in groups
 
-    assert groups[first_group_id]["change_pct"] == (
-        pytest.approx(40.0)
-    )
+    assert groups[first_group_id]["change_pct"] == (pytest.approx(40.0))
 
-    assert groups[second_group_id]["change_pct"] == (
-        pytest.approx(20.0)
-    )
+    assert groups[second_group_id]["change_pct"] == (pytest.approx(20.0))

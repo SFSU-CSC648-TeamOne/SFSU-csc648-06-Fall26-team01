@@ -1,4 +1,3 @@
-
 """Tests for prescription-linked workout performance.
 
 Run independently:
@@ -55,12 +54,8 @@ def create_fixture(headers):
     user_id = user_response.json()["id"]
 
     with SessionLocal() as db:
-        exercise = Exercise(
-            name=f"Test Push-Up {uuid4().hex[:8]}"
-        )
-        alternative = Exercise(
-            name=f"Test Incline Push-Up {uuid4().hex[:8]}"
-        )
+        exercise = Exercise(name=f"Test Push-Up {uuid4().hex[:8]}")
+        alternative = Exercise(name=f"Test Incline Push-Up {uuid4().hex[:8]}")
         db.add_all([exercise, alternative])
         db.flush()
 
@@ -138,9 +133,7 @@ def test_valid_prescription_submission():
 
     assert saved["reps"] == 8
     assert saved["set_number"] == 1
-    assert saved["prescription_set_id"] == (
-        fixture["prescription_set_id"]
-    )
+    assert saved["prescription_set_id"] == (fixture["prescription_set_id"])
     assert saved["observation_type"] == "training"
     assert saved["load_basis"] == "bodyweight"
 
@@ -290,9 +283,7 @@ def test_substitution_preserves_original():
             entry(
                 fixture,
                 exercise_id=fixture["alternative_id"],
-                substituted_for_exercise_id=(
-                    fixture["exercise_id"]
-                ),
+                substituted_for_exercise_id=(fixture["exercise_id"]),
                 is_user_modified=True,
             )
         ],
@@ -303,9 +294,7 @@ def test_substitution_preserves_original():
     saved = response.json()["entries"][0]
 
     assert saved["exercise_id"] == fixture["alternative_id"]
-    assert saved["substituted_for_exercise_id"] == (
-        fixture["exercise_id"]
-    )
+    assert saved["substituted_for_exercise_id"] == (fixture["exercise_id"])
     assert saved["is_user_modified"] is True
 
 
@@ -360,9 +349,7 @@ def test_history_returns_saved_metadata():
 
     saved = history.json()["entries"][0]
 
-    assert saved["prescription_set_id"] == (
-        fixture["prescription_set_id"]
-    )
+    assert saved["prescription_set_id"] == (fixture["prescription_set_id"])
     assert saved["observation_type"] == "training"
     assert saved["load_basis"] == "bodyweight"
     assert saved["is_user_modified"] is False

@@ -1,4 +1,3 @@
-
 """PostgreSQL integration tests for atomic bulk adaptations.
 
 Run from app/backend with ASCENDA_TEST_DATABASE_URL set:
@@ -52,7 +51,6 @@ from app.services.apply_program_adaptations import (
     apply_program_adaptations,
 )
 
-
 REQUIRED_TABLES = {
     "users",
     "exercises",
@@ -98,15 +96,11 @@ def db():
             if actual != "ascenda_test":
                 pytest.fail("Unexpected database.")
 
-            available = set(
-                inspect(connection).get_table_names()
-            )
+            available = set(inspect(connection).get_table_names())
             missing = REQUIRED_TABLES - available
 
             if missing:
-                pytest.fail(
-                    f"Missing tables: {sorted(missing)}"
-                )
+                pytest.fail(f"Missing tables: {sorted(missing)}")
 
             # Database inspection started an implicit
             # SQLAlchemy transaction.
@@ -183,9 +177,7 @@ def data(db):
         password_hash="test-hash",
     )
 
-    exercise = Exercise(
-        name=f"Bulk Test Push-Up {uuid4().hex[:8]}"
-    )
+    exercise = Exercise(name=f"Bulk Test Push-Up {uuid4().hex[:8]}")
 
     db.add_all([user, exercise])
     db.flush()
@@ -322,9 +314,7 @@ def apply(db, data, *, chosen=None, key=None, **overrides):
         "program_instance_id": data["instance_id"],
         "source_approval_id": data["source_approval_id"],
         "request_key": key or uuid4().hex,
-        "selections": (
-            selections(data) if chosen is None else chosen
-        ),
+        "selections": (selections(data) if chosen is None else chosen),
     }
 
     arguments.update(overrides)
@@ -337,7 +327,6 @@ def target(db, set_id):
     return db.get(PrescriptionSet, set_id).target_reps
 
 
-
 def audit_count(db, model, user_id):
     """Count only bulk approval records for this test user."""
 
@@ -345,10 +334,7 @@ def audit_count(db, model, user_id):
         statement = (
             select(func.count())
             .select_from(ProgramAdaptationApproval)
-            .where(
-                ProgramAdaptationApproval.user_id
-                == user_id
-            )
+            .where(ProgramAdaptationApproval.user_id == user_id)
         )
 
     elif model is ProgramAdaptationApprovalItem:
@@ -357,28 +343,22 @@ def audit_count(db, model, user_id):
             .select_from(ProgramAdaptationApprovalItem)
             .join(
                 ProgramAdaptationApproval,
-                ProgramAdaptationApprovalItem
-                .program_adaptation_approval_id
+                ProgramAdaptationApprovalItem.program_adaptation_approval_id
                 == ProgramAdaptationApproval.id,
             )
-            .where(
-                ProgramAdaptationApproval.user_id
-                == user_id
-            )
+            .where(ProgramAdaptationApproval.user_id == user_id)
         )
 
     else:
-        raise ValueError(
-            f"Unsupported audit model: {model}"
-        )
+        raise ValueError(f"Unsupported audit model: {model}")
 
     return db.scalar(statement)
-
 
 
 # --------------------------------------------------
 # Successful atomic application
 # --------------------------------------------------
+
 
 def test_selected_sets_are_updated(db, data):
     result = apply(db, data)
@@ -417,24 +397,17 @@ def test_complete_audit_records_created(db, data):
     assert approval is not None
     assert approval.user_id == data["user_id"]
     assert approval.program_instance_id == data["instance_id"]
-    assert approval.source_approval_id == (
-        data["source_approval_id"]
-    )
+    assert approval.source_approval_id == (data["source_approval_id"])
 
     items = db.scalars(
-        select(ProgramAdaptationApprovalItem)
-        .where(
-            ProgramAdaptationApprovalItem
-            .program_adaptation_approval_id == approval.id
+        select(ProgramAdaptationApprovalItem).where(
+            ProgramAdaptationApprovalItem.program_adaptation_approval_id == approval.id
         )
     ).all()
 
     assert len(items) == 2
 
-    by_set = {
-        item.prescription_set_id: item
-        for item in items
-    }
+    by_set = {item.prescription_set_id: item for item in items}
 
     assert by_set[data["first_set"]].previous_value == 18
     assert by_set[data["first_set"]].approved_value == 19
@@ -445,6 +418,7 @@ def test_complete_audit_records_created(db, data):
 # --------------------------------------------------
 # Idempotency
 # --------------------------------------------------
+
 
 def test_identical_retry_does_not_apply_twice(db, data):
     key = uuid4().hex
@@ -463,18 +437,26 @@ def test_identical_retry_does_not_apply_twice(db, data):
     assert target(db, data["first_set"]) == 19
     assert target(db, data["second_set"]) == 21
 
-    assert audit_count(
-        db, ProgramAdaptationApproval, data["user_id"],
-    ) == 1
+    assert (
+        audit_count(
+            db,
+            ProgramAdaptationApproval,
+            data["user_id"],
+        )
+        == 1
+    )
 
-    assert audit_count(
-        db, ProgramAdaptationApprovalItem, data["user_id"],
-    ) == 2
+    assert (
+        audit_count(
+            db,
+            ProgramAdaptationApprovalItem,
+            data["user_id"],
+        )
+        == 2
+    )
 
 
-def test_reused_key_with_different_values_rejected(
-    db, data
-):
+def test_reused_key_with_different_values_rejected(db, data):
     key = uuid4().hex
 
     apply(db, data, key=key)
@@ -493,9 +475,7 @@ def test_reused_key_with_different_values_rejected(
     assert target(db, data["first_set"]) == 19
 
 
-def test_reused_key_with_different_selection_rejected(
-    db, data
-):
+def test_reused_key_with_different_selection_rejected(db, data):
     key = uuid4().hex
 
     apply(db, data, key=key)
@@ -515,6 +495,7 @@ def test_reused_key_with_different_selection_rejected(
 # Enrollment isolation and authorization
 # --------------------------------------------------
 
+
 def test_other_enrollment_set_rejected(db, data):
     with pytest.raises(ConflictError):
         apply(
@@ -526,14 +507,17 @@ def test_other_enrollment_set_rejected(db, data):
         )
 
     assert target(db, data["foreign_set"]) == 18
-    assert audit_count(
-        db, ProgramAdaptationApproval, data["user_id"],
-    ) == 0
+    assert (
+        audit_count(
+            db,
+            ProgramAdaptationApproval,
+            data["user_id"],
+        )
+        == 0
+    )
 
 
-def test_source_approval_must_belong_to_enrollment(
-    db, data
-):
+def test_source_approval_must_belong_to_enrollment(db, data):
     with pytest.raises(NotFoundError):
         apply(
             db,
@@ -557,9 +541,7 @@ def test_nonexistent_enrollment_rejected(db, data):
     "status",
     ["completed", "abandoned"],
 )
-def test_inactive_enrollment_rejected(
-    db, data, status
-):
+def test_inactive_enrollment_rejected(db, data, status):
     instance = db.get(
         ProgramInstance,
         data["instance_id"],
@@ -576,6 +558,7 @@ def test_inactive_enrollment_rejected(
 # --------------------------------------------------
 # Stale targets and protected workouts
 # --------------------------------------------------
+
 
 def test_stale_target_rejected(db, data):
     future_set = db.get(
@@ -653,6 +636,7 @@ def test_recorded_workout_rejected(db, data):
 # Input validation
 # --------------------------------------------------
 
+
 def test_duplicate_selection_rejected(db, data):
     with pytest.raises(ValidationFailed):
         apply(
@@ -679,20 +663,21 @@ def test_invalid_idempotency_key_rejected(db, data):
 # Atomic rollback
 # --------------------------------------------------
 
-def test_audit_insertion_failure_rolls_back_all(
-    db, data
-):
+
+def test_audit_insertion_failure_rolls_back_all(db, data):
     before_approvals = audit_count(
-        db, ProgramAdaptationApproval, data["user_id"],
+        db,
+        ProgramAdaptationApproval,
+        data["user_id"],
     )
     before_items = audit_count(
-        db, ProgramAdaptationApprovalItem, data["user_id"],
+        db,
+        ProgramAdaptationApprovalItem,
+        data["user_id"],
     )
 
     def fail_insert(mapper, connection, target):
-        raise RuntimeError(
-            "Simulated audit insertion failure"
-        )
+        raise RuntimeError("Simulated audit insertion failure")
 
     event.listen(
         ProgramAdaptationApprovalItem,
@@ -716,13 +701,23 @@ def test_audit_insertion_failure_rolls_back_all(
     assert target(db, data["first_set"]) == 18
     assert target(db, data["second_set"]) == 20
 
-    assert audit_count(
-        db, ProgramAdaptationApproval, data["user_id"],
-    ) == before_approvals
+    assert (
+        audit_count(
+            db,
+            ProgramAdaptationApproval,
+            data["user_id"],
+        )
+        == before_approvals
+    )
 
-    assert audit_count(
-        db, ProgramAdaptationApprovalItem, data["user_id"],
-    ) == before_items
+    assert (
+        audit_count(
+            db,
+            ProgramAdaptationApprovalItem,
+            data["user_id"],
+        )
+        == before_items
+    )
 
 
 def test_partial_validation_failure_is_atomic(db, data):
@@ -739,6 +734,11 @@ def test_partial_validation_failure_is_atomic(db, data):
     assert target(db, data["first_set"]) == 18
     assert target(db, data["second_set"]) == 20
 
-    assert audit_count(
-        db, ProgramAdaptationApproval, data["user_id"],
-    ) == 0
+    assert (
+        audit_count(
+            db,
+            ProgramAdaptationApproval,
+            data["user_id"],
+        )
+        == 0
+    )
