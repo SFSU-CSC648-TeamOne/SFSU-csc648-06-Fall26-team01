@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import Navbar from "../../../../../components/Navbar";
 import { api, useAuth } from "../../../../../lib/auth";
 import {
@@ -37,12 +38,14 @@ const DummyViewer = dynamic(
 );
 
 type Found = { id: number; name: string };
+
 type Scan = {
   position: number;
   label: string;
   description?: string | null;
   model_url?: string | null;
 };
+
 type Model = { video_url?: string | null };
 
 // adding a type and helper
@@ -62,6 +65,7 @@ const usable = (t?: string | null) => {
 };
 
 const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, "");
+
 const clock = (ms: number) => {
   const sec = Math.floor(ms / 1000);
   return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
@@ -79,7 +83,9 @@ export default function ExerciseWorkout({
   const { user, loading: authLoading } = useAuth();
   const uid = user?.id ?? "guest";
   const program = getProgram(slug)!;
+
   const templateDays = useMemo(() => buildSchedule(program), [program]);
+
   const {
     days,
     baseline,
@@ -93,6 +99,7 @@ export default function ExerciseWorkout({
   );
 
   const day = days.find((d) => d.exercises.some((e) => e.key === exKey));
+
   // Same order as the program page: core exercises first, then optional ones.
   const list = useMemo(
     () =>
@@ -104,6 +111,7 @@ export default function ExerciseWorkout({
         : [],
     [day],
   );
+
   const index = list.findIndex((e) => e.key === exKey);
   const item = list[index];
   const dummy = item ? DUMMY_MODELS[item.exercise.id] : undefined;
@@ -125,37 +133,44 @@ export default function ExerciseWorkout({
     status: "completed" | "skipped";
   };
 
-  const [completedSets, setCompletedSets] = 
-  useState<RecordedSet[]>([]);
+  const [completedSets, setCompletedSets] = useState<RecordedSet[]>([]);
 
   // Track saving so users can't accidentally submit twice.
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
   const [mediaLoading, setMediaLoading] = useState(true);
+
   // Video and scans are looked up by this database name (the `demo` field in programsData.ts, else the exercise name).
   const name = item ? (item.exercise.demo ?? item.exercise.name) : undefined;
+
   // Video file in public/ (the `video` field in programsData.ts), used when the database has no video for `name`.
   const fallbackVideo = item?.exercise.video ?? null;
 
   useEffect(() => {
     if (!name) return;
+
     let live = true;
+
     // This component is reused when moving to the next exercise, so clear the previous one's media first.
     setVideo(fallbackVideo);
     setScans([]);
     setMediaLoading(true);
+
     (async () => {
       try {
         const page = await api<{ items: Found[] }>(
           `/exercises?q=${encodeURIComponent(name)}&limit=50`,
         );
+
         const hit = page.items.find((x) => norm(x.name) === norm(name));
         if (!hit) return;
+
         const [m, sc] = await Promise.all([
           api<Model>(`/exercises/${hit.id}/model`).catch(() => ({}) as Model),
           api<Scan[]>(`/exercises/${hit.id}/scans`).catch(() => [] as Scan[]),
         ]);
+
         if (live) {
           setVideo(m.video_url ?? fallbackVideo);
           setScans([...sc].sort((a, b) => a.position - b.position));
@@ -165,6 +180,7 @@ export default function ExerciseWorkout({
         if (live) setMediaLoading(false);
       }
     })();
+
     return () => {
       live = false;
     };
@@ -201,15 +217,19 @@ export default function ExerciseWorkout({
   // WGER API info (description, muscles, equipment, license, etc etc)
   const catalogId = item ? CATALOG_IDS[item.exercise.id] : undefined;
   const [detail, setDetail] = useState<Detail | null>(null);
+
   useEffect(() => {
     setDetail(null);
     if (!catalogId) return;
+
     let live = true;
+
     api<Detail>(`/exercises/${catalogId}`)
       .then((d) => {
         if (live) setDetail(d);
       })
       .catch(() => {});
+
     return () => {
       live = false;
     };
@@ -219,28 +239,31 @@ export default function ExerciseWorkout({
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
   const startedAt = useRef(0);
+
   useEffect(() => {
     if (!running) return;
+
     startedAt.current = Date.now() - elapsed;
+
     const id = setInterval(
       () => setElapsed(Date.now() - startedAt.current),
       200,
     );
+
     return () => clearInterval(id);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
 
   // ---- rep counter ----
   const targetSets = item?.sets ?? 3;
   const targetReps = item?.reps ?? 10;
-<<<<<<< HEAD
+
   const isTimed =
     item?.exercise.id === "plank" || item?.exercise.id === "wall-sit";
-  const needsRegression = targetReps === 0;
-=======
-  const isTimed = item?.exercise.id === "plank" || item?.exercise.id === "wall-sit";
+
   const needsRegression = targetReps <= 0;
->>>>>>> origin/main
+
   const [set, setSet] = useState(1);
   const [reps, setReps] = useState(0);
 
@@ -256,55 +279,52 @@ export default function ExerciseWorkout({
   }, [exKey]);
 
   const allDone = set > targetSets;
+
   const setComplete =
     !allDone &&
     !needsRegression &&
     (isTimed ? elapsed >= targetReps * 1000 : reps >= targetReps);
-  
-const nextSet = () => {
-  if (allDone) return;
 
-  const actualSeconds = Math.floor(elapsed / 1000);
+  const nextSet = () => {
+    if (allDone) return;
 
-  const hasPerformance = isTimed
-    ? actualSeconds > 0
-    : reps > 0;
+    const actualSeconds = Math.floor(elapsed / 1000);
 
-  if (!hasPerformance) return;
+    const hasPerformance = isTimed ? actualSeconds > 0 : reps > 0;
+    if (!hasPerformance) return;
 
-  const result: RecordedSet = {
-    set_number: set,
-    reps: isTimed ? null : reps,
-    duration_seconds: isTimed ? actualSeconds : null,
-    status: "completed",
+    const result: RecordedSet = {
+      set_number: set,
+      reps: isTimed ? null : reps,
+      duration_seconds: isTimed ? actualSeconds : null,
+      status: "completed",
+    };
+
+    setCompletedSets((current) => [...current, result]);
+    setSet((current) => current + 1);
+    setReps(0);
+    setElapsed(0);
+    setRunning(false);
   };
 
-  setCompletedSets(current => [...current, result]);
-  setSet(current => current + 1);
-  setReps(0);
-  setElapsed(0);
-  setRunning(false);
-};
+  const skipSet = () => {
+    if (allDone) return;
 
+    setCompletedSets((current) => [
+      ...current,
+      {
+        set_number: set,
+        reps: null,
+        duration_seconds: null,
+        status: "skipped",
+      },
+    ]);
 
-const skipSet = () => {
-  if (allDone) return;
-
-  setCompletedSets(current => [
-    ...current,
-    {
-      set_number: set,
-      reps: null,
-      duration_seconds: null,
-      status: "skipped",
-    },
-  ]);
-
-  setSet(current => current + 1);
-  setReps(0);
-  setElapsed(0);
-  setRunning(false);
-};
+    setSet((current) => current + 1);
+    setReps(0);
+    setElapsed(0);
+    setRunning(false);
+  };
 
   // ---- finish ----
   const finish = useCallback(async () => {
@@ -356,10 +376,12 @@ const skipSet = () => {
       // Update local progress only after the backend confirms the save.
       if (!authLoading) {
         const st = readProgress(uid, slug);
+
         writeProgress(uid, slug, {
           ...st,
           checked: { ...st.checked, [item.key]: true },
         });
+
         writeLast(uid, {
           slug,
           day: day.number,
@@ -369,6 +391,7 @@ const skipSet = () => {
       }
 
       const next = list[index + 1];
+
       router.push(
         next ? `/programs/${slug}/exercise/${next.key}` : `/programs/${slug}`,
       );
@@ -456,18 +479,21 @@ const skipSet = () => {
   return (
     <>
       <Navbar />
+
       <main className={s.page}>
         <Link href={`/programs/${slug}`} className={s.back}>
           ← {program.name} · Day {day.number}
         </Link>
+
         <header className={s.head}>
           <p className={s.kicker}>
             Week {day.week} · Day {day.number} · Exercise {index + 1} of{" "}
             {list.length}
             {item.role === "accessory" ? " · optional" : ""}
           </p>
+
           <h1 className={s.h1}>{item.exercise.name}</h1>
-<<<<<<< HEAD
+
           <p className={s.meta}>
             {" "}
             {needsRegression
@@ -475,12 +501,6 @@ const skipSet = () => {
               : `${item.sets} sets × ${item.reps} ${
                   isTimed ? "seconds" : "reps"
                 }`}
-=======
-          <p className={s.meta}> {needsRegression ?
-            "This prescription needs review." : `${item.sets} sets × ${item.reps} ${
-              isTimed ? "seconds" : "reps"
-            }`}
->>>>>>> origin/main
             {" · "} {item.exercise.muscle}
             {" · "} {item.exercise.equipment}
           </p>
@@ -502,6 +522,7 @@ const skipSet = () => {
                         : "NOT UPLOADED YET"}
                 </span>
               </div>
+
               {video ? (
                 <video
                   className={s.video}
@@ -520,6 +541,7 @@ const skipSet = () => {
                     : "The demonstration video for this exercise is not uploaded yet."}
                 </div>
               )}
+
               {dummy && !video && (
                 <div className={s.cap}>
                   <small>3D motion by KinemIQ</small>
@@ -533,25 +555,31 @@ const skipSet = () => {
                   <span>HOW TO</span>
                   <span>FROM WGER</span>
                 </div>
+
                 <div className={s.cap}>
                   {usable(detail.description) && (
                     <small>{detail.description}</small>
                   )}
+
                   {!!detail.primary_muscles?.length && (
                     <small>
                       <b>Primary:</b> {detail.primary_muscles.join(", ")}
                     </small>
                   )}
+
                   {!!detail.secondary_muscles?.length && (
                     <small>
-                      <b>Secondary:</b> {detail.secondary_muscles.join(", ")}
+                      <b>Secondary:</b>{" "}
+                      {detail.secondary_muscles.join(", ")}
                     </small>
                   )}
+
                   {!!detail.equipment?.length && (
                     <small>
                       <b>Equipment:</b> {detail.equipment.join(", ")}
                     </small>
                   )}
+
                   <small>
                     Source: wger.de · {detail.license_name ?? "CC-BY-SA"} ·{" "}
                     {detail.license_author ?? "wger.de contributors"}
@@ -562,15 +590,18 @@ const skipSet = () => {
 
             <section aria-label="Niantic 3D posture scans">
               <h2 className={s.h2}>Niantic 3D posture scans</h2>
+
               <div className={s.scanGrid}>
                 {[0, 1].map((i) => {
                   const sc = scans[i];
+
                   return (
                     <div className={s.card} key={i}>
                       <div className={s.cardTop}>
                         <span>NIANTIC 3D SCAN</span>
                         <span>DRAG TO ROTATE</span>
                       </div>
+
                       {sc?.model_url ? (
                         <ScanViewer url={sc.model_url} />
                       ) : (
@@ -580,6 +611,7 @@ const skipSet = () => {
                             : `Posture scan ${i + 1} is not uploaded yet.`}
                         </div>
                       )}
+
                       <div className={s.cap}>
                         <b>
                           {i + 1}{" "}
@@ -599,9 +631,11 @@ const skipSet = () => {
           <aside className={s.side} aria-label="Timer and rep counter">
             <section className={s.panel}>
               <p className={s.label}>Timer</p>
+
               <p className={s.clock} role="timer" aria-live="off">
                 {clock(elapsed)}
               </p>
+
               <div className={s.row}>
                 <button
                   type="button"
@@ -610,6 +644,7 @@ const skipSet = () => {
                 >
                   {running ? "Pause" : elapsed > 0 ? "Resume" : "Start"}
                 </button>
+
                 <button
                   type="button"
                   className={s.btnGhost}
@@ -628,6 +663,7 @@ const skipSet = () => {
                 <p className={s.label}>
                   {allDone ? "All sets done" : `Set ${set} of ${targetSets}`}
                 </p>
+
                 <span className={s.dots} aria-hidden="true">
                   {Array.from({ length: targetSets }, (_, i) => (
                     <i
@@ -643,6 +679,7 @@ const skipSet = () => {
                   ))}
                 </span>
               </div>
+
               <p className={s.reps} role="status" aria-live="polite">
                 {" "}
                 {isTimed
@@ -697,18 +734,25 @@ const skipSet = () => {
 
               <button
                 type="button"
+                aria-label="Count one rep"
                 className={s.btnStart}
                 onClick={() => {
                   if (needsRegression || allDone) return;
+
                   if (isTimed) {
                     setRunning((r) => !r);
                     return;
                   }
+
                   if (reps < targetReps) {
                     setReps((current) => Math.min(current + 1, targetReps));
                   }
                 }}
-                disabled={needsRegression || allDone || (isTimed ? elapsed >= targetReps * 1000 : reps >= targetReps)}
+                disabled={
+                  needsRegression ||
+                  allDone ||
+                  (isTimed ? elapsed >= targetReps * 1000 : reps >= targetReps)
+                }
               >
                 {needsRegression
                   ? "REGRESSION NEEDED"
@@ -721,25 +765,39 @@ const skipSet = () => {
                         : "+1 REP"}
               </button>
 
-<<<<<<< HEAD
               <div className={s.row}>
-                {setComplete && !allDone && (
-                  <button
-                    type="button"
-                    className={s.btnStart}
-                    onClick={nextSet}
-                  >
-                    {set === targetSets ? "Finish sets" : "Next set"}
-                  </button>
+                {!allDone && (
+                  <>
+                    <button
+                      type="button"
+                      className={s.btnStart}
+                      onClick={nextSet}
+                      disabled={isTimed ? elapsed < 1000 : reps === 0}
+                    >
+                      Finish sets
+                    </button>
+
+                    <button
+                      type="button"
+                      className={s.btnGhost}
+                      onClick={skipSet}
+                    >
+                      Skip set
+                    </button>
+                  </>
                 )}
+
                 <button
                   type="button"
                   className={s.btnGhost}
                   onClick={() => setReps((r) => Math.max(0, r - 1))}
-                  disabled={allDone || isTimed || reps === 0 || needsRegression}
+                  disabled={
+                    allDone || isTimed || reps === 0 || needsRegression
+                  }
                 >
                   −1
                 </button>
+
                 <button
                   type="button"
                   className={s.btnGhost}
@@ -754,36 +812,6 @@ const skipSet = () => {
                   Reset reps
                 </button>
               </div>
-=======
-              {!allDone && (
-                <div className={s.row}>
-                  <button
-                    type="button"
-                    onClick={nextSet}
-                    disabled={isTimed ? elapsed < 1000 : reps === 0}
-                  >
-                    Save set
-                  </button>
-                  <button type="button" onClick={skipSet}>
-                    Skip set
-                  </button>
-                </div>
-              )}
-
-              <button
-                type="button"
-                className={s.btnGhost}
-                onClick={() => {
-                  setSet(1);
-                  setReps(0);
-                  setRunning(false);
-                  setElapsed(0);
-                  setCompletedSets([]);
-                }}
-              >
-                Reset reps
-              </button>
->>>>>>> origin/main
             </section>
 
             {saveError && (
@@ -815,6 +843,7 @@ const skipSet = () => {
               ) : (
                 <span />
               )}
+
               {next && (
                 <Link href={`/programs/${slug}/exercise/${next.key}`}>
                   {next.exercise.name} →

@@ -36,9 +36,11 @@ const existingProfile = {
   equipment_ids: [],
 };
 
-function setup() {
+function setup(props: any = {}) {
   mockApi.mockImplementation((path: string, options?: any) => {
-    if (path === "/equipment") return Promise.resolve(equipment);
+    if (path === "/equipment") {
+      return Promise.resolve(equipment);
+    }
 
     if (path === "/profile" && options?.method === "PUT") {
       return Promise.resolve({});
@@ -54,6 +56,7 @@ function setup() {
       title="Your profile"
       lead="Update your fitness information."
       submitLabel="Save changes"
+      {...props}
     />
   );
 }
@@ -61,6 +64,7 @@ function setup() {
 describe("Profile Form", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
     (useRouter as jest.Mock).mockReturnValue({
       replace: mockReplace,
     });
@@ -69,34 +73,54 @@ describe("Profile Form", () => {
   test("displays all five profile sections", async () => {
     setup();
 
-    expect(screen.getByText("Your goal")).toBeInTheDocument();
-    expect(screen.getByText("Experience level")).toBeInTheDocument();
-    expect(screen.getByText("Schedule")).toBeInTheDocument();
-    expect(screen.getByText("Equipment")).toBeInTheDocument();
-    expect(screen.getByText("Limitations")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /Your goal/i })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("heading", { name: /Experience level/i })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("heading", { name: /Schedule/i })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("heading", { name: /Equipment/i })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("heading", { name: /Limitations/i })
+    ).toBeInTheDocument();
 
     expect(await screen.findByText("Dumbbells")).toBeInTheDocument();
   });
 
-  test("allows users to select a fitness goal", () => {
+  test("allows users to select a fitness goal", async () => {
     setup();
 
-    const goal = screen.getByRole("button", { name: /Build muscle/i });
+    const goal = screen.getByRole("button", {
+      name: /Build muscle/i,
+    });
+
     fireEvent.click(goal);
 
     expect(goal).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("allows users to select their experience level", () => {
+  test("allows users to select their experience level", async () => {
     setup();
 
-    const level = screen.getByRole("button", { name: /intermediate/i });
+    const level = screen.getByRole("button", {
+      name: /intermediate/i,
+    });
+
     fireEvent.click(level);
 
     expect(level).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("allows users to change their workout schedule", () => {
+  test("allows users to change their workout schedule", async () => {
     setup();
 
     const days = screen.getByRole("button", { name: "3" });
@@ -115,7 +139,10 @@ describe("Profile Form", () => {
     const dumbbells = await screen.findByRole("button", {
       name: "Dumbbells",
     });
-    const knee = screen.getByRole("button", { name: "Knee" });
+
+    const knee = screen.getByRole("button", {
+      name: "Knee",
+    });
 
     fireEvent.click(dumbbells);
     fireEvent.click(knee);
@@ -127,15 +154,25 @@ describe("Profile Form", () => {
   test("saves the selected profile information", async () => {
     setup();
 
-    fireEvent.click(screen.getByRole("button", { name: /Build strength/i }));
-    fireEvent.click(screen.getByRole("button", { name: /beginner/i }));
-    fireEvent.click(screen.getByRole("button", { name: "3" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Build strength/i })
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /beginner/i })
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "3" })
+    );
 
     fireEvent.click(
       await screen.findByRole("button", { name: "Dumbbells" })
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save changes" })
+    );
 
     await waitFor(() => {
       expect(mockApi).toHaveBeenCalledWith(
@@ -147,63 +184,64 @@ describe("Profile Form", () => {
       );
     });
 
-    const savedData = JSON.parse(
-      mockApi.mock.calls.find(
-        (call: any[]) => call[0] === "/profile" && call[1]?.method === "PUT"
-      )[1].body
+    const saveCall = mockApi.mock.calls.find(
+      (call: any[]) =>
+        call[0] === "/profile" &&
+        call[1]?.method === "PUT"
     );
+
+    expect(saveCall).toBeDefined();
+
+    const savedData = JSON.parse(saveCall[1].body);
 
     expect(savedData.goals).toEqual(["Build strength"]);
     expect(savedData.experience_level).toBe("beginner");
     expect(savedData.days_per_week).toBe(3);
     expect(savedData.equipment_ids).toEqual([1]);
 
-    expect(await screen.findByText("All changes saved.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("All changes saved.")
+    ).toBeInTheDocument();
   });
 
   test("displays an error when saving fails", async () => {
     mockApi.mockImplementation((path: string, options?: any) => {
-      if (path === "/equipment") return Promise.resolve(equipment);
+      if (path === "/equipment") {
+        return Promise.resolve(equipment);
+      }
 
       if (options?.method === "PUT") {
-        return Promise.reject(new Error("Unable to save profile"));
+        return Promise.reject(
+          new Error("Unable to save profile")
+        );
       }
 
       return Promise.resolve(existingProfile);
     });
 
-    render(
-      <ProfileForm
-        user={null}
-        kicker="Profile"
-        title="Your profile"
-        lead="Update your fitness information."
-        submitLabel="Save changes"
-      />
+    setup();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save changes" })
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Unable to save profile"
-    );
+    expect(
+      await screen.findByRole("alert")
+    ).toHaveTextContent("Unable to save profile");
   });
 
   test("redirects after first-time profile setup", async () => {
-    setup();
+    setup({
+      kicker: "Setup",
+      title: "Set up your profile",
+      lead: "Complete your profile.",
+      submitLabel: "Save profile",
+      afterSaveHref: "/profile",
+    });
 
-    render(
-      <ProfileForm
-        user={null}
-        kicker="Setup"
-        title="Set up your profile"
-        lead="Complete your profile."
-        submitLabel="Save profile"
-        afterSaveHref="/profile"
-      />
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save profile" })
     );
-
-    fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
 
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith("/profile");
