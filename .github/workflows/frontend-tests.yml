@@ -1,0 +1,131 @@
+name: Frontend Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "app/frontend/**"
+      - ".github/workflows/frontend-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "app/frontend/**"
+      - ".github/workflows/frontend-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  jest:
+    name: Jest unit tests and coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app/frontend
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run Jest tests with coverage
+        run: |
+          set -o pipefail
+          mkdir -p reports
+          npx jest --runInBand \
+            --coverage \
+            --coverageReporters=text \
+            --coverageReporters=json-summary \
+            --coverageReporters=lcov \
+            --json \
+            --outputFile=reports/jest-results.json \
+            2>&1 | tee reports/frontend-tests.log
+
+      - name: Display frontend test summary
+        if: always()
+        run: |
+          node - <<'NODE'
+          const fs = require("fs");
+
+          const resultsPath = "reports/jest-results.json";
+          const coveragePath = "coverage/coverage-summary.json";
+          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+          const statementTarget = 50;
+          const functionTarget = 90;
+          const lines = ["## Frontend Jest results", ""];
+
+          if (fs.existsSync(resultsPath)) {
+            const results = JSON.parse(fs.readFileSync(resultsPath, "utf8"));
+            lines.push(
+              "| Tests | Passed | Failed | Pending |",
+              "|---:|---:|---:|---:|",
+              `| ${results.numTotalTests} | ${results.numPassedTests} | ${results.numFailedTests} | ${results.numPendingTests} |`,
+              "",
+            );
+
+            lines.push("### Individual test results", "", "| Test case | Status |", "|---|---|");
+            for (const suite of results.testResults ?? []) {
+              for (const test of suite.assertionResults ?? []) {
+                const name = [...(test.ancestorTitles ?? []), test.title].join(" > ");
+                lines.push(`| \`${name.replaceAll("|", "\\|")}\` | ${test.status.toUpperCase()} |`);
+              }
+            }
+            lines.push("");
+          } else {
+            lines.push("Jest result file was not generated.", "");
+          }
+
+          if (fs.existsSync(coveragePath)) {
+            const coverage = JSON.parse(fs.readFileSync(coveragePath, "utf8")).total;
+            const statements = coverage.statements.pct;
+            const functions = coverage.functions.pct;
+            lines.push(
+              "### Coverage",
+              "",
+              "| Metric | Result | Target | Status |",
+              "|---|---:|---:|---|",
+              `| Statements | ${statements}% | ${statementTarget}% | ${statements >= statementTarget ? "MET" : "BELOW TARGET"} |`,
+              `| Functions | ${functions}% | ${functionTarget}% | ${functions >= functionTarget ? "MET" : "BELOW TARGET"} |`,
+              `| Branches | ${coverage.branches.pct}% | — | Report only |`,
+              `| Lines | ${coverage.lines.pct}% | — | Report only |`,
+              "",
+              "> Coverage targets are reported but are not yet enforced as CI failure thresholds.",
+              "",
+            );
+          } else {
+            lines.push("Coverage summary was not generated.", "");
+          }
+
+          fs.appendFileSync(summaryPath, `${lines.join("\n")}\n`);
+          NODE
+
+      - name: Upload frontend test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-jest-results
+          path: |
+            app/frontend/reports/jest-results.json
+            app/frontend/reports/frontend-tests.log
+            app/frontend/coverage/coverage-summary.json
+            app/frontend/coverage/lcov.info
+            app/frontend/coverage/lcov-report
+          if-no-files-found: warn
+          retention-days: 14
