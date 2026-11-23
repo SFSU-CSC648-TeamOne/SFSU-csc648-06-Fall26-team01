@@ -81,10 +81,15 @@ jobs:
           import xml.etree.ElementTree as ET
 
           report = "reports/sqlite-junit.xml"
+          coverage_report = "reports/sqlite-coverage.xml"
           summary = os.environ["GITHUB_STEP_SUMMARY"]
 
           with open(summary, "a", encoding="utf-8") as output:
               output.write("## SQLite test results\n\n")
+              if os.path.exists(coverage_report):
+                  coverage = ET.parse(coverage_report).getroot()
+                  line_rate = float(coverage.attrib.get("line-rate", 0))
+                  output.write(f"**Coverage:** {line_rate:.2%}\n\n")
               if not os.path.exists(report):
                   output.write("Test report was not generated.\n")
               else:
