@@ -16,10 +16,21 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiUnavailableError(AppError):
+    """Raised when Gemini cannot produce a reply (not configured, request failed or empty answer).
+
+    Takes the error message to show the client. The API returns it as HTTP 503 with code "chat_unavailable".
+    """
     status_code, code = 503, "chat_unavailable"
 
 
 def generate_reply(history: list, user: User, profile) -> str:
+    """Ask Gemini for the coach's next reply to a conversation.
+
+    Takes the conversation's messages in order, the user (for their display name) and their
+    profile, or None, whose goals, experience and schedule are added as context.
+    Returns the reply text. Raises GeminiUnavailableError if Gemini is not configured,
+    the request fails or the reply is empty.
+    """
     settings = get_settings()
     if not settings.gemini_api_key:
         raise GeminiUnavailableError("Gemini is not configured.")
@@ -71,21 +82,49 @@ def _own(db: Session, conv_id: int, user: User):
     return conv
 
 def list_conversations(db: Session, user: User):
+    """List the user's conversations.
+
+    Takes the database session and the signed-in user.
+    Returns a list of that user's ChatConversation rows.
+    """
     return repo.list_conversations(db, user.id)
 
 def create_conversation(db: Session, user: User):
+    """Start a new, empty conversation for the user and save it.
+
+    Takes the database session and the signed-in user.
+    Returns the new ChatConversation.
+    """
     conv = repo.add_conversation(db, user.id)
     db.commit()
     return conv
 
 def get_conversation(db: Session, user: User, conv_id: int):
+    """Get one of the user's conversations.
+
+    Takes the database session, the signed-in user and the conversation id.
+    Returns the ChatConversation. Raises NotFoundError if it does not exist or belongs to another user.
+    """
     return _own(db, conv_id, user)
 
 def delete_conversation(db: Session, user: User, conv_id: int) -> None:
+    """Delete one of the user's conversations and save the change.
+
+    Takes the database session, the signed-in user and the conversation id.
+    Returns None. Raises NotFoundError if it does not exist or belongs to another user.
+    """
     repo.delete_conversation(db, _own(db, conv_id, user))
     db.commit()
 
 def send_message(db: Session, user: User, conv_id: int, content: str):
+    """Add the user's message to a conversation, get the coach's reply and save both.
+
+    The first message in a conversation also becomes its title (up to 60 characters).
+    Takes the database session, the signed-in user, the conversation id and the message text.
+    Returns a tuple (conversation, user message, assistant message).
+    Raises NotFoundError if the conversation is not the user's, and GeminiUnavailableError
+    if no reply can be generated.
+    """
     conv = _own(db, conv_id, user)
     is_first = repo.count_messages(db, conv.id) == 0
     user_msg = repo.add_message(db, conv, "user", content.strip())
