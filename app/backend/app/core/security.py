@@ -38,5 +38,5 @@ def decode_access_token(token: str) -> Optional[int]:
     try:
         data = jwt.decode(token, s.jwt_secret, algorithms=[s.jwt_algorithm])
         return int(data["sub"])
-    except jwt.PyJWTError, KeyError, ValueError:
+    except (jwt.PyJWTError, KeyError, ValueError):
         return None
