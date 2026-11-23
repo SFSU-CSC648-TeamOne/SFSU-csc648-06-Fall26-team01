@@ -107,14 +107,19 @@ jobs:
                       f"{totals['failures']} | {totals['errors']} | {totals['skipped']} |\n"
                   )
 
+                  output.write("\n### Individual test results\n\n")
+                  output.write("| Test case | Status |\n|---|---|\n")
                   failed = []
                   for suite in suites:
                       for case in suite.findall(".//testcase"):
                           failure = case.find("failure")
                           error = case.find("error")
+                          skipped = case.find("skipped")
                           problem = failure if failure is not None else error
+                          name = f"{case.attrib.get('classname', '')}::{case.attrib.get('name', '')}"
+                          status = "SKIPPED" if skipped is not None else "FAILED" if problem is not None else "PASSED"
+                          output.write(f"| `{name}` | {status} |\n")
                           if problem is not None:
-                              name = f"{case.attrib.get('classname', '')}::{case.attrib.get('name', '')}"
                               failed.append((name, (problem.attrib.get("message") or "").strip()))
                   if failed:
                       output.write("\n### Failures\n\n")
@@ -178,7 +183,7 @@ jobs:
       - name: Install backend and PostgreSQL test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt httpx pytest "psycopg[binary]"
+          python -m pip install -r requirements.txt httpx pytest pytest-cov "psycopg[binary]"
 
       - name: Create isolated test schema
         run: |
@@ -195,7 +200,11 @@ jobs:
             tests/test_apply_program_adaptations.py \
             tests/test_apply_program_adaptations_concurrency.py \
             tests/test_workout_adaptation_concurrency.py \
-            --junitxml=reports/postgresql-junit.xml 2>&1 | tee reports/postgresql-tests.log
+            --junitxml=reports/postgresql-junit.xml \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=xml:reports/postgresql-coverage.xml \
+            2>&1 | tee reports/postgresql-tests.log
 
       - name: Display PostgreSQL test summary
         if: always()
@@ -205,10 +214,15 @@ jobs:
           import xml.etree.ElementTree as ET
 
           report = "reports/postgresql-junit.xml"
+          coverage_report = "reports/postgresql-coverage.xml"
           summary = os.environ["GITHUB_STEP_SUMMARY"]
 
           with open(summary, "a", encoding="utf-8") as output:
               output.write("## PostgreSQL test results\n\n")
+              if os.path.exists(coverage_report):
+                  coverage = ET.parse(coverage_report).getroot()
+                  line_rate = float(coverage.attrib.get("line-rate", 0))
+                  output.write(f"**Coverage:** {line_rate:.2%}\n\n")
               if not os.path.exists(report):
                   output.write("Test report was not generated.\n")
               else:
@@ -226,14 +240,19 @@ jobs:
                       f"{totals['failures']} | {totals['errors']} | {totals['skipped']} |\n"
                   )
 
+                  output.write("\n### Individual test results\n\n")
+                  output.write("| Test case | Status |\n|---|---|\n")
                   failed = []
                   for suite in suites:
                       for case in suite.findall(".//testcase"):
                           failure = case.find("failure")
                           error = case.find("error")
+                          skipped = case.find("skipped")
                           problem = failure if failure is not None else error
+                          name = f"{case.attrib.get('classname', '')}::{case.attrib.get('name', '')}"
+                          status = "SKIPPED" if skipped is not None else "FAILED" if problem is not None else "PASSED"
+                          output.write(f"| `{name}` | {status} |\n")
                           if problem is not None:
-                              name = f"{case.attrib.get('classname', '')}::{case.attrib.get('name', '')}"
                               failed.append((name, (problem.attrib.get("message") or "").strip()))
                   if failed:
                       output.write("\n### Failures\n\n")
@@ -251,6 +270,7 @@ jobs:
           name: backend-postgresql-integration
           path: |
             app/backend/reports/postgresql-junit.xml
+            app/backend/reports/postgresql-coverage.xml
             app/backend/reports/postgresql-tests.log
           if-no-files-found: warn
           retention-days: 14
