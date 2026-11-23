@@ -7,6 +7,7 @@
     "strict": false,
     "noEmit": true,
     "incremental": true,
+    "rootDir": ".",
     "module": "esnext",
     "esModuleInterop": true,
     "moduleResolution": "bundler",
