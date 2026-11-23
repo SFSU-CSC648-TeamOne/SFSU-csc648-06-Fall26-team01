@@ -55,7 +55,7 @@ jobs:
       - name: Install backend and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt pytest pytest-cov
+          python -m pip install -r requirements.txt httpx pytest pytest-cov
 
       - name: Run SQLite and mocked-service tests with coverage
         run: |
@@ -124,10 +124,12 @@ jobs:
       - name: Install backend and PostgreSQL test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt pytest "psycopg[binary]"
+          python -m pip install -r requirements.txt httpx pytest "psycopg[binary]"
 
-      - name: Apply migrations to isolated test database
-        run: python -m alembic upgrade head
+      - name: Create isolated test schema
+        run: |
+          python -c "import app.models; from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(engine); engine.dispose()"
+          python -m alembic stamp head
 
       - name: Run PostgreSQL integration tests
         run: |
